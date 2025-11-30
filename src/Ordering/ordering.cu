@@ -8,23 +8,23 @@
 #include "metis_ordering.h"
 #include "neutral_ordering.h"
 #include "rxmesh_ordering.h"
-#include "poc_ordering.h"
+#include "patch_ordering.h"
 #include "parth_ordering.h"
 
 namespace RXMESH_SOLVER {
 
 
-Ordering *Ordering::create(const RXMESH_Ordering_Type type) {
+Ordering *Ordering::create(const DEMO_ORDERING_TYPE type) {
     switch (type) {
-        case RXMESH_Ordering_Type::METIS:
+        case DEMO_ORDERING_TYPE::METIS:
             return new MetisOrdering();
-        case RXMESH_Ordering_Type::RXMESH_ND:
+        case DEMO_ORDERING_TYPE::RXMESH_ND:
             return new RXMeshOrdering();
-        case RXMESH_Ordering_Type::POC_ND:
-            return new POCOrdering();
-        case RXMESH_Ordering_Type::NEUTRAL:
+        case DEMO_ORDERING_TYPE::PATCH_ORDERING:
+            return new PatchOrdering();
+        case DEMO_ORDERING_TYPE::NEUTRAL:
             return new NeutralOrdering();
-        case RXMESH_Ordering_Type::PARTH:
+        case DEMO_ORDERING_TYPE::PARTH:
             return new ParthOrdering();
         default:
             std::cerr << "Unknown Ordering type" << std::endl;

@@ -48,9 +48,9 @@ void MetisOrdering::compute_permutation(std::vector<int>& perm)
 }
 
 
-RXMESH_Ordering_Type MetisOrdering::type() const
+DEMO_ORDERING_TYPE MetisOrdering::type() const
 {
-    return  RXMESH_Ordering_Type::METIS;
+    return  DEMO_ORDERING_TYPE::METIS;
 }
 std::string MetisOrdering::typeStr() const
 {

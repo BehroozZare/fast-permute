@@ -1,14 +1,104 @@
-set(REQUIRED_CMAKE_VERSION "3.9")
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+
+project(gpu_ordering
+        VERSION 0.1.0
+        LANGUAGES C CXX CUDA)
+
+# Enable GLM experimental features globally
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
+
+# Language standards
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+
+# Auto-detect CUDA Architecture
+include(${CMAKE_SOURCE_DIR}/cmake/AutoDetectCudaArch.cmake)
 
 ################################################################################
 # SECTION 1: Include Required Dependencies
 ################################################################################
+
+# ==============================================================================
+# Compiler Configuration (Migrated from original RXMesh config)
+# ==============================================================================
+# C++ compiler flags
+set(cxx_flags
+        $<$<CXX_COMPILER_ID:MSVC>:-D_SCL_SECURE_NO_WARNINGS /openmp:experimental /MP /std:c++17 /bigobj>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-Wall -m64 -fopenmp -O3 -std=c++20 -Wno-unused-function>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-Wall -m64 -fopenmp -O0 -g3 -std=c++20 -Wno-unused-function>
+)
+
+# CUDA compiler flags
+set(MSVC_XCOMPILER_FLAGS "/openmp:experimental /MP /std:c++17 /Zi")
+
+set(cuda_flags
+        #Windows stuff
+        -Xcompiler=$<$<CXX_COMPILER_ID:MSVC>:${MSVC_XCOMPILER_FLAGS}>
+        # Release
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:
+        -Xcompiler=-rdynamic,-Wall,-fopenmp,-O3,-Wno-unused-function
+        -O3
+        >
+        # Debug
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:
+        -G
+        -O0
+        -Xptxas=-O0
+        -lineinfo
+        -Xcompiler=-rdynamic,-Wall,-fopenmp,-O0,-g3,-Wno-unused-function
+        >
+        # other common CUDA flags here
+        -rdc=true
+        --expt-extended-lambda
+        --expt-relaxed-constexpr
+        -Xptxas -warn-spills -res-usage
+        --ptxas-options=-v
+)
+
+# Apply flags to global targets (optional, or attached to specific targets later)
+# For this project, we'll attach them to our dependency interface so everyone gets them
+add_library(gpu_ordering_flags INTERFACE)
+target_compile_options(gpu_ordering_flags INTERFACE
+        $<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>
+        $<$<COMPILE_LANGUAGE:CUDA>:${cuda_flags}>
+)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
+endif()
+
+
+# OpenMP
+find_package(OpenMP)
+if (OpenMP_CXX_FOUND)
+    target_link_libraries(gpu_ordering_flags INTERFACE OpenMP::OpenMP_CXX)
+endif()
+
+# CUDA Toolkit (cuSPARSE, cuSOLVER)
+find_package(CUDAToolkit REQUIRED)
+target_link_libraries(gpu_ordering_flags INTERFACE CUDA::cusparse CUDA::cusolver)
+
+
+
+# Disable Cereal (and other deps) warnings as errors and unnecessary targets
+set(WITH_WERROR OFF CACHE BOOL "Compile with '-Werror' C++ compiler flag" FORCE)
+set(BUILD_SANDBOX OFF CACHE BOOL "Build sandbox examples" FORCE)
+set(BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
+
+include(${CMAKE_SOURCE_DIR}/cmake/recipes/rxmesh.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/cli11.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/eigen.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/libigl.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/metis.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/parth.cmake)
+
+# Create a dependency interface target to hold configuration
+add_library(gpu_ordering_deps INTERFACE)
+target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
 
 ################################################################################
 # SECTION 2: Development Build Options
@@ -19,7 +109,7 @@ option(${PROJECT_NAME}_WITH_STRUMPACK "Use Strumpack for benchmark" OFF)
 option(${PROJECT_NAME}_WITH_PROFILE "Use Profile for benchmark" ON)
 
 ################################################################################
-# SECTION 3: Configure RXMesh Library with Optional Development Dependencies
+# SECTION 3: Configure Dependencies (formerly attached to main lib)
 ################################################################################
 
 # Find MPI (required for parallel features, especially STRUMPACK)
@@ -51,14 +141,14 @@ if (${PROJECT_NAME}_WITH_SUITESPARSE)
         include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
     endif()
 
-    # Add SuiteSparse to the main RXMesh library
-    target_link_libraries(${PROJECT_NAME} INTERFACE ${SUITESPARSE_LIBRARIES})
-    target_include_directories(${PROJECT_NAME} INTERFACE ${SUITESPARSE_INCLUDE_DIRS})
-    target_compile_definitions(${PROJECT_NAME} INTERFACE USE_SUITESPARSE)
+    # Add SuiteSparse to the dependencies target
+    target_link_libraries(gpu_ordering_deps INTERFACE ${SUITESPARSE_LIBRARIES})
+    target_include_directories(gpu_ordering_deps INTERFACE ${SUITESPARSE_INCLUDE_DIRS})
+    target_compile_definitions(gpu_ordering_deps INTERFACE USE_SUITESPARSE)
 
     # Add CHOLMOD_HAS_CUDA compile definition if GPU library is available
     if(CHOLMOD_CUDA_FOUND OR CHOLMOD_CUDA_LIBRARY)
-        target_compile_definitions(${PROJECT_NAME} INTERFACE CHOLMOD_HAS_CUDA)
+        target_compile_definitions(gpu_ordering_deps INTERFACE CHOLMOD_HAS_CUDA)
         message(STATUS "CHOLMOD GPU support enabled with CHOLMOD_HAS_CUDA compile definition")
         message(STATUS "CHOLMOD can be used in GPU mode at runtime")
     else()
@@ -70,124 +160,43 @@ endif ()
 # Parth for fill-reducing orderings
 if(${PROJECT_NAME}_WITH_PARTH)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/parth.cmake)
-    # Add Parth to the main RXMesh library
-    target_link_libraries(${PROJECT_NAME} INTERFACE Parth::parth)
-    target_compile_definitions(${PROJECT_NAME} INTERFACE USE_PARTH)
+    # Add Parth to the dependencies target
+    target_link_libraries(gpu_ordering_deps INTERFACE Parth::parth)
+    target_compile_definitions(gpu_ordering_deps INTERFACE USE_PARTH)
 endif()
 
 if(${PROJECT_NAME}_WITH_PROFILE)
-    target_compile_definitions(${PROJECT_NAME} INTERFACE USE_PROFILE)
+    target_compile_definitions(gpu_ordering_deps INTERFACE USE_PROFILE)
 endif()
 
 
 # STRUMPACK - Sparse direct solver with CUDA support
 if(${PROJECT_NAME}_WITH_STRUMPACK)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/strumpack.cmake)
-    target_link_libraries(${PROJECT_NAME} INTERFACE STRUMPACK::strumpack_full)
-    target_compile_definitions(${PROJECT_NAME} INTERFACE USE_STRUMPACK)
+    target_link_libraries(gpu_ordering_deps INTERFACE STRUMPACK::strumpack_full)
+    target_compile_definitions(gpu_ordering_deps INTERFACE USE_STRUMPACK)
 endif()
-
-
-
-################################################################################
-# SECTION 4: Create Development Helper Library
-################################################################################
-# This library contains development utilities for solvers, orderings, and utils
-# that extend the base RXMesh library for development and benchmarking purposes
-
-# Create parallel_cholmod library first (needed by rxmesh_dev_helpers)
-add_library(parallel_cholmod
-        LeftLooking_Parth/common.cpp
-        LeftLooking_Parth/executor.cpp
-        LeftLooking_Parth/inspector.cpp
-        LeftLooking_Parth/solve.cpp
-        LeftLooking_Parth/utils/compute_etree_inv.cpp
-        LeftLooking_Parth/custom_cholmod_files/analysis/parth_analyze.cpp
-        LeftLooking_Parth/custom_cholmod_files/analysis/parth_super_symbolic.cpp
-        LeftLooking_Parth/custom_cholmod_files/factorize/parth_factorize.cpp
-        LeftLooking_Parth/custom_cholmod_files/factorize/parth_super_numeric.cpp
-
-
-
-        #        LeftLooking_Parth/custom_cholmod_files/parth_factorize.cpp
-        #        LeftLooking_Parth/custom_cholmod_files/parth_numeric_supernode.cpp
-        #        LeftLooking_Parth/custom_cholmod_files/parth_solve.cpp
-        #        LeftLooking_Parth/custom_cholmod_files/parth_solve.cpp
-        #        LeftLooking_Parth/custom_cholmod_files/parth_solve_supernode.cpp
-        #        LeftLooking_Parth/custom_cholmod_files/parth_super_symbolic.cpp
-)
-
-if(${PROJECT_NAME}_WITH_SUITESPARSE)
-    # Link SuiteSparse libraries - order matters for static linking!
-    target_include_directories(parallel_cholmod PUBLIC ${SUITESPARSE_INCLUDE_DIRS})
-
-    # Ensure that SuiteSparse BLAS wrapper macros are available
-    # This is needed for the lowercase BLAS wrapper definitions (SUITESPARSE_BLAS_dsyrk, etc.)
-    # which are defined in SuiteSparse_config.h at line ~1814
-    target_compile_definitions(parallel_cholmod PUBLIC SUITESPARSE_BLAS_DEFINITIONS)
-
-    # For static library linking with CHOLMOD, we need to use --whole-archive to ensure
-    # all symbols (especially utility functions like cholmod_mult_size_t) are extracted
-    if(TARGET CHOLMOD_static)
-        # Use generator expression to properly wrap the library with linker flags
-        target_link_libraries(parallel_cholmod PUBLIC
-                "-Wl,--whole-archive"
-                "$<TARGET_FILE:CHOLMOD_static>"
-                "-Wl,--no-whole-archive"
-        )
-        # Link other SuiteSparse dependencies normally
-        target_link_libraries(parallel_cholmod PUBLIC
-                AMD_static COLAMD_static CAMD_static CCOLAMD_static SuiteSparseConfig_static
-        )
-        # Link BLAS and LAPACK libraries
-        find_package(BLAS REQUIRED)
-        find_package(LAPACK REQUIRED)
-        target_link_libraries(parallel_cholmod PUBLIC ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-    else()
-        # Fallback to regular linking if static targets not available
-        target_link_libraries(parallel_cholmod PUBLIC ${SUITESPARSE_LIBRARIES})
-        if(TARGET SuiteSparse::CHOLMOD)
-            target_link_libraries(parallel_cholmod PUBLIC SuiteSparse::CHOLMOD)
-        endif()
-    endif()
-endif()
-
-if(${PROJECT_NAME}_WITH_PARTH)
-    target_link_libraries(parallel_cholmod PUBLIC Parth::parth)
-endif()
-
-# Add include directories for parallel_cholmod
-target_include_directories(parallel_cholmod PUBLIC
-        ${CMAKE_SOURCE_DIR}/include
-        LeftLooking_Parth/include
-        LeftLooking_Parth/utils
-        LeftLooking_Parth/custom_cholmod_files/factorize
-)
-
-target_link_libraries(parallel_cholmod PRIVATE  spdlog::spdlog)
 
 
 # Create rxmesh_dev_helpers library
 add_library(rxmesh_dev_helpers
-        LinSysSolvers/LinSysSolver.cpp
-        LinSysSolvers/CUDSSSolver.cu
-        LinSysSolvers/CHOLMODSolver.cpp
-        LinSysSolvers/ParthSolver.cpp
-        LinSysSolvers/STRUMPACKSolver.cpp
-        utils/get_factor_nnz.cpp
-        utils/remove_diagonal.cpp
-        utils/check_valid_permutation.cpp
-        utils/compute_inverse_perm.cpp
-        utils/min_vertex_cover_bipartite.cpp
-        GPUOrdering/gpu_ordering.cu
-        GPUOrdering/gpu_ordering_v2.cu
-        GPUOrdering/gpu_ordering_v3.cu
-        Ordering/ordering.cu
-        Ordering/metis_ordering.cpp
-        Ordering/rxmesh_ordering.cu
-        Ordering/neutral_ordering.cpp
-        Ordering/poc_ordering.cu
-        Ordering/parth_ordering.cpp
+        src/LinSysSolvers/LinSysSolver.cpp
+        src/LinSysSolvers/CUDSSSolver.cu
+        src/LinSysSolvers/CHOLMODSolver.cpp
+        src/LinSysSolvers/STRUMPACKSolver.cpp
+        src/utils/get_factor_nnz.cpp
+        src/utils/remove_diagonal.cpp
+        src/utils/check_valid_permutation.cpp
+        src/utils/compute_inverse_perm.cpp
+        src/utils/min_vertex_cover_bipartite.cpp
+        src/PatchOrdering/cpu_ordering_with_patch.cpp
+        src/PatchOrdering/gpu_ordering_with_patch.cu
+        src/Ordering/ordering.cu
+        src/Ordering/metis_ordering.cpp
+        src/Ordering/rxmesh_ordering.cu
+        src/Ordering/neutral_ordering.cpp
+        src/Ordering/patch_ordering.cu
+        src/Ordering/parth_ordering.cpp
 )
 
 # Link additional dependencies required by dev helpers
@@ -196,21 +205,17 @@ target_link_libraries(rxmesh_dev_helpers PUBLIC
         spdlog::spdlog
         Eigen3::Eigen
         CLI11::CLI11
-        parallel_cholmod
+        Parth::parth
 )
-target_link_libraries(rxmesh_dev_helpers PRIVATE ${PROJECT_NAME})
+target_link_libraries(rxmesh_dev_helpers PRIVATE RXMesh gpu_ordering_deps)
 
 
 # Add dev code include directories
 target_include_directories(rxmesh_dev_helpers PUBLIC
-        LinSysSolvers
-        Ordering
-        utils
-        LeftLooking_Parth/include
-        LeftLooking_Parth/custom_cholmod_files/include
-        LeftLooking_Parth/custom_cholmod_files/include/Cholmod_Include
-        LeftLooking_Parth/custom_cholmod_files/util
-        GPUOrdering
+        src/LinSysSolvers
+        src/Ordering
+        src/utils
+        src/PatchOrdering
 )
 
 # Configure CUDA compilation for the dev helper library
@@ -219,11 +224,8 @@ target_include_directories(rxmesh_dev_helpers PUBLIC
 set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
 
-# Inherit CUDA architecture from the main library
-get_target_property(MAIN_CUDA_ARCHITECTURES ${PROJECT_NAME} CUDA_ARCHITECTURES)
-if(MAIN_CUDA_ARCHITECTURES)
-    set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_ARCHITECTURES ${MAIN_CUDA_ARCHITECTURES})
-endif()
+# Inherit CUDA architecture from the global settings (from AutoDetectCudaArch)
+# No need to manual copy unless necessary
 
 # Add debug definitions based on build type
 # In Debug builds: DEBUG is defined, NDEBUG is NOT defined
@@ -248,77 +250,4 @@ target_compile_options(rxmesh_dev_helpers PUBLIC
 ################################################################################
 # Development targets use both the RXMesh library and the dev helpers library
 
-# Benchmark executable
-add_executable(${PROJECT_NAME}_benchmark benchmark.cpp)
-
-# Configure CUDA device linking for the benchmark executable
-# Enable separable compilation and resolve device symbols at the executable level
-set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-
-# Link only rxmesh_dev_helpers (which already includes RXMesh)
-# DO NOT link RXMesh directly to avoid compiling the same .cu files twice
-# This prevents multiple definition errors for patcher.cu, rxmesh_dynamic.cu, etc.
-target_link_libraries(${PROJECT_NAME}_benchmark PUBLIC rxmesh_dev_helpers)
-
-# Configure RPATH for STRUMPACK dependencies if enabled
-if(${PROJECT_NAME}_WITH_STRUMPACK)
-    message(STATUS "Setting RPATH for ${PROJECT_NAME}_benchmark")
-    set_target_properties(${PROJECT_NAME}_benchmark PROPERTIES
-            BUILD_RPATH "${STRUMPACK_RPATH_DIRS}"
-            INSTALL_RPATH "${STRUMPACK_RPATH_DIRS}"
-            INSTALL_RPATH_USE_LINK_PATH TRUE
-            # Use RPATH instead of RUNPATH to propagate to transitive dependencies
-            LINK_FLAGS "-Wl,--disable-new-dtags"
-    )
-    message(STATUS "  BUILD_RPATH: ${STRUMPACK_RPATH_DIRS}")
-endif()
-
-
-
-# Benchmark executable
-add_executable(${PROJECT_NAME}_detailed_ordering_benchmark detailed_ordering_benchmark.cpp)
-
-# Configure CUDA device linking for the benchmark executable
-# Enable separable compilation and resolve device symbols at the executable level
-set_property(TARGET ${PROJECT_NAME}_detailed_ordering_benchmark PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-set_property(TARGET ${PROJECT_NAME}_detailed_ordering_benchmark PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-
-# Link only rxmesh_dev_helpers (which already includes RXMesh)
-# DO NOT link RXMesh directly to avoid compiling the same .cu files twice
-# This prevents multiple definition errors for patcher.cu, rxmesh_dynamic.cu, etc.
-target_link_libraries(${PROJECT_NAME}_detailed_ordering_benchmark PUBLIC rxmesh_dev_helpers)
-
-# Configure RPATH for STRUMPACK dependencies if enabled
-if(${PROJECT_NAME}_WITH_STRUMPACK)
-    message(STATUS "Setting RPATH for ${PROJECT_NAME}_detailed_ordering_benchmark")
-    set_target_properties(${PROJECT_NAME}_detailed_ordering_benchmark PROPERTIES
-            BUILD_RPATH "${STRUMPACK_RPATH_DIRS}"
-            INSTALL_RPATH "${STRUMPACK_RPATH_DIRS}"
-            INSTALL_RPATH_USE_LINK_PATH TRUE
-            # Use RPATH instead of RUNPATH to propagate to transitive dependencies
-            LINK_FLAGS "-Wl,--disable-new-dtags"
-    )
-    message(STATUS "  BUILD_RPATH: ${STRUMPACK_RPATH_DIRS}")
-endif()
-
-# Do the same for your executables:
-foreach(tgt ${PROJECT_NAME}_benchmark ${PROJECT_NAME}_detailed_ordering_benchmark)
-  set_property(TARGET ${tgt} PROPERTY INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
-  target_compile_options(${tgt} PUBLIC
-    $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-O0;-Xptxas=-O0;-lineinfo;-Xcompiler=-O0,-g3>
-    $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CXX>>:-O0;-g3;-fno-inline>
-  )
-endforeach()
-
-# Debug test for MinVertexCoverBipartite
-add_executable(debug_min_vertex_cover
-        debug_min_vertex_cover.cpp
-        utils/min_vertex_cover_bipartite.cpp
-)
-
-# Link Eigen for sparse matrix support
-target_link_libraries(debug_min_vertex_cover PUBLIC Eigen3::Eigen spdlog::spdlog)
-
-# Add utils directory for headers
-target_include_directories(debug_min_vertex_cover PUBLIC utils)
+add_subdirectory(benchmark)

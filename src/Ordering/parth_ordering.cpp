@@ -34,13 +34,13 @@ void ParthOrdering::compute_permutation(std::vector<int>& perm)
 }
 
 
-RXMESH_Ordering_Type ParthOrdering::type() const
+DEMO_ORDERING_TYPE ParthOrdering::type() const
 {
-    return  RXMESH_Ordering_Type::METIS;
+    return  DEMO_ORDERING_TYPE::PARTH;
 }
 std::string ParthOrdering::typeStr() const
 {
-    return "METIS";
+    return "PARTH";
 }
 
 void ParthOrdering::computeRatioOfBoundaryVertices()

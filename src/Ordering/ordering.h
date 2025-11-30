@@ -13,14 +13,14 @@
 
 namespace RXMESH_SOLVER {
 
-enum class RXMESH_Ordering_Type
+enum class DEMO_ORDERING_TYPE
 {
     METIS,
     AMD,
     NEUTRAL,
     PARTH,
     RXMESH_ND,
-    POC_ND
+    PATCH_ORDERING
 };
 
 class Ordering
@@ -35,9 +35,9 @@ public:
 public:
     virtual ~Ordering(void) {};
 
-    static Ordering* create(const RXMESH_Ordering_Type type);
+    static Ordering* create(const DEMO_ORDERING_TYPE type);
 
-    virtual RXMESH_Ordering_Type type() const = 0;
+    virtual DEMO_ORDERING_TYPE type() const = 0;
     virtual std::string typeStr() const = 0;
 
     virtual void setGraph(int*               Gp,
@@ -54,6 +54,9 @@ public:
 
     virtual void setOptions(const std::map<std::string, std::string>& options) {}
 
+    virtual void init(){
+        return;
+    }
     virtual void compute_permutation(std::vector<int>& perm) = 0;
 
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) {};

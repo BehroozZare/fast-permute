@@ -26,9 +26,7 @@ private:
 public:
     virtual ~RXMeshOrdering(void);
 
-    static RXMeshOrdering* create(const RXMESH_Ordering_Type type);
-
-    virtual RXMESH_Ordering_Type type() const override;
+    virtual DEMO_ORDERING_TYPE type() const override;
     virtual std::string typeStr() const override;
 
     virtual void setGraph(int*              Gp,

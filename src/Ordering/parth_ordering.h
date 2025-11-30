@@ -23,7 +23,7 @@ public:
 
     int patch_size = 512;
 
-    virtual RXMESH_Ordering_Type type() const override;
+    virtual DEMO_ORDERING_TYPE type() const override;
     virtual std::string typeStr() const override;
 
     virtual void setGraph(int*              Gp,

@@ -7,9 +7,10 @@
 #include <cmath>
 #include <chrono>
 #include <unordered_set>
-#include "gpu_ordering_v2.h"
+#include "gpu_ordering_with_patch.h"
 #include "cuda_error_handler.h"
 #include "cuda_profiler_api.h"
+#include <omp.h>
 
 #ifdef USE_PROFILE
 #include "nvtx_helper.h"
@@ -21,63 +22,32 @@
 
 namespace RXMESH_SOLVER {
 
-GPUOrdering_V2::GPUOrdering_V2() : _Gp(nullptr), _Gi(nullptr), _G_n(0), _G_nnz(0)
+GPUOrdering_PATCH::GPUOrdering_PATCH() : _Gp(nullptr), _Gi(nullptr), _G_n(0), _G_nnz(0)
 {
 }
 
-GPUOrdering_V2::~GPUOrdering_V2()
+GPUOrdering_PATCH::~GPUOrdering_PATCH()
 {
 }
 
-void GPUOrdering_V2::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
+void GPUOrdering_PATCH::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
 {
     this->_Gp    = Gp;
     this->_Gi    = Gi;
     this->_G_n   = G_N;
     this->_G_nnz = NNZ;
-    if (_use_gpu) {
-        this->_d_Gp.resize(_G_n + 1);
-        thrust::copy(Gp, Gp + _G_n + 1, _d_Gp.begin());
-        this->_d_Gi.resize(NNZ);
-        thrust::copy(Gi, Gi + NNZ, _d_Gi.begin());
-    }
+
+    //GPU allocation
+    this->_d_Gp.resize(_G_n + 1);
+    thrust::copy(Gp, Gp + _G_n + 1, _d_Gp.begin());
+    this->_d_Gi.resize(NNZ);
+    thrust::copy(Gi, Gi + NNZ, _d_Gi.begin());
+    
 
 }
 
 
-void GPUOrdering_V2::setMesh(const double* V_data,
-                             int           V_rows,
-                             int           V_cols,
-                             const int*    F_data,
-                             int           F_rows,
-                             int           F_cols)
-{
-    spdlog::info("Mesh has {} vertices and {} faces", V_rows, F_rows);
-    spdlog::info("Faces have {} vertices each", F_cols);
-
-    // Convert raw data to std::vector format for RXMesh
-    fv.resize(F_rows);
-    for (int i = 0; i < F_rows; ++i) {
-        fv[i].resize(F_cols);
-        for (int j = 0; j < F_cols; ++j) {
-            // Eigen stores data in column-major order by default
-            fv[i][j] = static_cast<uint32_t>(F_data[i + j * F_rows]);
-        }
-    }
-
-
-    // Optionally add vertex coordinates (not strictly needed for ND ordering)
-    vertices.resize(V_rows);
-    for (int i = 0; i < V_rows; ++i) {
-        vertices[i].resize(V_cols);
-        for (int j = 0; j < V_cols; ++j) {
-            // Eigen stores data in column-major order by default
-            vertices[i][j] = static_cast<float>(V_data[i + j * V_rows]);
-        }
-    }
-}
-
-void GPUOrdering_V2::local_permute_metis(int G_n, int* Gp, int* Gi,
+void GPUOrdering_PATCH::local_permute_metis(int G_n, int* Gp, int* Gi,
                                          std::vector<int>& local_permutation)
 {
     idx_t N   = G_n;
@@ -101,7 +71,7 @@ void GPUOrdering_V2::local_permute_metis(int G_n, int* Gp, int* Gi,
                  tmp.data());
 }
 
-void GPUOrdering_V2::local_permute_amd(int G_n, int* Gp, int* Gi,
+void GPUOrdering_PATCH::local_permute_amd(int G_n, int* Gp, int* Gi,
                                        std::vector<int>& local_permutation)
 {
     idx_t N   = G_n;
@@ -123,7 +93,7 @@ void GPUOrdering_V2::local_permute_amd(int G_n, int* Gp, int* Gi,
               nullptr);
 }
 
-void GPUOrdering_V2::local_permute_unity(int G_n, int* Gp, int* Gi,
+void GPUOrdering_PATCH::local_permute_unity(int G_n, int* Gp, int* Gi,
                                          std::vector<int>& local_permutation)
 {
     local_permutation.resize(G_n);
@@ -132,7 +102,7 @@ void GPUOrdering_V2::local_permute_unity(int G_n, int* Gp, int* Gi,
     }
 }
 
-void GPUOrdering_V2::local_permute(int G_n, int* Gp, int* Gi,
+void GPUOrdering_PATCH::local_permute(int G_n, int* Gp, int* Gi,
                                    std::vector<int>&         local_permutation)
 {
     if (this->local_permute_method == "metis") {
@@ -148,7 +118,7 @@ void GPUOrdering_V2::local_permute(int G_n, int* Gp, int* Gi,
     }
 }
 
-void GPUOrdering_V2::compute_local_quotient_graph(
+void GPUOrdering_PATCH::compute_local_quotient_graph(
     int tree_node_idx,///<[in] The index of the current decomposition node
     int& local_Q_n,
     std::vector<int>& local_Qp,
@@ -192,7 +162,7 @@ void GPUOrdering_V2::compute_local_quotient_graph(
     assert(local_Qp.back() == local_Qi.size());
 }
 
-void GPUOrdering_V2::compute_bipartition(
+void GPUOrdering_PATCH::compute_bipartition(
     int Q_n,
     int* Qp,
     int* Qi,
@@ -247,7 +217,7 @@ void GPUOrdering_V2::compute_bipartition(
 }
 
 
-void GPUOrdering_V2::two_way_Q_partition(
+void GPUOrdering_PATCH::two_way_Q_partition(
     int tree_node_idx,///<[in] The index of the current decomposition node
     std::vector<int>& assigned_g_nodes///<[in] Assigned G nodes for current decomposition
 ){
@@ -324,7 +294,7 @@ struct is_node_separator_functor {
     }
 };
 
-void GPUOrdering_V2::find_separator_superset_gpu(
+void GPUOrdering_PATCH::find_separator_superset(
     std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
     std::vector<int>& separator_superset///<[out] The superset of separator nodes
 )
@@ -353,42 +323,7 @@ void GPUOrdering_V2::find_separator_superset_gpu(
     thrust::copy(d_separator_superset.begin(), end_it, separator_superset.begin());
 }
 
-void GPUOrdering_V2::find_separator_superset_cpu(
-    std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
-    std::vector<int>& separator_superset///<[out] The superset of separator nodes
-)
-{
-
-    auto get_partition_id = [&](int g_node_id) -> int {
-        int q_node_id = this->_g_node_to_patch[g_node_id];
-        return this->_decomposition_tree.q_node_to_tree_node[q_node_id];
-    };
-
-    separator_superset.clear();
-    for(int g_node : assigned_g_nodes) {
-        assert(g_node < this->_G_n);
-        int partition_id = get_partition_id(g_node);
-        for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; ++nbr_ptr) {
-            int nbr_id = this->_Gi[nbr_ptr];
-            assert(nbr_id < _decomposition_tree.is_sep.size());
-            if(this->_decomposition_tree.is_sep[nbr_id] == 1) continue;
-            int nbr_partition_id = get_partition_id(nbr_id);
-            if(partition_id == nbr_partition_id) continue;
-            separator_superset.push_back(g_node);
-            break;
-        }
-    }
-    //Erase repetitive nodes
-    // std::sort(separator_superset.begin(), separator_superset.end());
-    #ifndef NDEBUG
-    int prev_size = separator_superset.size();
-    separator_superset.erase(std::unique(separator_superset.begin(), separator_superset.end()), separator_superset.end());
-    int after_size = separator_superset.size();
-    assert(prev_size == after_size);
-    #endif
-}
-
-void GPUOrdering_V2::refine_bipartate_separator(
+void GPUOrdering_PATCH::refine_bipartate_separator(
     int parent_node_id,
     std::vector<int>& separator_superset)
 {
@@ -531,21 +466,17 @@ void GPUOrdering_V2::refine_bipartate_separator(
 }
 
 
-void GPUOrdering_V2::three_way_G_partition(
+void GPUOrdering_PATCH::three_way_G_partition(
     int tree_node_idx,
     std::vector<int>& assigned_g_nodes,
     std::vector<int>& separator_g_nodes)
 {
-    if(_use_gpu) {
-        find_separator_superset_gpu(assigned_g_nodes, separator_g_nodes);
-    } else {
-        find_separator_superset_cpu(assigned_g_nodes, separator_g_nodes);
-    }
+    find_separator_superset(assigned_g_nodes, separator_g_nodes);
     refine_bipartate_separator(tree_node_idx, separator_g_nodes);
 }
 
 
-int GPUOrdering_V2::post_order_offset_computation(int offset,
+int GPUOrdering_PATCH::post_order_offset_computation(int offset,
                                                   int decomposition_node_id)
 {
     assert(decomposition_node_id <
@@ -569,7 +500,7 @@ int GPUOrdering_V2::post_order_offset_computation(int offset,
     return offset;
 }
 
-void GPUOrdering_V2::decompose()
+void GPUOrdering_PATCH::decompose()
 {
     #ifdef USE_PROFILE
     NVTX_RANGE_COLOR("decompose", 0xFF00FF00);  // Green
@@ -658,18 +589,16 @@ void GPUOrdering_V2::decompose()
                 #endif
 
                 //Copy the q to tree_node
-                if(_use_gpu) {
-                    #ifdef USE_PROFILE
-                    {
-                            NVTX_RANGE_COLOR("gpu_copy_q_" + std::to_string(tid), 0xFF0000FF);  // Blue
-                    #endif
-                        THRUST_CALL(thrust::copy(this->_decomposition_tree.q_node_to_tree_node.begin(),
-                            this->_decomposition_tree.q_node_to_tree_node.end(),
-                            this->_decomposition_tree.d_q_node_to_tree_node.begin()));
-                    #ifdef USE_PROFILE
-                    }
-                    #endif
+                #ifdef USE_PROFILE
+                {
+                        NVTX_RANGE_COLOR("gpu_copy_q_" + std::to_string(tid), 0xFF0000FF);  // Blue
+                #endif
+                    THRUST_CALL(thrust::copy(this->_decomposition_tree.q_node_to_tree_node.begin(),
+                        this->_decomposition_tree.q_node_to_tree_node.end(),
+                        this->_decomposition_tree.d_q_node_to_tree_node.begin()));
+                #ifdef USE_PROFILE
                 }
+                #endif
 
                 // Step 2: Find the separator nodes of the two partitions
                 std::vector<int> separator_g_nodes;
@@ -793,44 +722,28 @@ void GPUOrdering_V2::decompose()
 }
 
 
-void GPUOrdering_V2::init_patches()
+void GPUOrdering_PATCH::init_patches(int num_patches, std::vector<int> & g_node_to_patch)
 {
-    // Create RXMeshStatic from the mesh data (face-vertex connectivity)
-    // Use default patch size of 512 (can be adjusted)
-    rxmesh::rx_init(0);
-    _rxmesh = std::make_unique<rxmesh::RXMeshStatic>(this->fv, "", this->_patch_size);
-
-    spdlog::info(
-        "RXMesh initialized with {} vertices, {} edges, {} faces, {} patches",
-        _rxmesh->get_num_vertices(),
-        _rxmesh->get_num_edges(),
-        _rxmesh->get_num_faces(),
-        _rxmesh->get_num_patches());
-
-    this->_g_node_to_patch.resize(_rxmesh->get_num_vertices());
-    this->_num_patches = _rxmesh->get_num_patches();
-    _rxmesh->for_each_vertex(
-        rxmesh::HOST,
-        [&](const rxmesh::VertexHandle vh) {
-            uint32_t node_id       = _rxmesh->map_to_global(vh);
-            this->_g_node_to_patch[node_id] = static_cast<int>(vh.patch_id());
-        },
-        NULL,
-        false);
+    assert(g_node_to_patch.size() == this->_G_n);
+    assert(this->_G_n > 0);
+    assert(num_patches > 0);
+    this->_num_patches = num_patches;
+    this->_g_node_to_patch = g_node_to_patch;
     // Init the hirerchical tree memory
     int num_levels = std::ceil(std::log2(this->_num_patches));
     num_levels--;//Based on my experience, normally, the last level is empty
     int total_number_of_decomposition_nodes = (1 << (num_levels + 1)) - 1;
     this->_decomposition_tree.init_decomposition_tree(
         total_number_of_decomposition_nodes,
-        num_levels, _rxmesh->get_num_vertices(), this->_num_patches, _use_gpu);
-    if(_use_gpu) {
-        _d_g_node_to_patch = _g_node_to_patch;
-    }
+        num_levels, this->_G_n, this->_num_patches);
+
+    //Copy to GPU memory
+    this->_d_g_node_to_patch = this->_g_node_to_patch;
+
 }
 
 
-void GPUOrdering_V2::compute_sub_graph(
+void GPUOrdering_PATCH::compute_sub_graph(
     std::vector<int>&         nodes,
     Eigen::SparseMatrix<int>& local_graph) const
 {
@@ -876,7 +789,7 @@ void GPUOrdering_V2::compute_sub_graph(
 }
 
 
-void GPUOrdering_V2::step1_compute_quotient_graph()
+void GPUOrdering_PATCH::step1_compute_quotient_graph()
 {
     // Given node to patch, first give each separator node a unique patch ID
     // Step 1: assign patch-id -1 to each boundary vertex
@@ -992,7 +905,7 @@ void GPUOrdering_V2::step1_compute_quotient_graph()
     #endif
 }
 
-void GPUOrdering_V2::step2_create_decomposition_tree()
+void GPUOrdering_PATCH::step2_create_decomposition_tree()
 {
     #ifdef USE_PROFILE
     cudaProfilerStart();
@@ -1026,7 +939,7 @@ void GPUOrdering_V2::step2_create_decomposition_tree()
 #endif
 }
 
-void GPUOrdering_V2::compute_sub_graphs(std::vector<SubGraph>& sub_graphs){
+void GPUOrdering_PATCH::compute_sub_graphs(std::vector<SubGraph>& sub_graphs){
     // This loop creates the global-to-local mapping as well as number of nodes per group
     std::vector<int> global_to_local(this->_G_n, -1);
     sub_graphs.clear();
@@ -1131,7 +1044,7 @@ void GPUOrdering_V2::compute_sub_graphs(std::vector<SubGraph>& sub_graphs){
     }
 }
 
-void GPUOrdering_V2::step3_CPU_compute_local_permutations()
+void GPUOrdering_PATCH::step3_compute_local_permutations()
 {
     spdlog::info("Computing local subgraphs .. ");
     std::vector<SubGraph> sub_graphs;
@@ -1165,12 +1078,12 @@ void GPUOrdering_V2::step3_CPU_compute_local_permutations()
     spdlog::info("Local permutations are computed.");
 }
 
-void GPUOrdering_V2::step3_GPU_compute_local_permutations()
+double GPUOrdering_PATCH::compute_separator_ratio()
 {
-
+    return this->_separator_ratio;
 }
 
-void GPUOrdering_V2::step4_assemble_final_permutation(std::vector<int>& perm)
+void GPUOrdering_PATCH::step4_assemble_final_permutation(std::vector<int>& perm)
 {
     // Apply the offset to the decomposition nodes
     spdlog::info("Applying offset to the decomposition nodes .. ");
@@ -1197,7 +1110,7 @@ void GPUOrdering_V2::step4_assemble_final_permutation(std::vector<int>& perm)
     spdlog::info("Final permutation is assembled.");
 }
 
-void GPUOrdering_V2::compute_permutation(std::vector<int>& perm)
+void GPUOrdering_PATCH::compute_permutation(std::vector<int>& perm)
 {
     if (this->_Gp == nullptr || this->_Gi == nullptr || this->_G_n == 0 || this->_G_nnz == 0) {
         spdlog::error(
@@ -1205,14 +1118,7 @@ void GPUOrdering_V2::compute_permutation(std::vector<int>& perm)
             "compute_permutation().");
         return;
     }
-    if (fv.size() == 0) {
-        spdlog::error(
-            "Mesh not set. Please call setMesh() before "
-            "compute_permutation().");
-        return;
-    }
 
-    spdlog::info("Using GPU: {}", _use_gpu);
     // Step 1: Compute node to patch map
     auto start_time = std::chrono::high_resolution_clock::now();
     step1_compute_quotient_graph();
@@ -1229,7 +1135,7 @@ void GPUOrdering_V2::compute_permutation(std::vector<int>& perm)
 
     // Step 3: Compute the local permutations
     start_time = std::chrono::high_resolution_clock::now();
-    step3_CPU_compute_local_permutations();
+    step3_compute_local_permutations();
     end_time = std::chrono::high_resolution_clock::now();
     local_permute_time = std::chrono::duration<double>(end_time - start_time).count();
     spdlog::info("Step 3 (local permutations) completed in {:.6f} seconds", local_permute_time);

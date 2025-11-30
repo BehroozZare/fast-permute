@@ -9,10 +9,6 @@
 #include "CUDSSSolver.hpp"
 #endif
 
-#ifdef USE_PARTH
-#include "ParthSolver.hpp"
-#endif
-
 
 #ifdef USE_STRUMPACK
 #include <STRUMPACKSolver.hpp>
@@ -35,10 +31,6 @@ namespace RXMESH_SOLVER {
                 return new CUDSSSolver();
 #endif
 
-#ifdef USE_PARTH
-            case LinSysSolverType::PARTH_SOLVER:
-                return new ParthSolver();
-#endif
 
 #ifdef USE_STRUMPACK
             case LinSysSolverType::GPU_STRUMPACK:

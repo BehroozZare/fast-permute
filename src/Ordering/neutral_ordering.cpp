@@ -33,9 +33,9 @@ void NeutralOrdering::compute_permutation(std::vector<int>& perm)
 }
 
 
-RXMESH_Ordering_Type NeutralOrdering::type() const
+DEMO_ORDERING_TYPE NeutralOrdering::type() const
 {
-    return  RXMESH_Ordering_Type::NEUTRAL;
+    return  DEMO_ORDERING_TYPE::NEUTRAL;
 }
 std::string NeutralOrdering::typeStr() const
 {

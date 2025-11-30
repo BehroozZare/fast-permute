@@ -9,14 +9,16 @@
 #include <CLI/CLI.hpp>
 #include <Eigen/Core>
 #include <chrono>
+#include <unsupported/Eigen/SparseExtra>
 #include <iostream>
 
 #include "LinSysSolver.hpp"
-#include "check_valid_permutation.h"
 #include "get_factor_nnz.h"
+#include "check_valid_permutation.h"
 #include "ordering.h"
-#include "parth/parth.h"
 #include "remove_diagonal.h"
+#include "parth/parth.h"
+
 
 struct CLIArgs
 {
@@ -24,9 +26,8 @@ struct CLIArgs
     std::string output_address;
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
-    std::string local_permute_method = "metis";
-    std::string separator_finding_method = "max_degree";
-    std::string separator_refinement_method = "nothing";
+    bool use_gpu = false;
+
     CLIArgs(int argc, char* argv[])
     {
         CLI::App app{"Separator analysis"};
@@ -34,9 +35,8 @@ struct CLIArgs
         app.add_option("-s,--solver", solver_type, "solver type");
         app.add_option("-o,--output", output_address, "output folder name");
         app.add_option("-i,--input", input_mesh, "input mesh name");
-        app.add_option("-l,--local_permute_method", local_permute_method, "local permute method");
-        app.add_option("-t,--separator_finding_method", separator_finding_method, "separator finding method");
-        app.add_option("-r,--separator_refinement_method", separator_refinement_method, "separator refinement method");
+        app.add_option("-g,--use_gpu", use_gpu, "use gpu");
+
         try {
             app.parse(argc, argv);
         } catch (const CLI::ParseError& e) {
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
     // The cotangent Laplacian is negative semi-definite, so we add a constant
     // to shift all eigenvalues to be positive
     for (int i = 0; i < OL.rows(); ++i) {
-        OL.coeffRef(i, i) += 100.0;
+        OL.coeffRef(i, i) += 300.0;
     }
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(OL.rows());
     Eigen::VectorXd result;
@@ -110,26 +110,53 @@ int main(int argc, char* argv[])
     } else if (args.ordering_type == "METIS") {
         spdlog::info("Using METIS ordering.");
         ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::RXMESH_Ordering_Type::METIS);
+            RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
+        if(args.solver_type == "CUDSS") {
+            std::cerr << "METIS ordering is not supported with CUDSS solver." << std::endl;
+            return 1;
+        }
     } else if (args.ordering_type == "RXMESH_ND") {
         spdlog::info("Using RXMESH ordering.");
         ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::RXMESH_Ordering_Type::RXMESH_ND);
-    } else if (args.ordering_type == "POC_ND") {
-        spdlog::info("Using POC_ND ordering.");
+            RXMESH_SOLVER::DEMO_ORDERING_TYPE::RXMESH_ND);
+    } else if (args.ordering_type == "PATCH_ORDERING") {
+        spdlog::info("Using PATCH_ORDERING ordering.");
         ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::RXMESH_Ordering_Type::POC_ND);
-        ordering->setOptions({{"local_permute_method", args.local_permute_method}, {"separator_finding_method", args.separator_finding_method}, {"separator_refinement_method", args.separator_refinement_method}});
+            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        ordering->setOptions(
+            {{"use_gpu", args.use_gpu ? "1" : "0"}});
     } else if (args.ordering_type == "PARTH") {
         ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::RXMESH_Ordering_Type::PARTH);
+            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
     } else if (args.ordering_type == "NEUTRAL"){
         spdlog::info("Using NEUTRAL ordering.");
         ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::RXMESH_Ordering_Type::NEUTRAL);
+            RXMESH_SOLVER::DEMO_ORDERING_TYPE::NEUTRAL);
     } else {
         spdlog::error("Unknown Ordering type.");
     }
+
+    //Init solver
+    RXMESH_SOLVER::LinSysSolver* solver = nullptr;
+    if (args.solver_type == "CHOLMOD") {
+        solver = RXMESH_SOLVER::LinSysSolver::create(
+            RXMESH_SOLVER::LinSysSolverType::CPU_CHOLMOD);
+        spdlog::info("Using CHOLMOD direct solver.");
+    } else if (args.solver_type == "CUDSS") {
+        solver = RXMESH_SOLVER::LinSysSolver::create(
+            RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+        spdlog::info("Using CUDSS direct solver.");
+    } else if (args.solver_type == "PARTH_SOLVER") {
+        solver = RXMESH_SOLVER::LinSysSolver::create(
+            RXMESH_SOLVER::LinSysSolverType::PARTH_SOLVER);
+        spdlog::info("Using PARTH direct solver.");
+    } else if (args.solver_type == "STRUMPACK"){
+        solver = RXMESH_SOLVER::LinSysSolver::create(
+            RXMESH_SOLVER::LinSysSolverType::GPU_STRUMPACK);
+    } else {
+        spdlog::error("Unknown solver type.");
+    }
+    assert(solver != nullptr);
 
     // Create the graph
     std::vector<int> Gp;
@@ -138,7 +165,6 @@ int main(int argc, char* argv[])
         OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), Gp, Gi);
 
     // Init the permuter
-    double factor_ratio = 0;
     if (ordering != nullptr) {
         // Provide mesh data if the ordering needs it (e.g., RXMesh ND)
         if (ordering->needsMesh()) {
@@ -147,7 +173,13 @@ int main(int argc, char* argv[])
                             OF.data(), OF.rows(), OF.cols());
         }
         ordering->setGraph(Gp.data(), Gi.data(), OL.rows(), Gi.size());
-
+        auto ordering_init_start = std::chrono::high_resolution_clock::now();
+        ordering->init();
+        auto ordering_init_end = std::chrono::high_resolution_clock::now();
+        spdlog::info("Ordering initialization time: {} ms",
+                     std::chrono::duration_cast<std::chrono::milliseconds>(
+                         ordering_init_end - ordering_init_start)
+                         .count());
         auto ordering_start = std::chrono::high_resolution_clock::now();
         ordering->compute_permutation(perm);
         auto ordering_end = std::chrono::high_resolution_clock::now();
@@ -170,14 +202,51 @@ int main(int argc, char* argv[])
         spdlog::info(
             "The ratio of factor non-zeros to matrix non-zeros given custom reordering: {}",
             (factor_nnz * 1.0 /OL.nonZeros()));
-        factor_ratio = factor_nnz * 1.0 /OL.nonZeros();
+        solver->ordering_name = ordering->typeStr();
     }
-    std::string mesh_name = args.input_mesh.substr(args.input_mesh.find_last_of("/") + 1);
-    mesh_name = mesh_name.substr(0, mesh_name.find_last_of("."));
-    std::map<std::string, double> extra_info;
-    extra_info["fill-ratio"] = factor_ratio;
 
-    ordering->add_record("/home/behrooz/Desktop/Last_Project/RXMesh-dev/output/ordering_benchmark", extra_info, mesh_name);
+    //Save the matrix
+    Eigen::saveMarket(OL, "/home/behrooz/Desktop/Last_Project/RXMesh-dev/output/nefertiti.mtx");
+    solver->setMatrix(OL.outerIndexPtr(),
+                      OL.innerIndexPtr(),
+                      OL.valuePtr(),
+                      OL.rows(),
+                      OL.nonZeros());
+
+    // Symbolic analysis time
+    auto start = std::chrono::high_resolution_clock::now();
+    solver->analyze_pattern(perm);
+    auto end = std::chrono::high_resolution_clock::now();
+    spdlog::info(
+        "Analysis time: {} ms",
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count());
+
+    // Factorization time
+    start = std::chrono::high_resolution_clock::now();
+    solver->factorize();
+    end = std::chrono::high_resolution_clock::now();
+    spdlog::info(
+        "Factorization time: {} ms",
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count());
+
+    // Solve time
+    start = std::chrono::high_resolution_clock::now();
+    solver->solve(rhs, result);
+    end = std::chrono::high_resolution_clock::now();
+    spdlog::info(
+        "Solve time: {} ms",
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count());
+
+    // Compute residual
+    assert(OL.rows() == OL.cols());
+    double residual = (rhs - OL * result).norm();
+    spdlog::info("Residual: {}", residual);
+    spdlog::info("Final factor/matrix NNZ ratio: {}",
+                 solver->getFactorNNZ() * 1.0 / OL.nonZeros());
+    delete solver;
     delete ordering;
     return 0;
 }

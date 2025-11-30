@@ -162,9 +162,9 @@ void RXMeshOrdering::compute_permutation(std::vector<int>& perm)
 }
 
 
-RXMESH_Ordering_Type RXMeshOrdering::type() const
+DEMO_ORDERING_TYPE RXMeshOrdering::type() const
 {
-    return RXMESH_Ordering_Type::RXMESH_ND;
+    return DEMO_ORDERING_TYPE::RXMESH_ND;
 }
 
 std::string RXMeshOrdering::typeStr() const

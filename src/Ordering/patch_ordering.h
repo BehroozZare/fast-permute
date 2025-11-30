@@ -11,27 +11,41 @@
 #include <Eigen/Sparse>
 #include <cholmod.h>
 #include "ordering.h"
-#include "gpu_ordering_v3.h"
-#include "gpu_ordering_v2.h"
+#include "gpu_ordering_with_patch.h"
+#include "cpu_ordering_with_patch.h"
+#include <rxmesh/rxmesh_static.h>
 
 namespace RXMESH_SOLVER {
 
 
-class POCOrdering: public Ordering
+class PatchOrdering: public Ordering
 {
 private:
-    std::vector<std::vector<uint32_t>> fv;
-    std::vector<std::vector<float>> vertices;
+    std::vector<std::vector<uint32_t>> _fv;
+    std::vector<std::vector<float>> _vertices;
+    int _patch_size = 512;
     bool m_has_mesh = false;
-    GPUOrdering_V2 gpu_order;
+
+    enum class PatchOrderingType {
+        RXMESH_PATCH,
+        METIS_KWAY_PATCH,
+        METIS_SEPARATOR_PATCH
+    };
+
+    bool _use_gpu = false;
+    PatchOrderingType _patch_ordering_type = PatchOrderingType::RXMESH_PATCH;
+    std::unique_ptr<rxmesh::RXMeshStatic> _rxmesh;
+    GPUOrdering_PATCH _gpu_order;
+    CPUOrdering_PATCH _cpu_order;
     
+    int _num_patches = -1;
+    std::vector<int> _g_node_to_patch;
+
     
 public:
-    virtual ~POCOrdering(void);
+    virtual ~PatchOrdering(void);
 
-    static POCOrdering* create(const RXMESH_Ordering_Type type);
-
-    virtual RXMESH_Ordering_Type type() const override;
+    virtual DEMO_ORDERING_TYPE type() const override;
     virtual std::string typeStr() const override;
 
     virtual void setGraph(int*              Gp,
@@ -42,6 +56,7 @@ public:
     virtual void setMesh(const double* V_data, int V_rows, int V_cols,
                         const int* F_data, int F_rows, int F_cols) override;
     
+    virtual void init() override;
     virtual bool needsMesh() const override;
 
     virtual void compute_permutation(std::vector<int>& perm) override;
@@ -49,6 +64,8 @@ public:
     virtual void setOptions(const std::map<std::string, std::string>& options) override;
 
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) override;
+
+    double compute_separator_ratio();
 };
 
-}  // namespace PARTH_SOLVER
+}  // namespace RXMESH_SOLVER
