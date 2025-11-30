@@ -24,13 +24,11 @@ void ParthOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
     parth.setMesh(G_N, Gp, Gi);
 }
 
-void ParthOrdering::compute_permutation(std::vector<int>& perm)
+void ParthOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
 {
     parth.computePermutation(perm);
-
-    //Some analysis - should be commented for performance meaures
-    computeRatioOfBoundaryVertices();
-    computeTheStatisticsOfPatches();
+    etree.clear();
+    spdlog::info("Getting etree for Parth ordering is not supported.");
 }
 
 
@@ -42,6 +40,7 @@ std::string ParthOrdering::typeStr() const
 {
     return "PARTH";
 }
+
 
 void ParthOrdering::computeRatioOfBoundaryVertices()
 {

@@ -31,7 +31,7 @@ public:
                            int               G_N,
                            int               NNZ) override;
 
-    virtual void compute_permutation(std::vector<int>& perm) override;
+    virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree) override;
 
 
     void computeRatioOfBoundaryVertices();

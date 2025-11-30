@@ -244,7 +244,7 @@ void CHOLMODSolver::setMatrix(int*              p,
 
 }
 
-void CHOLMODSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm)
+void CHOLMODSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     if (use_gpu) {
         cholmod_l_free_factor(&L, &cm);

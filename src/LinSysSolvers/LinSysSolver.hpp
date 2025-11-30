@@ -47,12 +47,12 @@ class LinSysSolver
                            int               A_N,
                            int               NNZ) = 0;
 
-    virtual void analyze_pattern(std::vector<int>& user_defined_perm)
+    virtual void analyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
     {
-        innerAnalyze_pattern(user_defined_perm);
+        innerAnalyze_pattern(user_defined_perm, etree);
     }
 
-    virtual void innerAnalyze_pattern(std::vector<int>& user_defined_perm) = 0;
+    virtual void innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree) = 0;
 
     virtual void factorize(void)
     {

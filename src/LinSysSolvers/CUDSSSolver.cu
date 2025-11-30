@@ -170,7 +170,7 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     }
 }
 
-void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm)
+void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     assert(is_allocated);
     cudssStatus_t status;

@@ -59,7 +59,7 @@ public:
     virtual void init() override;
     virtual bool needsMesh() const override;
 
-    virtual void compute_permutation(std::vector<int>& perm) override;
+    virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree) override;
 
     virtual void setOptions(const std::map<std::string, std::string>& options) override;
 

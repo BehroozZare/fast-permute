@@ -50,7 +50,7 @@ void STRUMPACKSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     spss.set_matrix(_A);
 }
 
-void STRUMPACKSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm)
+void STRUMPACKSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     strumpack::ReturnCode code = spss.reorder();
     if (code != strumpack::ReturnCode::SUCCESS) {

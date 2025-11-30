@@ -9,6 +9,7 @@
 #include <iostream>
 #include <metis.h>
 #include "ordering.h"
+#include "spdlog/spdlog.h"
 
 namespace RXMESH_SOLVER {
 
@@ -24,12 +25,14 @@ void NeutralOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
     this->G_NNZ = NNZ;
 }
 
-void NeutralOrdering::compute_permutation(std::vector<int>& perm)
+void NeutralOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
 {
     perm.resize(G_N, -1);
     for (int i = 0; i < G_N; i++) {
         perm[i] = i;
     }
+    etree.clear();
+    spdlog::info("Getting etree for Neutral ordering is not supported.");
 }
 
 

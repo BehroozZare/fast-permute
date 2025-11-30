@@ -10,6 +10,7 @@
 #include <metis.h>
 #include "ordering.h"
 #include "csv_utils.h"
+#include "spdlog/spdlog.h"
 
 namespace RXMESH_SOLVER {
 
@@ -25,7 +26,7 @@ void MetisOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
     this->G_NNZ = NNZ;
 }
 
-void MetisOrdering::compute_permutation(std::vector<int>& perm)
+void MetisOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
 {
     idx_t N = G_N;
     idx_t NNZ = Gp[G_N];
@@ -45,6 +46,8 @@ void MetisOrdering::compute_permutation(std::vector<int>& perm)
 
     std::vector<int> tmp(G_N);
     METIS_NodeND(&N, Gp, Gi, NULL, NULL, perm.data(), tmp.data());
+    etree.clear();
+    spdlog::info("Getting etree for Metis ordering is not supported.");
 }
 
 

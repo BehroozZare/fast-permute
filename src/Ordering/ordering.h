@@ -57,7 +57,7 @@ public:
     virtual void init(){
         return;
     }
-    virtual void compute_permutation(std::vector<int>& perm) = 0;
+    virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree) = 0;
 
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) {};
 };

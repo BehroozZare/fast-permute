@@ -96,7 +96,7 @@ bool PatchOrdering::needsMesh() const
     return true;
 }
 
-void PatchOrdering::compute_permutation(std::vector<int>& perm)
+void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
 {
     assert(m_has_mesh);
     if(_use_gpu) {

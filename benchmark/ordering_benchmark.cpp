@@ -149,7 +149,8 @@ int main(int argc, char* argv[])
         ordering->setGraph(Gp.data(), Gi.data(), OL.rows(), Gi.size());
 
         auto ordering_start = std::chrono::high_resolution_clock::now();
-        ordering->compute_permutation(perm);
+        std::vector<int> etree;
+        ordering->compute_permutation(perm, etree);
         auto ordering_end = std::chrono::high_resolution_clock::now();
         //Check for correct perm
         if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
