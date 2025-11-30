@@ -65,7 +65,7 @@ void PatchOrdering::init(){
             _rxmesh->get_num_edges(),
             _rxmesh->get_num_faces(),
             _rxmesh->get_num_patches());
-    
+
         this->_g_node_to_patch.resize(_rxmesh->get_num_vertices());
         this->_num_patches = _rxmesh->get_num_patches();
         _rxmesh->for_each_vertex(
@@ -77,7 +77,26 @@ void PatchOrdering::init(){
             NULL,
             false);
     } else if(_patch_ordering_type == PatchOrderingType::METIS_KWAY_PATCH) {
-        // TODO: Implement METIS K-way patch ordering
+        rxmesh::rx_init(0);
+        _rxmesh = std::make_unique<rxmesh::RXMeshStatic>(_fv, "", this->_patch_size, true);
+
+        spdlog::info(
+            "RXMesh initialized with {} vertices, {} edges, {} faces, {} patches",
+            _rxmesh->get_num_vertices(),
+            _rxmesh->get_num_edges(),
+            _rxmesh->get_num_faces(),
+            _rxmesh->get_num_patches());
+
+        this->_g_node_to_patch.resize(_rxmesh->get_num_vertices());
+        this->_num_patches = _rxmesh->get_num_patches();
+        _rxmesh->for_each_vertex(
+            rxmesh::HOST,
+            [&](const rxmesh::VertexHandle vh) {
+                uint32_t node_id       = _rxmesh->map_to_global(vh);
+                this->_g_node_to_patch[node_id] = static_cast<int>(vh.patch_id());
+            },
+            NULL,
+            false);
     } else if(_patch_ordering_type == PatchOrderingType::METIS_SEPARATOR_PATCH) {
         // TODO: Implement METIS separator patch ordering
     }
@@ -96,13 +115,16 @@ bool PatchOrdering::needsMesh() const
     return true;
 }
 
-void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
+void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree)
 {
     assert(m_has_mesh);
     if(_use_gpu) {
         this->_gpu_order.compute_permutation(perm);
     } else {
         this->_cpu_order.compute_permutation(perm);
+    }
+    if(compute_etree) {
+        spdlog::info("Getting etree for Patch ordering is not supported.");
     }
 }
 

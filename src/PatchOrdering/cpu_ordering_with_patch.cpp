@@ -131,7 +131,7 @@ void CPUOrdering_PATCH::compute_local_quotient_graph(
     local_Qi.reserve(this->_quotient_graph._Qp[this->_quotient_graph._Q_n]);
     local_Q_node_weights.resize(q_local_to_global_map.size(), 0);
     int cnt = 0;
-    for(int local_q = 0; local_q < q_local_to_global_map.size(); local_q++) {
+    for(size_t local_q = 0; local_q < q_local_to_global_map.size(); local_q++) {
         int global_q = q_local_to_global_map[local_q];
         local_Q_node_weights[local_q] = this->_quotient_graph._Q_node_weights[global_q];
         for(int nbr_ptr = this->_quotient_graph._Qp[global_q]; nbr_ptr < this->_quotient_graph._Qp[global_q + 1]; nbr_ptr++) {
@@ -223,7 +223,7 @@ void CPUOrdering_PATCH::two_way_Q_partition(
         compute_bipartition(local_Q_n, local_Qp.data(), local_Qi.data(), local_Q_node_weights, two_way_q_partition_map);
 
         //Converting the q map to node map
-        for(int i = 0; i < local_Q_node_to_global_Q_node.size(); i++) {
+        for(size_t i = 0; i < local_Q_node_to_global_Q_node.size(); i++) {
             int q_global_node = local_Q_node_to_global_Q_node[i];
             //Assign the q to left and right nodes
             this->_decomposition_tree.q_node_to_tree_node[q_global_node] = tree_node_idx * 2 + two_way_q_partition_map[i] + 1;
@@ -309,7 +309,7 @@ void CPUOrdering_PATCH::refine_bipartate_separator(
     //Step 1: Extract the bipartite graph from the separator nodes
     // mapping from separator nodes to local nodes
     std::map<int, int> separator_node_to_local_node;
-    for (int i = 0; i < separator_superset.size(); i++) {
+    for (size_t i = 0; i < separator_superset.size(); i++) {
         separator_node_to_local_node[separator_superset[i]] = i;
     }
 
@@ -346,7 +346,7 @@ void CPUOrdering_PATCH::refine_bipartate_separator(
 
     //=========== Step : assign bipartition for max match
     std::vector<int> local_graph_to_partition(separator_superset.size(), -1);
-    for(int i = 0; i < separator_superset.size(); i++) {
+    for(size_t i = 0; i < separator_superset.size(); i++) {
         int tree_node_id = get_tree_id(separator_superset[i]);
         if (parent_node_id * 2 + 1 == tree_node_id) {
             local_graph_to_partition[i] = 0;
@@ -405,7 +405,7 @@ void CPUOrdering_PATCH::refine_bipartate_separator(
     std::vector<int> tmp = separator_superset;
     separator_superset.clear();
     //Converting the local min_vertex_cover to global one
-    for (int i = 0; i < min_vertex_cover.size(); i++) {
+    for (size_t i = 0; i < min_vertex_cover.size(); i++) {
         separator_superset.push_back(tmp[min_vertex_cover[i]]);
     }
     int final_separator_size = separator_superset.size();
@@ -551,7 +551,7 @@ void CPUOrdering_PATCH::decompose()
                 //Assign the nodes to the left and right assigned dofs
                 left_assigned_g_nodes.reserve(assigned_g_nodes.size());
                 right_assigned_g_nodes.reserve(assigned_g_nodes.size());
-                for(int i = 0; i < assigned_g_nodes.size(); i++) {
+                for(size_t i = 0; i < assigned_g_nodes.size(); i++) {
                     int g_node = assigned_g_nodes[i];
                     int q_node = this->_g_node_to_patch[g_node];
                     if(this->_decomposition_tree.is_separator(g_node)) continue;
@@ -587,7 +587,7 @@ void CPUOrdering_PATCH::decompose()
 
 
                 //Update the quotient graph by removing the effect of separator nodes
-                for(int i = 0; i < separator_g_nodes.size(); i++) {
+                for(size_t i = 0; i < separator_g_nodes.size(); i++) {
                     int g_node = separator_g_nodes[i];
                     int q_node = this->_g_node_to_patch[g_node];
                     this->_quotient_graph._Q_node_weights[q_node]--;
@@ -656,14 +656,14 @@ void CPUOrdering_PATCH::compute_sub_graph(
 {
     // Compute global node to local node mapping
     std::vector<int> global_to_local(this->_G_n, -1);
-    for (int i = 0; i < nodes.size(); ++i) {
+    for (size_t i = 0; i < nodes.size(); ++i) {
         assert(global_to_local[nodes[i]] == -1);
         global_to_local[nodes[i]] = i;
     }
 
     // Compute triplets for the sub graph
     std::vector<Eigen::Triplet<int>> triplets;
-    for (int i = 0; i < nodes.size(); ++i) {
+    for (size_t i = 0; i < nodes.size(); ++i) {
         int node_id = nodes[i];
         for (int nbr_ptr = this->_Gp[node_id]; nbr_ptr < this->_Gp[node_id + 1];
              ++nbr_ptr) {
@@ -707,7 +707,7 @@ void CPUOrdering_PATCH::step1_compute_quotient_graph()
     // auto patch_fix_end = std::chrono::high_resolution_clock::now();
     // auto patch_time = std::chrono::duration_cast<std::chrono::milliseconds>(patch_fix_end - patch_fix_start).count();
     // spdlog::info("Patch fix time: {} ms for vector of size {}", patch_time, _num_patches);
-    for (int i = 0; i < _g_node_to_patch.size(); i++) {
+    for (size_t i = 0; i < _g_node_to_patch.size(); i++) {
         int patch_id = _g_node_to_patch[i];
         patch_offset[patch_id] = 0;
     }
@@ -718,7 +718,7 @@ void CPUOrdering_PATCH::step1_compute_quotient_graph()
         patch_offset[i] += patch_offset[i - 1];
     }
 
-    for (int i = 0; i < _g_node_to_patch.size(); i++) {
+    for (size_t i = 0; i < _g_node_to_patch.size(); i++) {
         int patch_id = _g_node_to_patch[i];
         _g_node_to_patch[i] -= patch_offset[patch_id];
     }
@@ -850,7 +850,7 @@ void CPUOrdering_PATCH::compute_sub_graphs(std::vector<SubGraph>& sub_graphs){
         if (node.assigned_g_nodes.empty()) continue;
 
         // assign local ids 0..k-1 within this subgraph
-        for (int i = 0; i < (int)node.assigned_g_nodes.size(); i++) {
+        for (size_t i = 0; i < (int)node.assigned_g_nodes.size(); i++) {
             int g_node = node.assigned_g_nodes[i];
             assert(global_to_local[g_node] == -1);
             global_to_local[g_node] = i;
@@ -874,7 +874,7 @@ void CPUOrdering_PATCH::compute_sub_graphs(std::vector<SubGraph>& sub_graphs){
             }
         }
     }
-    for (int i = 0; i < (int)sub_graphs.size(); i++) {
+    for (size_t i = 0; i < sub_graphs.size(); i++) {
         if (sub_graphs[i]._num_nodes == 0) continue;
         sub_graphs[i]._Gi.resize(edge_per_group[i], 0);
     }
@@ -903,7 +903,7 @@ void CPUOrdering_PATCH::compute_sub_graphs(std::vector<SubGraph>& sub_graphs){
     }
 
     // Prefix-sum to convert degrees into CSR row pointers
-    for (int gid = 0; gid < (int)sub_graphs.size(); gid++) {
+    for (size_t gid = 0; gid < (int)sub_graphs.size(); gid++) {
         SubGraph& sg = sub_graphs[gid];
         if (sg._num_nodes == 0) continue;
 
@@ -917,7 +917,7 @@ void CPUOrdering_PATCH::compute_sub_graphs(std::vector<SubGraph>& sub_graphs){
 
     // Pass 2: fill _Gi using a set of write cursors, one per group
     std::vector<std::vector<int>> write_pos(sub_graphs.size());
-    for (int gid = 0; gid < sub_graphs.size(); gid++) {
+    for (size_t gid = 0; gid < sub_graphs.size(); gid++) {
         if (sub_graphs[gid]._num_nodes == 0) continue;
         write_pos[gid] = sub_graphs[gid]._Gp; // start at row starts
     }
@@ -991,7 +991,7 @@ void CPUOrdering_PATCH::step4_assemble_final_permutation(std::vector<int>& perm)
     for (auto& node : this->_decomposition_tree.decomposition_nodes) {
         if (node.assigned_g_nodes.empty())
             continue;
-        for (int local_node = 0; local_node < node.assigned_g_nodes.size(); local_node++) {
+        for (size_t local_node = 0; local_node < node.assigned_g_nodes.size(); local_node++) {
             int global_node = node.assigned_g_nodes[local_node];
             int perm_index  = node.local_new_labels[local_node] + node.offset;
             assert(global_node >= 0 && global_node < this->_G_n &&

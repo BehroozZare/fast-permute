@@ -65,7 +65,7 @@ bool RXMeshOrdering::needsMesh() const
     return true;
 }
 
-void RXMeshOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
+void RXMeshOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree)
 {
     rxmesh::rx_init(0);
     if (!m_has_mesh) {
@@ -76,7 +76,9 @@ void RXMeshOrdering::compute_permutation(std::vector<int>& perm, std::vector<int
             perm[i] = i;
         }
         etree.clear();
-        spdlog::info("Getting etree for RXMesh ordering is not supported.");
+        if(compute_etree) {
+            spdlog::info("Getting etree for RXMesh ordering is not supported.");
+        }
         return;
     }
 

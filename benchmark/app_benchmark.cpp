@@ -26,6 +26,7 @@ struct CLIArgs
     std::string output_address;
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
+    std::string patch_type = "rxmesh";
     bool use_gpu = false;
 
     CLIArgs(int argc, char* argv[])
@@ -36,6 +37,7 @@ struct CLIArgs
         app.add_option("-o,--output", output_address, "output folder name");
         app.add_option("-i,--input", input_mesh, "input mesh name");
         app.add_option("-g,--use_gpu", use_gpu, "use gpu");
+        app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
 
         try {
             app.parse(argc, argv);
@@ -125,7 +127,7 @@ int main(int argc, char* argv[])
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
         ordering->setOptions(
-            {{"use_gpu", args.use_gpu ? "1" : "0"}});
+            {{"use_gpu", args.use_gpu ? "1" : "0"}, {"patch_type", args.patch_type}});
     } else if (args.ordering_type == "PARTH") {
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);

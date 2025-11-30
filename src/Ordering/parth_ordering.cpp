@@ -24,11 +24,13 @@ void ParthOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
     parth.setMesh(G_N, Gp, Gi);
 }
 
-void ParthOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
+void ParthOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree)
 {
     parth.computePermutation(perm);
     etree.clear();
-    spdlog::info("Getting etree for Parth ordering is not supported.");
+    if(compute_etree) {
+        spdlog::info("Getting etree for Parth ordering is not supported.");
+    }
 }
 
 

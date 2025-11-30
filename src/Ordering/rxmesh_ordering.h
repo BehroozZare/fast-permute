@@ -39,7 +39,7 @@ public:
     
     virtual bool needsMesh() const override;
 
-    virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree) override;
+    virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree = false) override;
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) override;
 };
 

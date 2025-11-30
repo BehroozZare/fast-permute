@@ -26,7 +26,7 @@ void MetisOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
     this->G_NNZ = NNZ;
 }
 
-void MetisOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree)
+void MetisOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree)
 {
     idx_t N = G_N;
     idx_t NNZ = Gp[G_N];
@@ -47,7 +47,9 @@ void MetisOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>
     std::vector<int> tmp(G_N);
     METIS_NodeND(&N, Gp, Gi, NULL, NULL, perm.data(), tmp.data());
     etree.clear();
-    spdlog::info("Getting etree for Metis ordering is not supported.");
+    if(compute_etree) {
+        spdlog::info("Getting etree for Metis ordering is not supported.");
+    }
 }
 
 
