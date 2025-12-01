@@ -1,6 +1,6 @@
 
 # Benchmark executable (using app_benchmark.cpp as the main benchmark)
-add_executable(${PROJECT_NAME}_benchmark app_benchmark.cpp)
+add_executable(${PROJECT_NAME}_benchmark benchmark.cpp)
 
 # Configure CUDA device linking for the benchmark executable
 # Enable separable compilation and resolve device symbols at the executable level

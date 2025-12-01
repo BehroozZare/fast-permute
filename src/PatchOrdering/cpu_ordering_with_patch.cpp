@@ -434,6 +434,16 @@ void CPUOrdering_PATCH::three_way_G_partition(
 }
 
 
+void CPUOrdering_PATCH::level_order_offset_computation()
+{
+    int offset = 0;
+    for(size_t i =  _decomposition_tree.get_number_of_decomposition_nodes() - 1; i >= 0; i--){
+        auto& decomposition_node = this->_decomposition_tree.decomposition_nodes[i];
+        decomposition_node.offset = offset;
+        offset += decomposition_node.assigned_g_nodes.size();
+    }
+}
+
 int CPUOrdering_PATCH::post_order_offset_computation(int offset,
                                                   int decomposition_node_id)
 {
@@ -979,11 +989,19 @@ void CPUOrdering_PATCH::step3_compute_local_permutations()
     spdlog::info("Local permutations are computed.");
 }
 
+    
 void CPUOrdering_PATCH::step4_assemble_final_permutation(std::vector<int>& perm)
 {
     // Apply the offset to the decomposition nodes
     spdlog::info("Applying offset to the decomposition nodes .. ");
-    post_order_offset_computation(0, 0);
+    if (etree_order == "post_order") {
+        post_order_offset_computation(0, 0);
+    } else if (etree_order == "level_order") {
+        level_order_offset_computation();
+    } else {
+        spdlog::error("Unknown etree order. Use post_order or level_order");
+    }
+
     spdlog::info("Offset is applied to the decomposition nodes.");
     spdlog::info("Assembling the final permutation .. ");
     perm.clear();

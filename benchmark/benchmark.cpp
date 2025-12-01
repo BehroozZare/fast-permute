@@ -185,7 +185,12 @@ int main(int argc, char* argv[])
                          .count());
         auto ordering_start = std::chrono::high_resolution_clock::now();
 
-        ordering->compute_permutation(perm, etree);
+        if(args.solver_type=="CUDSS") {
+            ordering->compute_permutation(perm, etree, true);
+        } else {
+            ordering->compute_permutation(perm, etree, false);
+        }
+
         auto ordering_end = std::chrono::high_resolution_clock::now();
         //Check for correct perm
         if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {

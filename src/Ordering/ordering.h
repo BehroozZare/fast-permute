@@ -57,6 +57,8 @@ public:
     virtual void init(){
         return;
     }
+
+    // The compute etree is solely for CUDSS ordering where the binary tree order is level order
     virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree = false) = 0;
 
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) {};

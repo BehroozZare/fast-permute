@@ -28,15 +28,8 @@ public:                // Access specifier
     double* values_dev;
     double* bvalues_dev;
     double* xvalues_dev;
-    int*    user_perm_dev;  // Device pointer for user-defined permutation
 
     bool is_allocated;
-
-    std::vector<int> elimination_tree_;
-    size_t           elimination_tree_bytes_;
-    bool             elimination_tree_available_;
-
-
 
     ~CUDSSSolver();
     CUDSSSolver();
@@ -50,14 +43,6 @@ public:                // Access specifier
     void clean_sparse_matrix_mem();
     void clean_rhs_sol_mem();
     virtual LinSysSolverType type() const override;
-    const std::vector<int>& getEliminationTree() const { return elimination_tree_; }
-    size_t                  getEliminationTreeBytes() const
-    {
-        return elimination_tree_bytes_;
-    }
-    bool hasEliminationTree() const { return elimination_tree_available_; }
-    void captureEliminationTree();
-
 };
 
 }

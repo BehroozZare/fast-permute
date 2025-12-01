@@ -144,6 +144,8 @@ public:
 
     double _separator_ratio = 0.0;
 
+    std::string etree_order = "post_order";//Accept level_order and post_order
+    std::vector<int> etree; 
     void setGraph(int* Gp, int* Gi, int G_N, int NNZ);
 
     //This function updates the q_node_to_tree_node map for the current decomposition node
@@ -203,7 +205,13 @@ public:
     void local_permute(int G_n, int* Gp, int* Gi,
         std::vector<int> & local_permutation);
 
+    //Given the full binary tree, it numbers each decomposition node in a post-order manner
     int post_order_offset_computation(int offset, int decomposition_node_id);
+
+    //Given the full binary tree, it numbers each decomposition node in the tree starting from 
+    //Leaves to the root
+    void level_order_offset_computation();
+
     void compute_sub_graph(
         std::vector<int>&         nodes,
         Eigen::SparseMatrix<int>& local_graph) const;
