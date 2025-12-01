@@ -20,6 +20,8 @@
 #include "rxmesh/rxmesh_static.h"
 #include "spdlog/spdlog.h"
 
+#include <thrust/copy.h>
+
 namespace RXMESH_SOLVER {
 
 GPUOrdering_PATCH::GPUOrdering_PATCH() : _Gp(nullptr), _Gi(nullptr), _G_n(0), _G_nnz(0)
