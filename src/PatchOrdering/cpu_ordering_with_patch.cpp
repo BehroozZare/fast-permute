@@ -643,7 +643,7 @@ void CPUOrdering_PATCH::decompose()
 }
 
 
-void CPUOrdering_PATCH::init_patches(int num_patches,std::vector<int> & g_node_to_patch)
+void CPUOrdering_PATCH::init_patches(int num_patches,std::vector<int> & g_node_to_patch, int num_levels)
 {
     // Init the hirerchical tree memory
     assert(g_node_to_patch.size() == static_cast<size_t>(this->_G_n));
@@ -651,8 +651,7 @@ void CPUOrdering_PATCH::init_patches(int num_patches,std::vector<int> & g_node_t
     assert(num_patches > 0);
     this->_num_patches = num_patches;
     this->_g_node_to_patch = g_node_to_patch;
-    int num_levels = std::ceil(std::log2(this->_num_patches));
-    num_levels--;//Based on my experience, normally, the last level is empty
+
     int total_number_of_decomposition_nodes = (1 << (num_levels + 1)) - 1;
     this->_decomposition_tree.init_decomposition_tree(
         total_number_of_decomposition_nodes,

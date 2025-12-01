@@ -220,7 +220,7 @@ public:
 
     double compute_separator_ratio();
 
-    void init_patches(int num_patches,std::vector<int> & g_node_to_patch);
+    void init_patches(int num_patches,std::vector<int> & g_node_to_patch, int num_levels=9);
     void step1_compute_quotient_graph();
     void step2_create_decomposition_tree();
     void step3_compute_local_permutations();

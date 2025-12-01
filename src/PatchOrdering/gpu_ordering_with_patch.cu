@@ -722,7 +722,7 @@ void GPUOrdering_PATCH::decompose()
 }
 
 
-void GPUOrdering_PATCH::init_patches(int num_patches, std::vector<int> & g_node_to_patch)
+void GPUOrdering_PATCH::init_patches(int num_patches, std::vector<int> & g_node_to_patch, int num_levels)
 {
     assert(g_node_to_patch.size() == this->_G_n);
     assert(this->_G_n > 0);
@@ -730,8 +730,6 @@ void GPUOrdering_PATCH::init_patches(int num_patches, std::vector<int> & g_node_
     this->_num_patches = num_patches;
     this->_g_node_to_patch = g_node_to_patch;
     // Init the hirerchical tree memory
-    int num_levels = std::ceil(std::log2(this->_num_patches));
-    num_levels--;//Based on my experience, normally, the last level is empty
     int total_number_of_decomposition_nodes = (1 << (num_levels + 1)) - 1;
     this->_decomposition_tree.init_decomposition_tree(
         total_number_of_decomposition_nodes,
@@ -739,7 +737,6 @@ void GPUOrdering_PATCH::init_patches(int num_patches, std::vector<int> & g_node_
 
     //Copy to GPU memory
     this->_d_g_node_to_patch = this->_g_node_to_patch;
-
 }
 
 

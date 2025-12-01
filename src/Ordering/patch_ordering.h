@@ -59,6 +59,14 @@ public:
     virtual void init() override;
     virtual bool needsMesh() const override;
 
+    //Given the binary tree order, it assembles the permutation
+    void assemble_perm(std::vector<int>& level_numbering, std::vector<int>& perm);
+    //The level_numbering[hmd_id] is going to be the sequence number in final permutation
+    //For example the root should be last so level_numbering[0] = last_node
+    void get_level_numbering(int binary_tree_size, std::vector<int>& level_numbering);
+    //Given the binary tree order, it computes the etree
+    void compute_etree(std::vector<int>& level_numbering, std::vector<int>& etree);
+    
     virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree = false) override;
 
     virtual void setOptions(const std::map<std::string, std::string>& options) override;

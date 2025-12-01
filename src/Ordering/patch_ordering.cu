@@ -115,7 +115,58 @@ bool PatchOrdering::needsMesh() const
     return true;
 }
 
-void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree)
+
+void PatchOrdering::get_level_numbering(int binary_tree_size, std::vector<int>& level_numbering) {
+    level_numbering.clear();
+    level_numbering.resize(binary_tree_size, 0);
+    for(int i = 0; i < binary_tree_size; i++){
+        int hmd_id = binary_tree_size - 1 - i;
+        level_numbering[hmd_id] = i;
+    }
+}
+
+void PatchOrdering::compute_etree(std::vector<int>& level_numbering, std::vector<int>& etree) {
+    etree.clear();
+    etree.resize(level_numbering.size(), 0);
+    for (int hmd_id = 0; hmd_id < level_numbering.size(); hmd_id++) {
+        int etree_idx = level_numbering[hmd_id];
+        int etree_value = this->_cpu_order._decomposition_tree.decomposition_nodes[hmd_id].assigned_g_nodes.size();
+        etree[etree_idx] = etree_value;
+    }
+}
+
+void PatchOrdering::assemble_perm(std::vector<int>& level_numbering, std::vector<int>& perm) {
+    perm.clear();
+    perm.resize(_cpu_order._G_n, -1);
+    std::vector<int> etree_inverse(level_numbering.size(), 0);
+    for(int hmd_id = 0; hmd_id < level_numbering.size(); hmd_id++){
+        etree_inverse[level_numbering[hmd_id]] = hmd_id;
+    }
+
+    int offset = 0;
+    for(int i = 0; i < etree_inverse.size(); i++){
+        int hmd_id = etree_inverse[i];
+        auto& node = this->_cpu_order._decomposition_tree.decomposition_nodes[hmd_id];
+        if (node.assigned_g_nodes.empty())
+            continue;
+        for (int local_node = 0; local_node < node.assigned_g_nodes.size(); local_node++) {
+            int global_node = node.assigned_g_nodes[local_node];
+            int perm_index  = node.local_new_labels[local_node] + offset;
+            assert(global_node >= 0 && global_node < this->G_N &&
+                    "Invalid global node index");
+            assert(perm_index >= 0 && perm_index < perm.size() &&
+                    "Permutation index out of bounds");
+            assert(perm[perm_index] == -1 &&
+                    "Permutation slot already filled - duplicate node!");
+            perm[perm_index] = global_node;
+        }
+        offset += node.assigned_g_nodes.size();
+    }
+}
+
+
+
+void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool with_etree)
 {
     assert(m_has_mesh);
     if(_use_gpu) {
@@ -123,8 +174,12 @@ void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>
     } else {
         this->_cpu_order.compute_permutation(perm);
     }
-    if(compute_etree) {
-        spdlog::info("Getting etree for Patch ordering is not supported.");
+    if(with_etree) {
+        perm.clear();
+        std::vector<int> level_numbering;
+        get_level_numbering(_cpu_order._decomposition_tree.decomposition_nodes.size(), level_numbering);
+        compute_etree(level_numbering, etree);
+        assemble_perm(level_numbering, perm);
     }
 }
 
