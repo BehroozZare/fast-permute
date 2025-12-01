@@ -15,14 +15,13 @@ ParthOrdering::~ParthOrdering()
 
 void ParthOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
 {
-    parth.setNDLevels(4);
     parth.setMatrix(G_N, Gp, Gi, 1);
 }
 
 void ParthOrdering::setOptions(const std::map<std::string, std::string>& options)
 {
-    if(options.find("binary_tree_order") != options.end()) {
-        binary_tree_order = options.at("binary_tree_order");
+    if(options.find("binary_level") != options.end()) {
+        nd_levels = std::stoi(options.at("binary_level"));
     }
 }
 
@@ -77,6 +76,7 @@ void ParthOrdering::assemble_perm(std::vector<int>& level_numbering, std::vector
 
 void ParthOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool with_etree)
 {
+    parth.setNDLevels(nd_levels);
     parth.computePermutation(perm, 1);  // 1 = post_order mode, required for correct HMD tree state
 
     //Apply mapping to the permutation

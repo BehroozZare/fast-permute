@@ -11,6 +11,7 @@
 #include <chrono>
 #include <unsupported/Eigen/SparseExtra>
 #include <iostream>
+#include <filesystem>
 
 #include "LinSysSolver.hpp"
 #include "get_factor_nnz.h"
@@ -18,12 +19,14 @@
 #include "ordering.h"
 #include "remove_diagonal.h"
 #include "parth/parth.h"
+#include "csv_utils.h"
 
 
 struct CLIArgs
 {
     std::string input_mesh;
-    std::string output_address;
+    int binary_level = 9; // It is zero-based so 9 is 10 levels
+    std::string output_csv_address;//Include absolute path with csv file name without .csv extension
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
@@ -34,10 +37,11 @@ struct CLIArgs
         CLI::App app{"Separator analysis"};
         app.add_option("-a,--ordering", ordering_type, "ordering type");
         app.add_option("-s,--solver", solver_type, "solver type");
-        app.add_option("-o,--output", output_address, "output folder name");
+        app.add_option("-o,--output", output_csv_address, "output folder name");
         app.add_option("-i,--input", input_mesh, "input mesh name");
         app.add_option("-g,--use_gpu", use_gpu, "use gpu");
         app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
+        app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
 
         try {
             app.parse(argc, argv);
@@ -72,7 +76,7 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "Loading mesh from: " << args.input_mesh << std::endl;
-    std::cout << "Output folder: " << args.output_address << std::endl;
+    std::cout << "Output folder: " << args.output_csv_address << std::endl;
 
     Eigen::MatrixXd OV;
     Eigen::MatrixXi OF;
@@ -131,6 +135,7 @@ int main(int argc, char* argv[])
     } else if (args.ordering_type == "PARTH") {
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+        ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
     } else if (args.ordering_type == "NEUTRAL"){
         spdlog::info("Using NEUTRAL ordering.");
         ordering = RXMESH_SOLVER::Ordering::create(
@@ -167,6 +172,13 @@ int main(int argc, char* argv[])
     RXMESH_SOLVER::remove_diagonal(
         OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), Gp, Gi);
 
+
+    long int ordering_init_time = -1;
+    long int ordering_time = -1;
+    long int analysis_time = -1;
+    long int factorization_time = -1;
+    long int solve_time = -1;
+    long int factor_nnz = -1;
     // Init the permuter
     if (ordering != nullptr) {
         // Provide mesh data if the ordering needs it (e.g., RXMesh ND)
@@ -179,12 +191,12 @@ int main(int argc, char* argv[])
         auto ordering_init_start = std::chrono::high_resolution_clock::now();
         ordering->init();
         auto ordering_init_end = std::chrono::high_resolution_clock::now();
-        spdlog::info("Ordering initialization time: {} ms",
-                     std::chrono::duration_cast<std::chrono::milliseconds>(
+        ordering_init_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                          ordering_init_end - ordering_init_start)
-                         .count());
+                         .count();
+        spdlog::info("Ordering initialization time: {} ms",
+                     ordering_init_time);
         auto ordering_start = std::chrono::high_resolution_clock::now();
-
         if(args.solver_type=="CUDSS") {
             ordering->compute_permutation(perm, etree, true);
         } else {
@@ -192,17 +204,19 @@ int main(int argc, char* argv[])
         }
 
         auto ordering_end = std::chrono::high_resolution_clock::now();
+        ordering_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            ordering_end - ordering_start)
+            .count();
+            
         //Check for correct perm
         if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
             spdlog::error("Permutation is not valid!");
         }
         spdlog::info("Ordering time: {} ms",
-                     std::chrono::duration_cast<std::chrono::milliseconds>(
-                         ordering_end - ordering_start)
-                         .count());
+                     ordering_time);
         assert(perm.size() == OL.rows());
 
-        int factor_nnz = RXMESH_SOLVER::get_factor_nnz(OL.outerIndexPtr(),
+        factor_nnz = RXMESH_SOLVER::get_factor_nnz(OL.outerIndexPtr(),
                                                        OL.innerIndexPtr(),
                                                        OL.valuePtr(),
                                                        OL.rows(),
@@ -226,28 +240,28 @@ int main(int argc, char* argv[])
     auto start = std::chrono::high_resolution_clock::now();
     solver->analyze_pattern(perm, etree);
     auto end = std::chrono::high_resolution_clock::now();
+    analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     spdlog::info(
         "Analysis time: {} ms",
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count());
+        analysis_time);
 
     // Factorization time
     start = std::chrono::high_resolution_clock::now();
     solver->factorize();
     end = std::chrono::high_resolution_clock::now();
+    factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     spdlog::info(
         "Factorization time: {} ms",
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count());
+        factorization_time);
 
     // Solve time
     start = std::chrono::high_resolution_clock::now();
     solver->solve(rhs, result);
     end = std::chrono::high_resolution_clock::now();
+    solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     spdlog::info(
         "Solve time: {} ms",
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count());
+        solve_time);
 
     // Compute residual
     assert(OL.rows() == OL.cols());
@@ -255,6 +269,44 @@ int main(int argc, char* argv[])
     spdlog::info("Residual: {}", residual);
     spdlog::info("Final factor/matrix NNZ ratio: {}",
                  solver->getFactorNNZ() * 1.0 / OL.nonZeros());
+
+
+    //Save data to a csv file
+    std::string csv_name = args.output_csv_address;
+    std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
+    std::vector<std::string> header;
+    header.emplace_back("mesh_name");
+    header.emplace_back("G_N");
+    header.emplace_back("G_NNZ");
+    header.emplace_back("solver_type");
+    header.emplace_back("ordering_type");
+    header.emplace_back("nd_levels");
+    header.emplace_back("patch_type");
+    header.emplace_back("factor/matrix NNZ ratio");
+    header.emplace_back("ordering_time");
+    header.emplace_back("analysis_time");
+    header.emplace_back("factorization_time");
+    header.emplace_back("solve_time");
+    header.emplace_back("residual");
+
+
+    PARTH::CSVManager runtime_csv(csv_name, "some address", header, false);
+    runtime_csv.addElementToRecord(mesh_name, "mesh_name");
+    runtime_csv.addElementToRecord(solver->N, "G_N");
+    runtime_csv.addElementToRecord(solver->NNZ, "G_NNZ");
+    runtime_csv.addElementToRecord(args.solver_type, "solver_type");
+    runtime_csv.addElementToRecord(ordering->typeStr(), "ordering_type");
+    runtime_csv.addElementToRecord(args.binary_level, "nd_levels");
+    runtime_csv.addElementToRecord(args.patch_type, "patch_type");
+    runtime_csv.addElementToRecord(factor_nnz * 1.0 / OL.nonZeros(), "factor/matrix NNZ ratio");
+    runtime_csv.addElementToRecord(ordering_time, "ordering_time");
+    runtime_csv.addElementToRecord(analysis_time, "analysis_time");
+    runtime_csv.addElementToRecord(factorization_time, "factorization_time");
+    runtime_csv.addElementToRecord(solve_time, "solve_time");
+    runtime_csv.addElementToRecord(residual, "residual");
+    runtime_csv.addRecord();
+
+
     delete solver;
     delete ordering;
     return 0;

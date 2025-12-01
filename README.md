@@ -205,7 +205,7 @@ Helper utilities for benchmarking and development:
 
 Benchmark executables:
 
-- **benchmark.cpp**: Main benchmark that:
+- **cudss_benchmark.cpp**: Main benchmark that:
   1. Loads a triangle mesh
   2. Constructs a cotangent Laplacian matrix
   3. Applies a fill-reducing ordering

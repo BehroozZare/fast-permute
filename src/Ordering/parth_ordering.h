@@ -20,9 +20,9 @@ class ParthOrdering: public Ordering
 public:
     PARTH::ParthAPI parth;
     virtual ~ParthOrdering(void);
-    std::string binary_tree_order = "post_order";//Accept level_order and post_order
 
     int patch_size = 512;
+    int nd_levels = 9;
 
     virtual DEMO_ORDERING_TYPE type() const override;
     virtual std::string typeStr() const override;
