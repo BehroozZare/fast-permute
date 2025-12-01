@@ -15,7 +15,7 @@ ParthOrdering::~ParthOrdering()
 
 void ParthOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
 {
-    parth.setNDLevels(9);
+    parth.setNDLevels(4);
     parth.setMatrix(G_N, Gp, Gi, 1);
 }
 

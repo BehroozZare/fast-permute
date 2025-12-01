@@ -23,7 +23,7 @@ class PatchOrdering: public Ordering
 private:
     std::vector<std::vector<uint32_t>> _fv;
     std::vector<std::vector<float>> _vertices;
-    int _patch_size = 512;
+    int _patch_size = 24;
     bool m_has_mesh = false;
 
     enum class PatchOrderingType {

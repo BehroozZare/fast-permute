@@ -204,6 +204,17 @@ void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std:
             spdlog::error("CUDSSSolver::cudssDataSet for user elimination tree failed with status: {}", status);
             exit(EXIT_FAILURE);
         }
+
+
+        // Compute the number of levels in the etree
+        int level = std::log2(etree.size() + 1);
+        spdlog::info("CUDSS: Number of levels in the etree: {}", level);
+        // Set the number of levels in the etree
+        status = cudssConfigSet(config, CUDSS_CONFIG_ND_NLEVELS, &level, sizeof(int));
+        if (status != CUDSS_STATUS_SUCCESS) {
+            spdlog::error("CUDSSSolver::cudssConfigSet for ND_NLEVELS failed with status: {}", status);
+            exit(EXIT_FAILURE);
+        }
         
         // Execute reordering phase (cuDSS still needs this to process user perm/etree)
         status = cudssExecute(
