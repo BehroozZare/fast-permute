@@ -103,9 +103,9 @@ void PatchOrdering::init(){
 
 
     if(_use_gpu) {
-        this->_gpu_order.init_patches(this->_num_patches, this->_g_node_to_patch);
+        this->_gpu_order.init_patches(this->_num_patches, this->_g_node_to_patch, this->_binary_level);
     } else {
-        this->_cpu_order.init_patches(this->_num_patches, this->_g_node_to_patch);
+        this->_cpu_order.init_patches(this->_num_patches, this->_g_node_to_patch, this->_binary_level);
     }
 
 
@@ -224,7 +224,9 @@ void PatchOrdering::setOptions(const std::map<std::string, std::string>& options
             _patch_size = std::stoi(options.at("patch_size"));
         }
 
-
+    if (options.find("binary_level") != options.end()) {
+        _binary_level = std::stoi(options.at("binary_level"));
+    }
 
     // if(options.find("separator_finding_method") != options.end()) {
     //     this->gpu_order.separator_finding_method = options.at("separator_finding_method");

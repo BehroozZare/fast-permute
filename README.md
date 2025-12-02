@@ -205,7 +205,7 @@ Helper utilities for benchmarking and development:
 
 Benchmark executables:
 
-- **cudss_benchmark.cpp**: Main benchmark that:
+- **cudss_benchmark/cudss_benchmark.cpp**: Main benchmark that:
   1. Loads a triangle mesh
   2. Constructs a cotangent Laplacian matrix
   3. Applies a fill-reducing ordering
@@ -213,6 +213,8 @@ Benchmark executables:
   5. Reports timing and fill-ratio metrics
 
 - **ordering_benchmark.cpp**: Ordering-focused benchmark for comparing fill-ratios across different ordering methods
+
+- **etree_analysis/etree_analysis.cpp**: Elimination tree analysis benchmark for studying tree structure properties
 
 ## Running the Benchmark Script
 

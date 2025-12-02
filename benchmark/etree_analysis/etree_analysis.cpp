@@ -20,6 +20,7 @@
 #include "remove_diagonal.h"
 #include "parth/parth.h"
 #include "csv_utils.h"
+#include "etree_analysis_utils.h"
 
 
 struct CLIArgs
@@ -87,7 +88,7 @@ int main(int argc, char* argv[])
                   << std::endl;
         return 1;
     }
-
+    std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
     // Create laplacian matrix
     Eigen::SparseMatrix<double> OL;
     igl::cotmatrix(OV, OF, OL);
@@ -135,7 +136,8 @@ int main(int argc, char* argv[])
         ordering->setOptions(
             {{"use_gpu", args.use_gpu ? "1" : "0"},
                 {"patch_type", args.patch_type},
-                {"patch_size", std::to_string(args.patch_size)}});
+                {"patch_size", std::to_string(args.patch_size)},
+                {"binary_level", std::to_string(args.binary_level)}});
     } else if (args.ordering_type == "PARTH") {
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
@@ -203,6 +205,13 @@ int main(int argc, char* argv[])
         auto ordering_start = std::chrono::high_resolution_clock::now();
         if(args.solver_type=="CUDSS") {
             ordering->compute_permutation(perm, etree, true);
+            //Make this naming to represent the ordering and the parameters
+            //Get the basic address from the output_csv_address and add the ordering and the parameters
+            std::string basic_address = args.output_csv_address.substr(0, args.output_csv_address.find_last_of("/"));
+            std::string ordering_name = ordering->typeStr();
+            std::string parameters = "patch_type=" + args.patch_type + ",patch_size=" + std::to_string(args.patch_size);
+            std::string etree_address = basic_address + "/" + mesh_name + "_" + ordering_name + "_" + parameters + ".txt";
+            RXMESH_SOLVER::save_etree_to_text(etree, etree_address);
         } else {
             ordering->compute_permutation(perm, etree, false);
         }
@@ -277,7 +286,7 @@ int main(int argc, char* argv[])
 
     //Save data to a csv file
     std::string csv_name = args.output_csv_address;
-    std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
+
     std::vector<std::string> header;
     header.emplace_back("mesh_name");
     header.emplace_back("G_N");
@@ -305,7 +314,8 @@ int main(int argc, char* argv[])
     } else {
         runtime_csv.addElementToRecord("DEFAULT", "ordering_type");
     }
-    runtime_csv.addElementToRecord(args.binary_level, "nd_levels");
+    int nd_levels = std::log2(etree.size() + 1);
+    runtime_csv.addElementToRecord(nd_levels, "nd_levels");
     runtime_csv.addElementToRecord(args.patch_type, "patch_type");
     runtime_csv.addElementToRecord(args.patch_size, "patch_size");
     runtime_csv.addElementToRecord(factor_nnz * 1.0 / OL.nonZeros(), "factor/matrix NNZ ratio");
