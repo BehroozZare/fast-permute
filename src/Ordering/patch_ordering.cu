@@ -220,6 +220,9 @@ void PatchOrdering::setOptions(const std::map<std::string, std::string>& options
             throw std::runtime_error("Invalid patch type: " + patch_type);
         }
     }
+        if (options.find("patch_size") != options.end()) {
+            _patch_size = std::stoi(options.at("patch_size"));
+        }
 
 
 

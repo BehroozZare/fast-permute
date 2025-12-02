@@ -214,6 +214,61 @@ Benchmark executables:
 
 - **ordering_benchmark.cpp**: Ordering-focused benchmark for comparing fill-ratios across different ordering methods
 
+## Running the Benchmark Script
+
+The project includes a comprehensive benchmark script that automates testing across multiple ordering algorithms and configurations.
+
+### Script Location
+
+```bash
+scripts/benchmark/cudss_ordering_benchmark.sh
+```
+
+### Configuration
+
+Before running the script, you **must** configure three variables at the top of the script:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `INPUT_ROOT` | Directory containing your `.obj` mesh files | `/path/to/meshes` |
+| `OUTPUT_CSV` | Path prefix for the output CSV file (without `.csv` extension) | `/path/to/output/results` |
+| `BENCHMARK_BIN` | Path to the compiled benchmark binary | `/path/to/cmake-build-release/benchmark/gpu_ordering_cudss_benchmark` |
+
+Edit the script to set these paths:
+
+```bash
+INPUT_ROOT="/path/to/your/mesh/directory"
+OUTPUT_CSV="/path/to/output/benchmark_results"
+BENCHMARK_BIN="/path/to/gpu_ordering/cmake-build-release/benchmark/gpu_ordering_cudss_benchmark"
+```
+
+### What the Script Benchmarks
+
+The script automatically discovers all `.obj` files in `INPUT_ROOT` and runs three categories of benchmarks:
+
+1. **DEFAULT Ordering**: Uses the solver's built-in ordering for each mesh
+
+2. **PARTH Ordering**: Tests the Parth algorithm with varying `binary_level` values:
+   - `binary_level`: 2, 4, 6, 8, 10
+
+3. **PATCH_ORDERING**: Tests patch-based ordering with all combinations of:
+   - `patch_type`: `metis_kway`, `rxmesh`
+   - `patch_size`: 64, 256, 512
+
+### Running the Benchmark
+
+```bash
+# Make the script executable (if needed)
+chmod +x scripts/benchmark/cudss_ordering_benchmark.sh
+
+# Run the benchmark
+./scripts/benchmark/cudss_ordering_benchmark.sh
+```
+
+### Output
+
+Results are appended to `${OUTPUT_CSV}.csv`, containing timing and fill-ratio metrics for each configuration tested
+
 ## Build Options
 
 CMake options for enabling/disabling features:

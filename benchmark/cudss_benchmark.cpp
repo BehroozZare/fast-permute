@@ -30,6 +30,7 @@ struct CLIArgs
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
+    int patch_size = 24;
     bool use_gpu = false;
 
     CLIArgs(int argc, char* argv[])
@@ -41,6 +42,7 @@ struct CLIArgs
         app.add_option("-i,--input", input_mesh, "input mesh name");
         app.add_option("-g,--use_gpu", use_gpu, "use gpu");
         app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
+        app.add_option("-z,--patch_size", patch_size, "patch size");
         app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
 
         try {
@@ -131,7 +133,9 @@ int main(int argc, char* argv[])
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
         ordering->setOptions(
-            {{"use_gpu", args.use_gpu ? "1" : "0"}, {"patch_type", args.patch_type}});
+            {{"use_gpu", args.use_gpu ? "1" : "0"},
+                {"patch_type", args.patch_type},
+                {"patch_size", std::to_string(args.patch_size)}});
     } else if (args.ordering_type == "PARTH") {
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
@@ -282,6 +286,7 @@ int main(int argc, char* argv[])
     header.emplace_back("ordering_type");
     header.emplace_back("nd_levels");
     header.emplace_back("patch_type");
+    header.emplace_back("patch_size");
     header.emplace_back("factor/matrix NNZ ratio");
     header.emplace_back("ordering_time");
     header.emplace_back("analysis_time");
@@ -295,9 +300,14 @@ int main(int argc, char* argv[])
     runtime_csv.addElementToRecord(solver->N, "G_N");
     runtime_csv.addElementToRecord(solver->NNZ, "G_NNZ");
     runtime_csv.addElementToRecord(args.solver_type, "solver_type");
+    if(ordering!=nullptr) {
     runtime_csv.addElementToRecord(ordering->typeStr(), "ordering_type");
+    } else {
+        runtime_csv.addElementToRecord("DEFAULT", "ordering_type");
+    }
     runtime_csv.addElementToRecord(args.binary_level, "nd_levels");
     runtime_csv.addElementToRecord(args.patch_type, "patch_type");
+    runtime_csv.addElementToRecord(args.patch_size, "patch_size");
     runtime_csv.addElementToRecord(factor_nnz * 1.0 / OL.nonZeros(), "factor/matrix NNZ ratio");
     runtime_csv.addElementToRecord(ordering_time, "ordering_time");
     runtime_csv.addElementToRecord(analysis_time, "analysis_time");
