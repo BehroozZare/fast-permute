@@ -520,7 +520,7 @@ void GPUOrdering_PATCH::decompose()
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
-        for (int l = 0; l < this->_decomposition_tree.decomposition_level; l++) {
+        for (int l = 0; l < this->_decomposition_tree.decomposition_level + 1; l++) {
             int start_level_idx = (1 << l) - 1;
             int end_level_idx   = (1 << (l + 1)) - 1;
             assert(end_level_idx < this->_decomposition_tree.get_number_of_decomposition_nodes());
@@ -556,7 +556,7 @@ void GPUOrdering_PATCH::decompose()
 
 
                 //+++++++++++++ If it is a leaf node ++++++++++++++++
-                if (l == this->_decomposition_tree.decomposition_level - 1) {
+                if (l == this->_decomposition_tree.decomposition_level) {
                     // Add all the nodes in the patches to the dofs
                     cur_decomposition_node.init_node(
                         -1,

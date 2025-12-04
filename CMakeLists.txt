@@ -207,7 +207,7 @@ target_link_libraries(rxmesh_dev_helpers PUBLIC
         CLI11::CLI11
         Parth::parth
 )
-target_link_libraries(rxmesh_dev_helpers PRIVATE RXMesh gpu_ordering_deps)
+target_link_libraries(rxmesh_dev_helpers PUBLIC gpu_ordering_deps PRIVATE RXMesh)
 
 
 # Add dev code include directories
