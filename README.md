@@ -314,13 +314,51 @@ On Windows, the library naming conventions differ from Linux. Pre-built OpenBLAS
 
 #### Option 1: Using Pre-built OpenBLAS (Recommended)
 
+**Automated Setup (PowerShell):**
+
+Run the following commands in PowerShell to automatically download and configure OpenBLAS:
+
+```powershell
+# Download and extract OpenBLAS
+$OpenBLAS_VERSION = "0.3.28"
+$OpenBLAS_URL = "https://github.com/OpenMathLib/OpenBLAS/releases/download/v${OpenBLAS_VERSION}/OpenBLAS-${OpenBLAS_VERSION}-x64.zip"
+$OpenBLAS_DIR = "C:\OpenBLAS"
+
+Invoke-WebRequest -Uri $OpenBLAS_URL -OutFile openblas.zip
+Expand-Archive -Path openblas.zip -DestinationPath $OpenBLAS_DIR -Force
+
+# Move contents from versioned subdirectory to parent (if present)
+$SubDir = Get-ChildItem -Path $OpenBLAS_DIR -Directory | Select-Object -First 1
+if ($SubDir) {
+    Move-Item -Path "$($SubDir.FullName)\*" -Destination $OpenBLAS_DIR -Force
+    Remove-Item -Path $SubDir.FullName -Force -Recurse
+}
+
+# Auto-detect library and include paths
+$OPENBLAS_LIB = (Get-ChildItem -Path $OpenBLAS_DIR -Recurse -Filter "*openblas*.lib" | Select-Object -First 1).FullName
+$OPENBLAS_INCLUDE = (Get-ChildItem -Path $OpenBLAS_DIR -Recurse -Directory -Filter "include" | Select-Object -First 1).FullName
+
+# Configure and build with Visual Studio 2022
+cmake -B build `
+    -G "Visual Studio 17 2022" `
+    -DCMAKE_BUILD_TYPE=Release `
+    -DBLAS_LIBRARIES="$OPENBLAS_LIB" `
+    -DLAPACK_LIBRARIES="$OPENBLAS_LIB" `
+    -DOPENBLAS_INCLUDE_DIR="$OPENBLAS_INCLUDE"
+
+cmake --build build --config Release --parallel
+```
+
+**Manual Setup:**
+
 1. Download pre-built OpenBLAS from [GitHub Releases](https://github.com/OpenMathLib/OpenBLAS/releases)
 2. Extract to a known location (e.g., `C:\OpenBLAS`)
 3. Configure CMake with the following variables:
 
 ```powershell
 # PowerShell
-cmake .. -DCMAKE_BUILD_TYPE=Release `
+cmake -B build -DCMAKE_BUILD_TYPE=Release `
+    -G "Visual Studio 17 2022" `
     -DBLAS_LIBRARIES="C:/OpenBLAS/libopenblas.lib" `
     -DLAPACK_LIBRARIES="C:/OpenBLAS/libopenblas.lib" `
     -DOPENBLAS_INCLUDE_DIR="C:/OpenBLAS/include"
@@ -328,7 +366,8 @@ cmake .. -DCMAKE_BUILD_TYPE=Release `
 
 ```cmd
 :: Command Prompt
-cmake .. -DCMAKE_BUILD_TYPE=Release ^
+cmake -B build -DCMAKE_BUILD_TYPE=Release ^
+    -G "Visual Studio 17 2022" ^
     -DBLAS_LIBRARIES="C:/OpenBLAS/libopenblas.lib" ^
     -DLAPACK_LIBRARIES="C:/OpenBLAS/libopenblas.lib" ^
     -DOPENBLAS_INCLUDE_DIR="C:/OpenBLAS/include"
@@ -344,14 +383,14 @@ $env:BLAS_LIBRARIES = "C:/OpenBLAS/libopenblas.lib"
 $env:LAPACK_LIBRARIES = "C:/OpenBLAS/libopenblas.lib"
 $env:OPENBLAS_INCLUDE_DIR = "C:/OpenBLAS/include"
 
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake -B build -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022"
 ```
 
 #### Option 3: Using vcpkg
 
 ```powershell
 vcpkg install openblas:x64-windows
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=[vcpkg-root]/scripts/buildsystems/vcpkg.cmake
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=[vcpkg-root]/scripts/buildsystems/vcpkg.cmake
 ```
 
 #### Windows Library Naming Notes
