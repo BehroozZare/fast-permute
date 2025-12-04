@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 project(gpu_ordering
         VERSION 0.1.0
@@ -129,32 +130,15 @@ else()
 endif()
 
 # SuiteSparse - Must be configured before Parth since Parth depends on it
+# Note: suitesparse.cmake is included at line 96 which also includes openblas.cmake
+# for cross-platform BLAS/LAPACK detection
 if (${PROJECT_NAME}_WITH_SUITESPARSE)
-    # Try to find system-installed SuiteSparse first
-    set(SUITESPARSE_INCLUDE_DIR_HINTS $ENV{SUITESPARSE_INC})
-    set(SUITESPARSE_LIBRARY_DIR_HINTS $ENV{SUITESPARSE_LIB})
-    find_package(SuiteSparse QUIET)
-
-    if(NOT SuiteSparse_FOUND)
-        # If system SuiteSparse not found, use FetchContent to build from source
-        message(STATUS "System SuiteSparse not found. Building from source...")
-        include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
-    endif()
-
     # Add SuiteSparse to the dependencies target
+    # The suitesparse.cmake recipe sets SUITESPARSE_LIBRARIES and SUITESPARSE_INCLUDE_DIRS
     target_link_libraries(gpu_ordering_deps INTERFACE ${SUITESPARSE_LIBRARIES})
     target_include_directories(gpu_ordering_deps INTERFACE ${SUITESPARSE_INCLUDE_DIRS})
     target_compile_definitions(gpu_ordering_deps INTERFACE USE_SUITESPARSE)
-
-    # Add CHOLMOD_HAS_CUDA compile definition if GPU library is available
-    if(CHOLMOD_CUDA_FOUND OR CHOLMOD_CUDA_LIBRARY)
-        target_compile_definitions(gpu_ordering_deps INTERFACE CHOLMOD_HAS_CUDA)
-        message(STATUS "CHOLMOD GPU support enabled with CHOLMOD_HAS_CUDA compile definition")
-        message(STATUS "CHOLMOD can be used in GPU mode at runtime")
-    else()
-        message(STATUS "CHOLMOD GPU library not found - CPU-only support available")
-        message(STATUS "CHOLMOD will only support CPU mode at runtime")
-    endif()
+    message(STATUS "CHOLMOD configured for CPU-only support")
 endif ()
 
 # Parth for fill-reducing orderings

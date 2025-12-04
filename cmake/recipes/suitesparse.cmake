@@ -7,20 +7,10 @@ endif()
 
 include(FetchContent)
 
-# Find CUDA Toolkit (optional for CHOLMOD GPU support)
-find_package(CUDAToolkit QUIET)
-if(CUDAToolkit_FOUND)
-    message(STATUS "Found CUDA Toolkit version ${CUDAToolkit_VERSION} at ${CUDAToolkit_BIN_DIR}")
-    message(STATUS "CHOLMOD will be built with GPU support")
-    set(ENABLE_CHOLMOD_GPU ON)
-else()
-    message(STATUS "CUDA Toolkit not found - CHOLMOD will be built CPU-only")
-    set(ENABLE_CHOLMOD_GPU OFF)
-endif()
-
-# Find BLAS and LAPACK (required by SuiteSparse)
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
+# Include OpenBLAS recipe - this provides BLAS::BLAS and LAPACK::LAPACK targets
+# It will first try to find system-installed BLAS/LAPACK, and if not found,
+# will download and build OpenBLAS from source
+include(${CMAKE_CURRENT_LIST_DIR}/openblas.cmake)
 
 # Download SuiteSparse
 FetchContent_Declare(
@@ -51,20 +41,18 @@ if(NOT suitesparse_POPULATED)
     set(CHOLMOD_MATRIXOPS OFF CACHE BOOL "Disable MatrixOps module")
     set(CHOLMOD_MODIFY OFF CACHE BOOL "Disable Modify module")
     
-    # Enable CUDA/GPU support for CHOLMOD if CUDA is available
-    if(ENABLE_CHOLMOD_GPU)
-        set(CHOLMOD_CUDA ON CACHE BOOL "Enable CUDA GPU acceleration for CHOLMOD")
-        message(STATUS "CHOLMOD GPU support enabled")
-    else()
-        set(CHOLMOD_CUDA OFF CACHE BOOL "CUDA not available - CHOLMOD GPU disabled")
-        message(STATUS "CHOLMOD GPU support disabled (no CUDA)")
-    endif()
+    # Disable CUDA/GPU support
+    set(CHOLMOD_CUDA OFF CACHE BOOL "Disable CUDA GPU acceleration for CHOLMOD")
     
     # Disable demo/test builds
     set(SUITESPARSE_DEMOS OFF CACHE BOOL "Disable demos")
     
-    # Use 64-bit integers (required for GPU support)
-    set(SUITESPARSE_USE_64BIT_BLAS ON CACHE BOOL "Use 64-bit BLAS (required for CHOLMOD GPU)")
+    # Use 64-bit integers (not on Windows where pre-built OpenBLAS is typically 32-bit)
+    if(WIN32)
+        set(SUITESPARSE_USE_64BIT_BLAS OFF CACHE BOOL "Use 64-bit BLAS" FORCE)
+    else()
+        set(SUITESPARSE_USE_64BIT_BLAS ON CACHE BOOL "Use 64-bit BLAS")
+    endif()
     
     # Disable Fortran if not needed
     set(SUITESPARSE_USE_FORTRAN OFF CACHE BOOL "Disable Fortran")
@@ -74,16 +62,8 @@ if(NOT suitesparse_POPULATED)
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "Don't build shared libraries")
     
     # Configure BLAS/LAPACK settings for SuiteSparse
-    # This ensures the lowercase BLAS/LAPACK wrapper macros are defined
     set(SUITESPARSE_USE_SYSTEM_BLAS ON CACHE BOOL "Use system BLAS")
     set(SUITESPARSE_USE_SYSTEM_LAPACK ON CACHE BOOL "Use system LAPACK")
-    set(BLA_VENDOR "Generic" CACHE STRING "BLAS vendor")
-    
-    # Configure BLAS naming convention - critical for wrapper macro definitions
-    # SuiteSparse uses these to define SUITESPARSE_BLAS_dsyrk, etc.
-    # Most modern BLAS libraries use lowercase names with underscores (Fortran convention)
-    set(BLAS_UNDERSCORE ON CACHE BOOL "BLAS names have trailing underscore")
-    set(BLAS_NO_UNDERSCORE OFF CACHE BOOL "BLAS names have no trailing underscore")
     
     # Populate the content
     FetchContent_Populate(suitesparse)
@@ -158,55 +138,8 @@ set(SUITESPARSE_INCLUDE_DIRS
 # Set library list based on what was built (static or shared)
 if(TARGET CHOLMOD_static)
     set(SUITESPARSE_LIBRARIES CHOLMOD_static AMD_static COLAMD_static CAMD_static CCOLAMD_static SuiteSparseConfig_static CACHE STRING "SuiteSparse libraries")
-    
-    # Debug: Check which CHOLMOD CUDA targets exist
-    message(STATUS "Checking for CHOLMOD CUDA targets after building SuiteSparse...")
-    
-    # Add CHOLMOD CUDA library if available
-    # Note: In SuiteSparse 7.x, CHOLMOD CUDA support might be:
-    # 1. Separate CHOLMOD_CUDA_static target (older versions)
-    # 2. Integrated into main CHOLMOD_static with CHOLMOD_HAS_CUDA defined
-    # 3. Separate GPU library linked via CUDA libraries
-    
-    if(TARGET CHOLMOD_CUDA_static)
-        list(APPEND SUITESPARSE_LIBRARIES CHOLMOD_CUDA_static)
-        set(CHOLMOD_CUDA_FOUND TRUE CACHE BOOL "CHOLMOD CUDA found" FORCE)
-        set(CHOLMOD_CUDA_LIBRARY CHOLMOD_CUDA_static CACHE STRING "CHOLMOD CUDA library" FORCE)
-        message(STATUS "✓ CHOLMOD_CUDA_static target found - GPU support available")
-    elseif(TARGET CHOLMOD_CUDA)
-        list(APPEND SUITESPARSE_LIBRARIES CHOLMOD_CUDA)
-        set(CHOLMOD_CUDA_FOUND TRUE CACHE BOOL "CHOLMOD CUDA found" FORCE)
-        set(CHOLMOD_CUDA_LIBRARY CHOLMOD_CUDA CACHE STRING "CHOLMOD CUDA library" FORCE)
-        message(STATUS "✓ CHOLMOD_CUDA target found - GPU support available")
-    elseif(ENABLE_CHOLMOD_GPU AND CUDAToolkit_FOUND)
-        # CUDA was enabled during build, so CHOLMOD should have CUDA support
-        # even if there's no separate CHOLMOD_CUDA target
-        # In newer SuiteSparse versions, CUDA support is integrated into main CHOLMOD
-        set(CHOLMOD_CUDA_FOUND TRUE CACHE BOOL "CHOLMOD built with CUDA support" FORCE)
-        set(CHOLMOD_CUDA_LIBRARY "INTEGRATED_IN_CHOLMOD" CACHE STRING "CHOLMOD CUDA integrated" FORCE)
-        message(STATUS "✓ CHOLMOD built with CUDA support integrated (no separate CHOLMOD_CUDA target)")
-        message(STATUS "  CHOLMOD_HAS_CUDA should be defined for GPU acceleration")
-    else()
-        message(STATUS "✗ CHOLMOD CUDA library not found - CPU-only support")
-        set(CHOLMOD_CUDA_FOUND FALSE CACHE BOOL "CHOLMOD CUDA not found" FORCE)
-    endif()
 else()
     set(SUITESPARSE_LIBRARIES CHOLMOD AMD COLAMD CAMD CCOLAMD SuiteSparseConfig CACHE STRING "SuiteSparse libraries")
-    
-    # Add CHOLMOD CUDA library if available (shared library case)
-    if(TARGET CHOLMOD_CUDA)
-        list(APPEND SUITESPARSE_LIBRARIES CHOLMOD_CUDA)
-        set(CHOLMOD_CUDA_FOUND TRUE CACHE BOOL "CHOLMOD CUDA found" FORCE)
-        set(CHOLMOD_CUDA_LIBRARY CHOLMOD_CUDA CACHE STRING "CHOLMOD CUDA library" FORCE)
-        message(STATUS "✓ CHOLMOD_CUDA (shared) target found - GPU support available")
-    elseif(ENABLE_CHOLMOD_GPU AND CUDAToolkit_FOUND)
-        set(CHOLMOD_CUDA_FOUND TRUE CACHE BOOL "CHOLMOD built with CUDA support" FORCE)
-        set(CHOLMOD_CUDA_LIBRARY "INTEGRATED_IN_CHOLMOD" CACHE STRING "CHOLMOD CUDA integrated" FORCE)
-        message(STATUS "✓ CHOLMOD (shared) built with CUDA support integrated")
-    else()
-        message(STATUS "✗ CHOLMOD CUDA library not found - CPU-only support")
-        set(CHOLMOD_CUDA_FOUND FALSE CACHE BOOL "CHOLMOD CUDA not found" FORCE)
-    endif()
 endif()
 
 # Set variables that FindSuiteSparse.cmake expects
@@ -229,8 +162,6 @@ if(TARGET CHOLMOD_static)
     set(CCOLAMD_LIBRARY CCOLAMD_static CACHE STRING "CCOLAMD library")
     set(CHOLMOD_LIBRARY CHOLMOD_static CACHE STRING "CHOLMOD library")
     set(SUITESPARSE_CONFIG_LIBRARY SuiteSparseConfig_static CACHE STRING "SuiteSparse_config library")
-    # Note: CHOLMOD_CUDA_LIBRARY and CHOLMOD_CUDA_FOUND are already set above (lines 171-192)
-    # No need to set them again here
 else()
     set(AMD_LIBRARY AMD CACHE STRING "AMD library")
     set(CAMD_LIBRARY CAMD CACHE STRING "CAMD library")
@@ -238,24 +169,6 @@ else()
     set(CCOLAMD_LIBRARY CCOLAMD CACHE STRING "CCOLAMD library")
     set(CHOLMOD_LIBRARY CHOLMOD CACHE STRING "CHOLMOD library")
     set(SUITESPARSE_CONFIG_LIBRARY SuiteSparseConfig CACHE STRING "SuiteSparse_config library")
-    # Note: CHOLMOD_CUDA_LIBRARY and CHOLMOD_CUDA_FOUND are already set above (lines 197-209)
-    # No need to set them again here
 endif()
 
-# Print summary of CHOLMOD GPU configuration
-message(STATUS "")
-message(STATUS "========================================")
-message(STATUS "SuiteSparse CHOLMOD Configuration Summary")
-message(STATUS "========================================")
-message(STATUS "CHOLMOD_CUDA_FOUND: ${CHOLMOD_CUDA_FOUND}")
-message(STATUS "CHOLMOD_CUDA_LIBRARY: ${CHOLMOD_CUDA_LIBRARY}")
-if(CHOLMOD_CUDA_FOUND)
-    message(STATUS "GPU Support: ENABLED")
-    message(STATUS "  - CHOLMOD can use GPU acceleration at runtime")
-    message(STATUS "  - CHOLMOD_HAS_CUDA should be defined in your code")
-else()
-    message(STATUS "GPU Support: DISABLED")
-    message(STATUS "  - CHOLMOD will run in CPU-only mode")
-endif()
-message(STATUS "========================================")
-message(STATUS "")
+message(STATUS "SuiteSparse CHOLMOD configured (CPU-only)")

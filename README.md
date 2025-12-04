@@ -282,6 +282,90 @@ CMake options for enabling/disabling features:
 -Dgpu_ordering_WITH_PROFILE=ON     # Enable profiling support (default: ON)
 ```
 
+## Cross-Platform Build Instructions
+
+The project uses CMake recipes that automatically detect and configure BLAS/LAPACK for SuiteSparse. The detection order is:
+
+1. Pre-set `BLAS_LIBRARIES`/`LAPACK_LIBRARIES` (command line override)
+2. Intel OneAPI MKL
+3. OpenBLAS (system-installed)
+4. Any system BLAS/LAPACK (e.g., Apple Accelerate on macOS)
+5. Build OpenBLAS from source (fallback)
+
+### Linux
+
+On most Linux distributions, the build should work out of the box if you have a system BLAS/LAPACK installed:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install libopenblas-dev
+
+# Fedora/RHEL
+sudo dnf install openblas-devel
+```
+
+### macOS
+
+macOS includes the Accelerate framework which provides BLAS/LAPACK. No additional setup is required.
+
+### Windows
+
+On Windows, the library naming conventions differ from Linux. Pre-built OpenBLAS binaries typically use 32-bit integers and have different file names.
+
+#### Option 1: Using Pre-built OpenBLAS (Recommended)
+
+1. Download pre-built OpenBLAS from [GitHub Releases](https://github.com/OpenMathLib/OpenBLAS/releases)
+2. Extract to a known location (e.g., `C:\OpenBLAS`)
+3. Configure CMake with the following variables:
+
+```powershell
+# PowerShell
+cmake .. -DCMAKE_BUILD_TYPE=Release `
+    -DBLAS_LIBRARIES="C:/OpenBLAS/libopenblas.lib" `
+    -DLAPACK_LIBRARIES="C:/OpenBLAS/libopenblas.lib" `
+    -DOPENBLAS_INCLUDE_DIR="C:/OpenBLAS/include"
+```
+
+```cmd
+:: Command Prompt
+cmake .. -DCMAKE_BUILD_TYPE=Release ^
+    -DBLAS_LIBRARIES="C:/OpenBLAS/libopenblas.lib" ^
+    -DLAPACK_LIBRARIES="C:/OpenBLAS/libopenblas.lib" ^
+    -DOPENBLAS_INCLUDE_DIR="C:/OpenBLAS/include"
+```
+
+#### Option 2: Using Environment Variables
+
+Set environment variables before running CMake:
+
+```powershell
+# PowerShell
+$env:BLAS_LIBRARIES = "C:/OpenBLAS/libopenblas.lib"
+$env:LAPACK_LIBRARIES = "C:/OpenBLAS/libopenblas.lib"
+$env:OPENBLAS_INCLUDE_DIR = "C:/OpenBLAS/include"
+
+cmake .. -DCMAKE_BUILD_TYPE=Release
+```
+
+#### Option 3: Using vcpkg
+
+```powershell
+vcpkg install openblas:x64-windows
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=[vcpkg-root]/scripts/buildsystems/vcpkg.cmake
+```
+
+#### Windows Library Naming Notes
+
+| Platform | BLAS Library Name | Notes |
+|----------|-------------------|-------|
+| Linux | `libopenblas.a` or `libopenblas.so` | 64-bit integers supported |
+| macOS | `libopenblas.a` or `libopenblas.dylib` | 64-bit integers supported |
+| Windows | `libopenblas.lib` | Typically uses 32-bit integers |
+
+The CMake recipes automatically handle these differences:
+- On Windows, SuiteSparse is configured with `SUITESPARSE_USE_64BIT_BLAS=OFF`
+- On Linux/macOS, SuiteSparse uses `SUITESPARSE_USE_64BIT_BLAS=ON`
+
 ## License
 
 See [LICENSE](LICENSE) file.
