@@ -480,14 +480,14 @@ void CPUOrdering_PATCH::decompose()
     }
 
     // auto omp_parallel_start = std::chrono::high_resolution_clock::now();
-    // #pragma omp parallel
+    #pragma omp parallel
     {
         int tid = omp_get_thread_num();
         for (int l = 0; l < this->_decomposition_tree.decomposition_level + 1; l++) {
             int start_level_idx = (1 << l) - 1;
             int end_level_idx   = (1 << (l + 1)) - 1;
             assert(end_level_idx <= this->_decomposition_tree.get_number_of_decomposition_nodes());
-            // #pragma omp for schedule(dynamic)
+            #pragma omp for schedule(dynamic)
             for (int tree_node_id = start_level_idx; tree_node_id < end_level_idx;
                  ++tree_node_id) {
 
