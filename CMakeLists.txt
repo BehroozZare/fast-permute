@@ -14,6 +14,9 @@ set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+set(CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+set(CUDA_SEPARABLE_COMPILATION ON)
+
 # Auto-detect CUDA Architecture
 include(${CMAKE_SOURCE_DIR}/cmake/AutoDetectCudaArch.cmake)
 
@@ -135,7 +138,18 @@ endif()
 if (${PROJECT_NAME}_WITH_SUITESPARSE)
     # Add SuiteSparse to the dependencies target
     # The suitesparse.cmake recipe sets SUITESPARSE_LIBRARIES and SUITESPARSE_INCLUDE_DIRS
-    target_link_libraries(gpu_ordering_deps INTERFACE ${SUITESPARSE_LIBRARIES})
+    if(NOT BLAS_LIBRARIES)
+        message(FATAL_ERROR "BLAS_LIBRARIES not set. Pass -DBLAS_LIBRARIES=...")
+    endif()
+    
+    target_link_libraries(gpu_ordering_deps INTERFACE 
+        ${SUITESPARSE_LIBRARIES}
+        ${BLAS_LIBRARIES}
+        ${LAPACK_LIBRARIES}
+    )
+	if(OPENBLAS_INCLUDE_DIR)
+		target_include_directories(gpu_ordering_deps INTERFACE ${OPENBLAS_INCLUDE_DIR})
+    endif()
     target_include_directories(gpu_ordering_deps INTERFACE ${SUITESPARSE_INCLUDE_DIRS})
     target_compile_definitions(gpu_ordering_deps INTERFACE USE_SUITESPARSE)
     message(STATUS "CHOLMOD configured for CPU-only support")
@@ -206,7 +220,7 @@ target_include_directories(rxmesh_dev_helpers PUBLIC
 # Enable separable compilation but DON'T resolve device symbols yet
 # Device symbols will be resolved in the final executable
 set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
+set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
 # Inherit CUDA architecture from the global settings (from AutoDetectCudaArch)
 # No need to manual copy unless necessary

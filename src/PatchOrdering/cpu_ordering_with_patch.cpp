@@ -972,7 +972,7 @@ void CPUOrdering_PATCH::step3_compute_local_permutations()
     //Compute the local permutations
     auto local_perm_start = std::chrono::high_resolution_clock::now();
     #pragma omp parallel for 
-    for (size_t i = 0; i < this->_decomposition_tree.decomposition_nodes.size(); i++) {
+    for (int i = 0; i < this->_decomposition_tree.decomposition_nodes.size(); i++) {
         std::vector<int> local_permutation;
         if (sub_graphs[i]._num_nodes == 0) continue;
         local_permute(sub_graphs[i]._num_nodes, sub_graphs[i]._Gp.data(), sub_graphs[i]._Gi.data(), local_permutation);

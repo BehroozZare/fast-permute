@@ -269,7 +269,7 @@ void CHOLMODSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, st
             spdlog::info("Using user provided permutation (GPU mode)");
             cm.nmethods           = 1;
             cm.method[0].ordering = CHOLMOD_GIVEN;
-            L                     = cholmod_l_analyze_p(A, long_user_defined_perm.data(), NULL, 0, &cm);
+            L                     = cholmod_l_analyze_p(A, (int64_t*)long_user_defined_perm.data(), NULL, 0, &cm);
         } else {
             spdlog::info("Using METIS permutation (GPU mode)");
             cm.nmethods           = 1;
