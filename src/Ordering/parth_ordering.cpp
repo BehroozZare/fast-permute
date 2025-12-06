@@ -2,6 +2,9 @@
 // Created by behrooz on 2025-09-29.
 //
 
+
+
+#ifdef USE_PARTH
 #include "parth_ordering.h"
 
 #include "ordering.h"
@@ -140,3 +143,4 @@ void ParthOrdering::computeTheStatisticsOfPatches()
 
 
 }
+#endif

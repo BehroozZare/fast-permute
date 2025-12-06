@@ -95,7 +95,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/recipes/eigen.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/libigl.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/metis.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/parth.cmake)
+
 
 # Create a dependency interface target to hold configuration
 add_library(gpu_ordering_deps INTERFACE)
@@ -189,7 +189,6 @@ target_link_libraries(rxmesh_dev_helpers PUBLIC
         spdlog::spdlog
         Eigen3::Eigen
         CLI11::CLI11
-        Parth::parth
 )
 target_link_libraries(rxmesh_dev_helpers PUBLIC gpu_ordering_deps PRIVATE RXMesh)
 

@@ -18,8 +18,8 @@
 #include "check_valid_permutation.h"
 #include "ordering.h"
 #include "remove_diagonal.h"
-#include "parth/parth.h"
 #include "csv_utils.h"
+#include "save_vector.h"
 
 
 struct CLIArgs
@@ -30,8 +30,10 @@ struct CLIArgs
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
+    std::string check_point_address = "/media/behrooz/FarazHard/Checkpoints";
     int patch_size = 24;
     bool use_gpu = false;
+    bool store_check_points = true;
 
     CLIArgs(int argc, char* argv[])
     {
@@ -44,6 +46,8 @@ struct CLIArgs
         app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
         app.add_option("-z,--patch_size", patch_size, "patch size");
         app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
+        app.add_option("-c,--store_check_points", store_check_points, "store check points");
+        app.add_option("-k,--check_point_address", check_point_address, "check point address");
 
         try {
             app.parse(argc, argv);
@@ -113,6 +117,7 @@ int main(int argc, char* argv[])
     std::vector<int>         perm;
     std::vector<int> etree;
     RXMESH_SOLVER::Ordering* ordering = nullptr;
+    std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
     if (args.ordering_type == "DEFAULT") {
         spdlog::info("Using default ordering (default for each solver).");
         ordering = nullptr;
@@ -233,8 +238,7 @@ int main(int argc, char* argv[])
         solver->ordering_name = ordering->typeStr();
     }
 
-    //Save the matrix
-    Eigen::saveMarket(OL, "/home/behrooz/Desktop/Last_Project/RXMesh-dev/output/nefertiti.mtx");
+
     solver->setMatrix(OL.outerIndexPtr(),
                       OL.innerIndexPtr(),
                       OL.valuePtr(),
@@ -278,7 +282,6 @@ int main(int argc, char* argv[])
 
     //Save data to a csv file
     std::string csv_name = args.output_csv_address;
-    std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
     std::vector<std::string> header;
     header.emplace_back("mesh_name");
     header.emplace_back("G_N");
@@ -296,7 +299,7 @@ int main(int argc, char* argv[])
     header.emplace_back("residual");
 
 
-    PARTH::CSVManager runtime_csv(csv_name, "some address", header, false);
+    RXMESH_SOLVER::CSVManager runtime_csv(csv_name, "some address", header, false);
     runtime_csv.addElementToRecord(mesh_name, "mesh_name");
     runtime_csv.addElementToRecord(solver->N, "G_N");
     runtime_csv.addElementToRecord(solver->NNZ, "G_NNZ");
@@ -318,6 +321,29 @@ int main(int argc, char* argv[])
     runtime_csv.addElementToRecord(residual, "residual");
     runtime_csv.addRecord();
 
+
+    //Save the matrix
+    if(args.store_check_points) {
+        std::string check_point_address = args.check_point_address;
+        std::string matirx_save_address = check_point_address + "/" + mesh_name + ".mtx";
+        std::string parameters = "level=" + std::to_string(args.binary_level) +
+            ",patch_type=" + args.patch_type + ",patch_size=" + std::to_string(args.patch_size) + ",ordering_time=" + std::to_string(ordering_time);
+        std::string ordering_name = "DEFAULT";
+        if (ordering != nullptr) {
+            ordering_name = ordering->typeStr();
+        }
+        std::string perm_save_address = check_point_address + "/perm_" + mesh_name + "_" + ordering_name + "_" + parameters + ".txt";
+        std::string etree_save_address = check_point_address + "/etree_" + mesh_name + "_" + ordering_name + "_" + parameters + ".txt";
+        if (ordering_name == "DEFAULT") {
+            Eigen::saveMarket(OL, matirx_save_address);
+        }
+        if (!perm.empty()) {
+            RXMESH_SOLVER::save_vector_to_file(perm, perm_save_address);
+        }
+        if (!etree.empty()) {
+            RXMESH_SOLVER::save_vector_to_file(etree, etree_save_address);
+        }
+    }
 
     delete solver;
     delete ordering;

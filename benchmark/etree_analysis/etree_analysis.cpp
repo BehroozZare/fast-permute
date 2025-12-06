@@ -18,7 +18,6 @@
 #include "check_valid_permutation.h"
 #include "ordering.h"
 #include "remove_diagonal.h"
-#include "parth/parth.h"
 #include "csv_utils.h"
 #include "etree_analysis_utils.h"
 
@@ -304,7 +303,7 @@ int main(int argc, char* argv[])
     header.emplace_back("residual");
 
 
-    PARTH::CSVManager runtime_csv(csv_name, "some address", header, false);
+    RXMESH_SOLVER::CSVManager runtime_csv(csv_name, "some address", header, false);
     runtime_csv.addElementToRecord(mesh_name, "mesh_name");
     runtime_csv.addElementToRecord(solver->N, "G_N");
     runtime_csv.addElementToRecord(solver->NNZ, "G_NNZ");

@@ -76,7 +76,7 @@ void MetisOrdering::add_record(std::string save_address, std::map<std::string, d
     header.emplace_back("separator_ratio");
     header.emplace_back("fill-ratio");
 
-    PARTH::CSVManager runtime_csv(csv_name, "some address", header,
+    RXMESH_SOLVER::CSVManager runtime_csv(csv_name, "some address", header,
                                   false);
     runtime_csv.addElementToRecord(mesh_name, "mesh_name");
     runtime_csv.addElementToRecord(G_N, "G_N");

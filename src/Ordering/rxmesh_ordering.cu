@@ -191,7 +191,7 @@ void RXMeshOrdering::add_record(std::string save_address, std::map<std::string, 
     header.emplace_back("separator_ratio");
     header.emplace_back("fill-ratio");
 
-    PARTH::CSVManager runtime_csv(csv_name, "some address", header,
+    RXMESH_SOLVER::CSVManager runtime_csv(csv_name, "some address", header,
                                   false);
     runtime_csv.addElementToRecord(mesh_name, "mesh_name");
     runtime_csv.addElementToRecord(G_N, "G_N");
@@ -204,4 +204,4 @@ void RXMeshOrdering::add_record(std::string save_address, std::map<std::string, 
     runtime_csv.addElementToRecord(extra_info.at("fill-ratio"), "fill-ratio");
     runtime_csv.addRecord();
 }
-}
+} // namespace RXMESH_SOLVER

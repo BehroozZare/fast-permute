@@ -24,8 +24,10 @@ Ordering *Ordering::create(const DEMO_ORDERING_TYPE type) {
             return new PatchOrdering();
         case DEMO_ORDERING_TYPE::NEUTRAL:
             return new NeutralOrdering();
+        #ifdef USE_PARTH
         case DEMO_ORDERING_TYPE::PARTH:
             return new ParthOrdering();
+        #endif
         default:
             std::cerr << "Unknown Ordering type" << std::endl;
             return nullptr;
