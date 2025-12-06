@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include "nvtx3/nvtx3.hpp"
+#include "nvtx3/nvToolsExt.h"
 
 // Helper class for RAII-style range marking
 class NVTXRange {
