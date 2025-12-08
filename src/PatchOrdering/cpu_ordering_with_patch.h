@@ -130,7 +130,7 @@ public:
     // std::string separator_refinement_method = "nothing";
     DecompositionTree _decomposition_tree;
     int _decomposition_max_level;
-    int _patch_size = 512;
+
     int _num_patches = -1;
     std::vector<int> _g_node_to_patch;
     int _G_n, _G_nnz;
@@ -227,5 +227,6 @@ public:
     void step4_assemble_final_permutation(std::vector<int>& perm);
 
     void compute_permutation(std::vector<int>& perm);
+    void reset();
 };
 }

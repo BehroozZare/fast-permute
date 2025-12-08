@@ -257,5 +257,6 @@ public:
     void step4_assemble_final_permutation(std::vector<int>& perm);
 
     void compute_permutation(std::vector<int>& perm);
+    void reset();
 };
 }

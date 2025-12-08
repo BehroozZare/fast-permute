@@ -107,9 +107,9 @@ int main(int argc, char* argv[])
     // Make sure the matrix is symmetric positive definite by adding to diagonal
     // The cotangent Laplacian is negative semi-definite, so we add a constant
     // to shift all eigenvalues to be positive
-    for (int i = 0; i < OL.rows(); ++i) {
-        OL.coeffRef(i, i) += 300.0;
-    }
+    spdlog::info("Adding values to the diagnoal ... ");
+    OL.diagonal().array()  += 300.0;
+    spdlog::info("The values to the diagonal are added");
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(OL.rows());
     Eigen::VectorXd result;
 
@@ -183,6 +183,7 @@ int main(int argc, char* argv[])
         OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), Gp, Gi);
 
 
+    double residual = 0;
     long int ordering_init_time = -1;
     long int ordering_time = -1;
     long int analysis_time = -1;
@@ -191,6 +192,7 @@ int main(int argc, char* argv[])
     long int factor_nnz = -1;
     // Init the permuter
     if (ordering != nullptr) {
+        spdlog::info("Start Customized Ordering ...");
         // Provide mesh data if the ordering needs it (e.g., RXMesh ND)
         if (ordering->needsMesh()) {
             // Pass raw pointers to avoid ABI issues between C++ and CUDA compilation
@@ -236,48 +238,49 @@ int main(int argc, char* argv[])
             "The ratio of factor non-zeros to matrix non-zeros given custom reordering: {}",
             (factor_nnz * 1.0 /OL.nonZeros()));
         solver->ordering_name = ordering->typeStr();
+        spdlog::info("Customize Ordering is done.");
     }
 
 
-    solver->setMatrix(OL.outerIndexPtr(),
-                      OL.innerIndexPtr(),
-                      OL.valuePtr(),
-                      OL.rows(),
-                      OL.nonZeros());
+    // solver->setMatrix(OL.outerIndexPtr(),
+    //                   OL.innerIndexPtr(),
+    //                   OL.valuePtr(),
+    //                   OL.rows(),
+    //                   OL.nonZeros());
 
-    // Symbolic analysis time
-    auto start = std::chrono::high_resolution_clock::now();
-    solver->analyze_pattern(perm, etree);
-    auto end = std::chrono::high_resolution_clock::now();
-    analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    spdlog::info(
-        "Analysis time: {} ms",
-        analysis_time);
+    // // Symbolic analysis time
+    // auto start = std::chrono::high_resolution_clock::now();
+    // solver->analyze_pattern(perm, etree);
+    // auto end = std::chrono::high_resolution_clock::now();
+    // analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // spdlog::info(
+    //     "Analysis time: {} ms",
+    //     analysis_time);
 
     // Factorization time
-    start = std::chrono::high_resolution_clock::now();
-    solver->factorize();
-    end = std::chrono::high_resolution_clock::now();
-    factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    spdlog::info(
-        "Factorization time: {} ms",
-        factorization_time);
+    // start = std::chrono::high_resolution_clock::now();
+    // solver->factorize();
+    // end = std::chrono::high_resolution_clock::now();
+    // factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // spdlog::info(
+    //     "Factorization time: {} ms",
+    //     factorization_time);
 
     // Solve time
-    start = std::chrono::high_resolution_clock::now();
-    solver->solve(rhs, result);
-    end = std::chrono::high_resolution_clock::now();
-    solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    spdlog::info(
-        "Solve time: {} ms",
-        solve_time);
+    // start = std::chrono::high_resolution_clock::now();
+    // solver->solve(rhs, result);
+    // end = std::chrono::high_resolution_clock::now();
+    // solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // spdlog::info(
+    //     "Solve time: {} ms",
+    //     solve_time);
 
-    // Compute residual
-    assert(OL.rows() == OL.cols());
-    double residual = (rhs - OL * result).norm();
-    spdlog::info("Residual: {}", residual);
-    spdlog::info("Final factor/matrix NNZ ratio: {}",
-                 solver->getFactorNNZ() * 1.0 / OL.nonZeros());
+    // // Compute residual
+    // assert(OL.rows() == OL.cols());
+    // residual = (rhs - OL * result).norm();
+    // spdlog::info("Residual: {}", residual);
+    // spdlog::info("Final factor/matrix NNZ ratio: {}",
+    //              solver->getFactorNNZ() * 1.0 / OL.nonZeros());
 
 
     //Save data to a csv file
@@ -301,8 +304,8 @@ int main(int argc, char* argv[])
 
     RXMESH_SOLVER::CSVManager runtime_csv(csv_name, "some address", header, false);
     runtime_csv.addElementToRecord(mesh_name, "mesh_name");
-    runtime_csv.addElementToRecord(solver->N, "G_N");
-    runtime_csv.addElementToRecord(solver->NNZ, "G_NNZ");
+    runtime_csv.addElementToRecord(OL.rows(), "G_N");
+    runtime_csv.addElementToRecord(OL.nonZeros(), "G_NNZ");
     runtime_csv.addElementToRecord(args.solver_type, "solver_type");
     if(ordering!=nullptr) {
     runtime_csv.addElementToRecord(ordering->typeStr(), "ordering_type");
@@ -324,6 +327,7 @@ int main(int argc, char* argv[])
 
     //Save the matrix
     if(args.store_check_points) {
+        spdlog::info("Saving checkpoints ...");
         std::string check_point_address = args.check_point_address;
         std::string matirx_save_address = check_point_address + "/" + mesh_name + ".mtx";
         std::string parameters = "level=" + std::to_string(args.binary_level) +

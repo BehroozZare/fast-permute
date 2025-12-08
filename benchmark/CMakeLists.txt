@@ -25,6 +25,21 @@ if(${PROJECT_NAME}_WITH_STRUMPACK)
     )
 endif()
 
+
+#IPC benchmark
+add_executable(${PROJECT_NAME}_ipc_benchmark ipc_benchmark/ipc_benchmark.cpp)
+
+# Configure CUDA device linking for the ipc benchmark executable
+set_property(TARGET ${PROJECT_NAME}_ipc_benchmark PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET ${PROJECT_NAME}_ipc_benchmark PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
+# Link rxmesh_dev_helpers
+target_link_libraries(${PROJECT_NAME}_ipc_benchmark PUBLIC rxmesh_dev_helpers)
+
+# add include directory for ipc benchmark
+target_include_directories(${PROJECT_NAME}_ipc_benchmark PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ipc_benchmark)
+
+
 # Ordering Benchmark executable
 add_executable(${PROJECT_NAME}_ordering_benchmark ordering_benchmark.cpp)
 

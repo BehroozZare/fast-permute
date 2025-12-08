@@ -99,6 +99,9 @@ void PatchOrdering::init(){
             false);
     } else if(_patch_ordering_type == PatchOrderingType::METIS_SEPARATOR_PATCH) {
         // TODO: Implement METIS separator patch ordering
+    } else if(_patch_ordering_type == PatchOrderingType::REUSE_PATCH) {
+        //Reuse the previous patch
+        spdlog::info("Reusing the previous patch to node mapping with size {}", this->_g_node_to_patch.size());
     }
 
 
@@ -216,6 +219,8 @@ void PatchOrdering::setOptions(const std::map<std::string, std::string>& options
             this->_patch_ordering_type = PatchOrderingType::METIS_KWAY_PATCH;
         } else if(patch_type == "metis_separator") {
             this->_patch_ordering_type = PatchOrderingType::METIS_SEPARATOR_PATCH;
+        } else if(patch_type == "reuse_patch") {
+            this->_patch_ordering_type = PatchOrderingType::REUSE_PATCH;
         } else {
             throw std::runtime_error("Invalid patch type: " + patch_type);
         }
@@ -287,5 +292,13 @@ void PatchOrdering::add_record(std::string save_address, std::map<std::string, d
 }
 
 
+void PatchOrdering::reset()
+{
+    if(_use_gpu) {
+        this->_gpu_order.reset();
+    } else {
+        this->_cpu_order.reset();
+    }
+}
 
 }

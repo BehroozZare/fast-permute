@@ -9,8 +9,7 @@
 #include <vector>
 //Return the factor's nnz using CHOLMOD analysis
 namespace RXMESH_SOLVER {
-    void remove_diagonal(int N,
+    void compress_hessian(int N,
             int* Ap, int* Ai,
-            std::vector<int>& Gp, std::vector<int>& Gi);
+            std::vector<int>& Gp, std::vector<int>& Gi, int dim);
 }
-

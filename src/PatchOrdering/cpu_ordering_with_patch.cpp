@@ -1061,5 +1061,19 @@ void CPUOrdering_PATCH::compute_permutation(std::vector<int>& perm)
     spdlog::info("Step 4 (assemble permutation) completed in {:.6f} seconds", assemble_time);
 }
 
+void CPUOrdering_PATCH::reset(){
+    this->_Gp = nullptr;
+    this->_Gi = nullptr;
+    this->_G_n = 0;
+    this->_G_nnz = 0;
+    this->_num_patches = -1;
+    this->_decomposition_tree.decomposition_level = -1;
+    this->_decomposition_tree.decomposition_nodes.clear();
+    this->_decomposition_tree.decomposition_node_offset.clear();
+    this->_decomposition_tree.is_sep.clear();
+    this->_decomposition_tree.g_node_to_tree_node.clear();
+    this->_decomposition_tree.q_node_to_tree_node.clear();
+    this->_decomposition_tree._num_patches = -1;
+}
 
 }  // namespace RXMESH_SOLVER

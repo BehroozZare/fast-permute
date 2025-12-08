@@ -1147,5 +1147,8 @@ void GPUOrdering_PATCH::compute_permutation(std::vector<int>& perm)
     spdlog::info("Step 4 (assemble permutation) completed in {:.6f} seconds", assemble_time);
 }
 
+void GPUOrdering_PATCH::reset(){
+
+}
 
 }  // namespace RXMESH_SOLVER

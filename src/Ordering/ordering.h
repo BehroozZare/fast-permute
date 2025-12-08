@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <cholmod.h>
+#include <spdlog/spdlog.h>
 
 namespace RXMESH_SOLVER {
 
@@ -62,6 +63,11 @@ public:
     virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree = false) = 0;
 
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) {};
+
+    virtual void reset() {
+        spdlog::error("Reset is not implemented for this ordering.");
+        return;
+    }
 };
 
 }  // namespace PARTH_SOLVER

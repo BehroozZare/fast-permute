@@ -30,7 +30,8 @@ private:
     enum class PatchOrderingType {
         RXMESH_PATCH,
         METIS_KWAY_PATCH,
-        METIS_SEPARATOR_PATCH
+        METIS_SEPARATOR_PATCH,
+        REUSE_PATCH,
     };
 
     bool _use_gpu = false;
@@ -73,6 +74,8 @@ public:
     virtual void setOptions(const std::map<std::string, std::string>& options) override;
 
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) override;
+
+    virtual void reset() override;
 
     double compute_separator_ratio();
 };
