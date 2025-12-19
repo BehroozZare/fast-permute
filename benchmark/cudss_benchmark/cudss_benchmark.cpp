@@ -3,7 +3,7 @@
 //
 
 
-#include <igl/cotmatrix.h>
+
 #include <igl/read_triangle_mesh.h>
 #include <spdlog/spdlog.h>
 #include <CLI/CLI.hpp>
@@ -13,6 +13,7 @@
 #include <iostream>
 #include <filesystem>
 
+#include "SPD_cot_matrix.h"
 #include "LinSysSolver.hpp"
 #include "get_factor_nnz.h"
 #include "check_valid_permutation.h"
@@ -30,7 +31,7 @@ struct CLIArgs
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
-    std::string check_point_address = "/media/behrooz/FarazHard/Checkpoints";
+    std::string check_point_address = "/media/behrooz/FarazHard/new_spd_matrices";
     int patch_size = 24;
     bool use_gpu = false;
     bool store_check_points = true;
@@ -58,17 +59,6 @@ struct CLIArgs
 };
 
 
-Eigen::SparseMatrix<double> computeSmootherMatrix(Eigen::MatrixXd& V, Eigen::MatrixXi& F)
-{
-    Eigen::SparseMatrix<double> L;
-    igl::cotmatrix(V, F, L);
-    // Make sure the matrix is semi-positive definite by adding values to the diagonal
-    L.diagonal().array() += 100;
-    return L;
-
-}
-
-
 int main(int argc, char* argv[])
 {
     // Load the mesh
@@ -92,9 +82,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // Create laplacian matrix
+    // Create SPD cotangent matrix (already positive definite with regularization)
     Eigen::SparseMatrix<double> OL;
-    igl::cotmatrix(OV, OF, OL);
+    RXMESH_SOLVER::computeSPD_cot_matrix(OV, OF, OL);
 
     // Print laplacian size and sparsity
     spdlog::info("Number of rows: {}", OL.rows());
@@ -104,12 +94,6 @@ int main(int argc, char* argv[])
         (1 - (OL.nonZeros() / static_cast<double>(OL.rows() * OL.rows()))) *
             100);
 
-    // Make sure the matrix is symmetric positive definite by adding to diagonal
-    // The cotangent Laplacian is negative semi-definite, so we add a constant
-    // to shift all eigenvalues to be positive
-    spdlog::info("Adding values to the diagnoal ... ");
-    OL.diagonal().array()  += 300.0;
-    spdlog::info("The values to the diagonal are added");
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(OL.rows());
     Eigen::VectorXd result;
 
@@ -242,45 +226,45 @@ int main(int argc, char* argv[])
     }
 
 
-    // solver->setMatrix(OL.outerIndexPtr(),
-    //                   OL.innerIndexPtr(),
-    //                   OL.valuePtr(),
-    //                   OL.rows(),
-    //                   OL.nonZeros());
+    solver->setMatrix(OL.outerIndexPtr(),
+                      OL.innerIndexPtr(),
+                      OL.valuePtr(),
+                      OL.rows(),
+                      OL.nonZeros());
 
-    // // Symbolic analysis time
-    // auto start = std::chrono::high_resolution_clock::now();
-    // solver->analyze_pattern(perm, etree);
-    // auto end = std::chrono::high_resolution_clock::now();
-    // analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    // spdlog::info(
-    //     "Analysis time: {} ms",
-    //     analysis_time);
+    // Symbolic analysis time
+    auto start = std::chrono::high_resolution_clock::now();
+    solver->analyze_pattern(perm, etree);
+    auto end = std::chrono::high_resolution_clock::now();
+    analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    spdlog::info(
+        "Analysis time: {} ms",
+        analysis_time);
 
     // Factorization time
-    // start = std::chrono::high_resolution_clock::now();
-    // solver->factorize();
-    // end = std::chrono::high_resolution_clock::now();
-    // factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    // spdlog::info(
-    //     "Factorization time: {} ms",
-    //     factorization_time);
+    start = std::chrono::high_resolution_clock::now();
+    solver->factorize();
+    end = std::chrono::high_resolution_clock::now();
+    factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    spdlog::info(
+        "Factorization time: {} ms",
+        factorization_time);
 
     // Solve time
-    // start = std::chrono::high_resolution_clock::now();
-    // solver->solve(rhs, result);
-    // end = std::chrono::high_resolution_clock::now();
-    // solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    // spdlog::info(
-    //     "Solve time: {} ms",
-    //     solve_time);
+    start = std::chrono::high_resolution_clock::now();
+    solver->solve(rhs, result);
+    end = std::chrono::high_resolution_clock::now();
+    solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    spdlog::info(
+        "Solve time: {} ms",
+        solve_time);
 
-    // // Compute residual
-    // assert(OL.rows() == OL.cols());
-    // residual = (rhs - OL * result).norm();
-    // spdlog::info("Residual: {}", residual);
-    // spdlog::info("Final factor/matrix NNZ ratio: {}",
-    //              solver->getFactorNNZ() * 1.0 / OL.nonZeros());
+    // Compute residual
+    assert(OL.rows() == OL.cols());
+    residual = (rhs - OL * result).norm();
+    spdlog::info("Residual: {}", residual);
+    spdlog::info("Final factor/matrix NNZ ratio: {}",
+                 solver->getFactorNNZ() * 1.0 / OL.nonZeros());
 
 
     //Save data to a csv file

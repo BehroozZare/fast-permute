@@ -30,8 +30,8 @@ include(${CMAKE_SOURCE_DIR}/cmake/AutoDetectCudaArch.cmake)
 # C++ compiler flags
 set(cxx_flags
         $<$<CXX_COMPILER_ID:MSVC>:-D_SCL_SECURE_NO_WARNINGS /openmp:experimental /MP /std:c++17 /bigobj>
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-Wall -m64 -fopenmp -O3 -std=c++20 -Wno-unused-function>
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-Wall -m64 -fopenmp -O0 -g3 -std=c++20 -Wno-unused-function>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-Wall -m64 -fopenmp -O3 -Wno-unused-function>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-Wall -m64 -fopenmp -O0 -g3 -Wno-unused-function>
 )
 
 # CUDA compiler flags
@@ -176,6 +176,24 @@ if(${PROJECT_NAME}_WITH_STRUMPACK)
 endif()
 
 
+# Print Eigen info for debugging
+if(TARGET Eigen3::Eigen)
+    get_target_property(EIGEN_INCLUDES Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "=== EIGEN DEBUG ===")
+    message(STATUS "Eigen3::Eigen include dirs: ${EIGEN_INCLUDES}")
+    message(STATUS "===================")
+endif()
+
+# Create a header-only INTERFACE library for libigl-dependent code
+# Header-only ensures the code is compiled in the caller's translation unit,
+# avoiding ABI issues with Eigen across library boundaries
+add_library(libigl_utils INTERFACE)
+target_link_libraries(libigl_utils INTERFACE
+        igl::core
+        Eigen3::Eigen
+)
+target_include_directories(libigl_utils INTERFACE src/utils)
+
 # Create rxmesh_dev_helpers library
 add_library(rxmesh_dev_helpers
         src/LinSysSolvers/LinSysSolver.cpp
@@ -199,6 +217,7 @@ add_library(rxmesh_dev_helpers
 
 # Link additional dependencies required by dev helpers
 target_link_libraries(rxmesh_dev_helpers PUBLIC
+        libigl_utils
         igl::core
         spdlog::spdlog
         Eigen3::Eigen
@@ -213,13 +232,14 @@ target_include_directories(rxmesh_dev_helpers PUBLIC
         src/Ordering
         src/utils
         src/PatchOrdering
+        src/utils
 )
 
 # Configure CUDA compilation for the dev helper library
 # Enable separable compilation but DON'T resolve device symbols yet
 # Device symbols will be resolved in the final executable
 set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
 
 # Inherit CUDA architecture from the global settings (from AutoDetectCudaArch)
 # No need to manual copy unless necessary

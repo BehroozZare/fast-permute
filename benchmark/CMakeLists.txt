@@ -27,7 +27,7 @@ endif()
 
 
 #IPC benchmark
-add_executable(${PROJECT_NAME}_ipc_benchmark ipc_benchmark/ipc_benchmark.cpp)
+add_executable(${PROJECT_NAME}_ipc_benchmark ipc_benchmark/ipc_benchmark.cu)
 
 # Configure CUDA device linking for the ipc benchmark executable
 set_property(TARGET ${PROJECT_NAME}_ipc_benchmark PROPERTY CUDA_SEPARABLE_COMPILATION ON)
@@ -84,7 +84,7 @@ if(${PROJECT_NAME}_WITH_STRUMPACK)
 endif()
 
 # Common compile options for all benchmarks
-foreach(tgt ${PROJECT_NAME}_cudss_benchmark ${PROJECT_NAME}_ordering_benchmark ${PROJECT_NAME}_etree_analysis)
+foreach(tgt ${PROJECT_NAME}_cudss_benchmark ${PROJECT_NAME}_ordering_benchmark ${PROJECT_NAME}_etree_analysis ${PROJECT_NAME}_ipc_benchmark)
   set_property(TARGET ${tgt} PROPERTY INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
   target_compile_options(${tgt} PUBLIC
     $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-O0;-Xptxas=-O0;-lineinfo;-Xcompiler=-O0,-g3>

@@ -4,12 +4,16 @@
 
 #include "patch_ordering.h"
 #include "csv_utils.h"
+#include <rxmesh/rxmesh_static.h>
 
 namespace RXMESH_SOLVER {
 
-    PatchOrdering::~PatchOrdering()
-{
+// Define the custom deleter - requires complete type
+void RXMeshDeleter::operator()(rxmesh::RXMeshStatic* ptr) const {
+    delete ptr;
 }
+
+PatchOrdering::~PatchOrdering() = default;
 
 void PatchOrdering::setGraph(int* Gp, int* Gi, int G_N, int NNZ)
 {
@@ -57,7 +61,7 @@ void PatchOrdering::setMesh(const double* V_data, int V_rows, int V_cols,
 void PatchOrdering::init(){
     if(_patch_ordering_type == PatchOrderingType::RXMESH_PATCH) {
         rxmesh::rx_init(0);
-        _rxmesh = std::make_unique<rxmesh::RXMeshStatic>(_fv, "", this->_patch_size);
+        _rxmesh.reset(new rxmesh::RXMeshStatic(_fv, "", this->_patch_size));
 
         spdlog::info(
             "RXMesh initialized with {} vertices, {} edges, {} faces, {} patches",
@@ -78,7 +82,7 @@ void PatchOrdering::init(){
             false);
     } else if(_patch_ordering_type == PatchOrderingType::METIS_KWAY_PATCH) {
         rxmesh::rx_init(0);
-        _rxmesh = std::make_unique<rxmesh::RXMeshStatic>(_fv, "", this->_patch_size, true);
+        _rxmesh.reset(new rxmesh::RXMeshStatic(_fv, "", this->_patch_size, true));
 
         spdlog::info(
             "RXMesh initialized with {} vertices, {} edges, {} faces, {} patches",
@@ -171,7 +175,7 @@ void PatchOrdering::assemble_perm(std::vector<int>& level_numbering, std::vector
 
 void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool with_etree)
 {
-    assert(m_has_mesh);
+    assert(!_g_node_to_patch.empty());
     if(_use_gpu) {
         this->_gpu_order.compute_permutation(perm);
     } else {

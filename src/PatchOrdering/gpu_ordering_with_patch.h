@@ -4,11 +4,11 @@
 #pragma once
 #include "Eigen/Core"
 #include "Eigen/Sparse"
-#include "rxmesh/rxmesh_static.h"
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <cuda_runtime.h>
 #include "cuda_error_handler.h"
+#include <spdlog/spdlog.h>
 
 namespace RXMESH_SOLVER {
 

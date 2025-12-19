@@ -18,6 +18,15 @@ int get_factor_nnz(int* Ap, int* Ai, double* Ax, int N, int NNZ, std::vector<int
     cholmod_sparse *A = nullptr;
     cholmod_factor *L = nullptr;
 
+#ifndef NDEBUG
+    assert(perm.size() == N);
+    std::vector<bool> visited(perm.size(), false);
+    for (int i = 0; i < perm.size(); ++i) {
+        assert(visited[perm[i]] == false);
+        visited[perm[i]] = true;
+    }
+#endif
+
     try {
         A = cholmod_allocate_sparse(N, N, NNZ, true, true, -1, CHOLMOD_REAL, &cm);
         if (A == nullptr) {

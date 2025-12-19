@@ -18,24 +18,23 @@
 #include "LinSysSolver.hpp"
 #include "get_factor_nnz.h"
 #include "check_valid_permutation.h"
-#include "cpu_ordering_with_patch.h"
-#include "remove_diagonal.h"
-#include "compress_hessian.h"
 #include "ipc_prep_benchmark.h"
 #include "csv_utils.h"
 #include "save_vector.h"
-#include <parth//parth.h>
+#include <parth/parth.h>
 #include <ordering.h>
+
+#include "patch_ordering.h"
 
 
 struct CLIArgs
 {
     int binary_level = 9; // It is zero-based so 9 is 10 levels
     std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/IPC";//Include absolute path with csv file name without .csv extension
-    std::string solver_type   = "CHOLMOD";
+    std::string solver_type   = "CUDSS";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
-    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/mat100x100t40-mat100x100t40_fall_NH_BE_interiorPoint_20251207132538";
+    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/Matrices";
     int patch_size = 24;
     bool use_gpu = false;
 
@@ -78,9 +77,10 @@ int main(int argc, char* argv[])
     //Use Parth for patch creation
     int DIM = 3;
     PARTH::ParthAPI parth;
-    std::vector<int> perm;
+    std::vector<int> parth_perm;
+    parth.setNDLevels(9);
     parth.setMatrix(base.rows(), base.outerIndexPtr(), base.innerIndexPtr(), DIM);
-    parth.computePermutation(perm);
+    parth.computePermutation(parth_perm);
 
 
     std::vector<int> node_to_patch = parth.hmd.DOF_to_HMD_node;
@@ -150,14 +150,29 @@ int main(int argc, char* argv[])
     
 
 
-    RXMESH_SOLVER::Ordering* ordering;
-    ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
+
+    RXMESH_SOLVER::Ordering* metis_ordering;
+    metis_ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
     std::vector<int> Gp_prev;
     std::vector<int> Gi_prev;
     std::vector<int> org_metis_perm;
+    Eigen::VectorXd rhs = Eigen::VectorXd::Random(base.rows());
+    Eigen::VectorXd result;
 
     for(int i = 0; i < matrix_addresses.size(); i++) {
         auto& matrix_address = matrix_addresses[i];
+        //From the name of the matrix get the frame and iteration number
+        int frame = -1;
+        int iteration = -1;
+        std::string matrix_name = std::filesystem::path(matrix_address).filename().string();
+        std::regex pattern(R"(hessian_(\d+)_(\d+)_last_IPC\.mtx)");
+        std::smatch match;
+        if(std::regex_match(matrix_name, match, pattern)){
+            frame = std::stoi(match[1].str());
+            iteration = std::stoi(match[2].str());
+        }
+        assert(frame != -1 && iteration != -1);
+        spdlog::info("Frame: {}, Iteration: {}", frame, iteration);
         PARTH::ParthAPI parth_compressor;
         Eigen::SparseMatrix<double> mat;
         Eigen::loadMarket(mat, matrix_address);
@@ -194,11 +209,10 @@ int main(int argc, char* argv[])
         }
         assert(solver != nullptr);
 
-        RXMESH_SOLVER::CPUOrdering_PATCH cpu_ordering_with_patch;
-        cpu_ordering_with_patch.setGraph(Gp_curr, Gi_curr, G_N, G_NNZ);
-        cpu_ordering_with_patch.init_patches(number_of_patches, node_to_patch, args.binary_level);
-
-        //Patch to node mapping
+        RXMESH_SOLVER::Ordering* patch_ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        patch_ordering->setGraph(Gp_curr, Gi_curr, G_N, G_NNZ);
+        reinterpret_cast<RXMESH_SOLVER::PatchOrdering*>(patch_ordering)->_g_node_to_patch = node_to_patch;
+        reinterpret_cast<RXMESH_SOLVER::PatchOrdering*>(patch_ordering)->_cpu_order.init_patches(number_of_patches, node_to_patch, args.binary_level);
 
         double residual = 0;
         long int ordering_init_time = -1;
@@ -208,38 +222,60 @@ int main(int argc, char* argv[])
         long int solve_time = -1;
         long int factor_nnz = -1;
 
+        std::vector<int> matrix_perm, matrix_etree;
         auto ordering_start = std::chrono::high_resolution_clock::now();
-        cpu_ordering_with_patch.compute_permutation(perm);
-        //Map to global permutation
-        std::vector<int> matrix_perm(perm.size() * DIM);
-        for(int i = 0; i < perm.size(); i++){
-            for(int j = 0; j < DIM; j++){
-                matrix_perm[i * DIM + j] = perm[i] * DIM + j;
+        if (args.ordering_type != "DEFAULT") {
+            std::vector<int> patch_perm, patch_etree;
+            patch_ordering->compute_permutation(patch_perm, patch_etree, true);
+            //Map to global permutation
+            matrix_perm.resize(patch_perm.size() * DIM);
+            for(int i1 = 0; i1 < patch_perm.size(); i1++){
+                for(int j = 0; j < DIM; j++){
+                    matrix_perm[i1 * DIM + j] = patch_perm[i1] * DIM + j;
+                }
             }
+            matrix_etree = patch_etree;
+            for(auto& value: matrix_etree){
+                value = value * DIM;
+            }
+            assert(matrix_perm.size() == mat.rows());
         }
+
         auto ordering_end = std::chrono::high_resolution_clock::now();
         ordering_time = std::chrono::duration_cast<std::chrono::milliseconds>(
             ordering_end - ordering_start)
             .count();
                 
         //Check for correct perm
-        if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
+        if (!RXMESH_SOLVER::check_valid_permutation(matrix_perm.data(), matrix_perm.size())) {
             spdlog::error("Permutation is not valid!");
         }
         spdlog::info("Ordering time: {} ms",
                     ordering_time);
-        assert(matrix_perm.size() == mat.rows());
 
-        factor_nnz = RXMESH_SOLVER::get_factor_nnz(mat.outerIndexPtr(),
-                                                    mat.innerIndexPtr(),
-                                                    mat.valuePtr(),
-                                                    mat.rows(),
-                                                    mat.nonZeros(),
-                                                    matrix_perm);
 
-        ordering->setGraph(Gp_curr, Gi_curr, G_N, G_NNZ);
+        if (args.ordering_type != "DEFAULT") {
+            factor_nnz = RXMESH_SOLVER::get_factor_nnz(mat.outerIndexPtr(),
+                                mat.innerIndexPtr(),
+                                mat.valuePtr(),
+                                mat.rows(),
+                                mat.nonZeros(),
+                                matrix_perm);
+
+            if (!matrix_perm .empty()) {
+                RXMESH_SOLVER::save_vector_to_file(matrix_perm, args.check_point_address + "/perm_" + std::to_string(frame) + "_" + std::to_string(iteration) + "_Ordering_time_" + std::to_string(ordering_time) + ".txt");
+            }
+            if (!matrix_etree.empty()) {
+                RXMESH_SOLVER::save_vector_to_file(matrix_etree, args.check_point_address + "/etree_" + std::to_string(frame) + "_" + std::to_string(iteration) + "_Ordering_time_" + std::to_string(ordering_time) + ".txt");
+            }
+        }
+
+
+
+
+        metis_ordering->setGraph(Gp_curr, Gi_curr, G_N, G_NNZ);
         std::vector<int> metis_etree, metis_perm;
-        ordering->compute_permutation(metis_perm, metis_etree, false);
+        metis_ordering->compute_permutation(metis_perm, metis_etree, false);
         std::vector<int> matrix_metis_perm(metis_perm.size() * DIM);
         for(int i = 0; i < metis_perm.size(); i++){
             for(int j = 0; j < DIM; j++){
@@ -270,45 +306,47 @@ int main(int argc, char* argv[])
         spdlog::info("The ratio of patching factor to metis factor is {}", (org_metis_factor_nnz * 1.0 /metis_factor_nnz));
 
 
-        // solver->setMatrix(OL.outerIndexPtr(),
-        //                   OL.innerIndexPtr(),
-        //                   OL.valuePtr(),
-        //                   OL.rows(),
-        //                   OL.nonZeros());
+        solver->setMatrix(mat.outerIndexPtr(),
+                          mat.innerIndexPtr(),
+                          mat.valuePtr(),
+                          mat.rows(),
+                          mat.nonZeros());
 
-        // // Symbolic analysis time
-        // auto start = std::chrono::high_resolution_clock::now();
-        // solver->analyze_pattern(perm, etree);
-        // auto end = std::chrono::high_resolution_clock::now();
-        // analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        // spdlog::info(
-        //     "Analysis time: {} ms",
-        //     analysis_time);
+        // Symbolic analysis time
+        auto start = std::chrono::high_resolution_clock::now();
+        solver->analyze_pattern(matrix_perm, matrix_etree);
+        auto end = std::chrono::high_resolution_clock::now();
+        analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        spdlog::info(
+            "Analysis time: {} ms",
+            analysis_time);
 
-        // Factorization time
-        // start = std::chrono::high_resolution_clock::now();
-        // solver->factorize();
-        // end = std::chrono::high_resolution_clock::now();
-        // factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        // spdlog::info(
-        //     "Factorization time: {} ms",
-        //     factorization_time);
+        //Factorization time
+        start = std::chrono::high_resolution_clock::now();
+        solver->factorize();
+        end = std::chrono::high_resolution_clock::now();
+        factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        spdlog::info(
+            "Factorization time: {} ms",
+            factorization_time);
 
-        // Solve time
-        // start = std::chrono::high_resolution_clock::now();
-        // solver->solve(rhs, result);
-        // end = std::chrono::high_resolution_clock::now();
-        // solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        // spdlog::info(
-        //     "Solve time: {} ms",
-        //     solve_time);
+        //Solve time
+        start = std::chrono::high_resolution_clock::now();
+        solver->solve(rhs, result);
+        end = std::chrono::high_resolution_clock::now();
+        solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        spdlog::info(
+            "Solve time: {} ms",
+            solve_time);
 
-        // // Compute residual
-        // assert(OL.rows() == OL.cols());
-        // residual = (rhs - OL * result).norm();
-        // spdlog::info("Residual: {}", residual);
-        // spdlog::info("Final factor/matrix NNZ ratio: {}",
-        //              solver->getFactorNNZ() * 1.0 / OL.nonZeros());
+        // Compute residual
+        assert(mat.rows() == mat.cols());
+        //Make mat full (it is lower triangular with Eigen)
+        Eigen::SparseMatrix<double> mat_full = mat.selfadjointView<Eigen::Lower>();
+        residual = (rhs - mat_full * result).norm();
+        spdlog::info("Residual: {}", residual);
+        spdlog::info("Final factor/matrix NNZ ratio: {}",
+                     solver->getFactorNNZ() * 1.0 / mat.nonZeros());
 
 
         //Save data to a csv file
@@ -346,7 +384,9 @@ int main(int argc, char* argv[])
         std::copy(Gp_curr, Gp_curr + G_N + 1, Gp_prev.begin());
         std::copy(Gi_curr, Gi_curr + G_NNZ, Gi_prev.begin());
         delete solver;
+        delete patch_ordering;
     }
-    delete ordering;
+    delete metis_ordering;
+
     return 0;
 }

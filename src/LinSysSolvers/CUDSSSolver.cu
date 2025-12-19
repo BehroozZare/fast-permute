@@ -170,14 +170,15 @@ void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std:
 {
     assert(is_allocated);
     cudssStatus_t status;
-#ifndef NDEBUG
-    int sum = 0;
-    for (auto& e: etree) {
-        sum+=e;
-    }
-    assert(sum == N);
-#endif
+
     if (user_defined_perm.size() == N && etree.size() > 0) {
+#ifndef NDEBUG
+        int sum = 0;
+        for (auto& e: etree) {
+            sum+=e;
+        }
+        assert(sum == N);
+#endif
         // REUSE MODE: Both perm and etree provided
         spdlog::info("CUDSS: Reusing user-defined permutation (size={}) and etree (size={})", 
                      N, etree.size());

@@ -20,16 +20,16 @@ echo "Found ${#MESHES[@]} meshes"
 # -----------------------------------------------------------------------------
 # Section A: DEFAULT ordering
 # -----------------------------------------------------------------------------
-# echo "=== Running DEFAULT ordering ==="
-# for mesh in "${MESHES[@]}"; do
-#     echo "Processing: $mesh"
-#     "$BENCHMARK_BIN" \
-#         -i "$mesh" \
-#         -s CUDSS \
-#         -a DEFAULT \
-#         -g 0 \
-#         -o "$OUTPUT_CSV"
-# done
+echo "=== Running DEFAULT ordering ==="
+for mesh in "${MESHES[@]}"; do
+    echo "Processing: $mesh"
+    "$BENCHMARK_BIN" \
+        -i "$mesh" \
+        -s CUDSS \
+        -a DEFAULT \
+        -g 0 \
+        -o "$OUTPUT_CSV"
+done
 
 # -----------------------------------------------------------------------------
 # Section B: PARTH ordering (binary_level: 2, 4, 6, 8, 10)
@@ -51,28 +51,28 @@ echo "Found ${#MESHES[@]} meshes"
 # -----------------------------------------------------------------------------
 # Section C: PATCH_ORDERING (patch_type × patch_size × binary_level)
 # -----------------------------------------------------------------------------
-echo "=== Running PATCH_ORDERING ==="
-PATCH_TYPES=("rxmesh")
-PATCH_SIZES=(64 512)
-BINARY_LEVELS=(4 8 10)
+# echo "=== Running PATCH_ORDERING ==="
+# PATCH_TYPES=("rxmesh")
+# PATCH_SIZES=(64 512)
+# BINARY_LEVELS=(4 8 10)
 
-for mesh in "${MESHES[@]}"; do
-    for patch_type in "${PATCH_TYPES[@]}"; do
-        for patch_size in "${PATCH_SIZES[@]}"; do
-            for binary_level in "${BINARY_LEVELS[@]}"; do
-                echo "Processing: $mesh | patch_type=$patch_type | patch_size=$patch_size | binary_level=$binary_level"
-                "$BENCHMARK_BIN" \
-                    -i "$mesh" \
-                    -s CUDSS \
-                    -a PATCH_ORDERING \
-                    -g 0 \
-                    -p "$patch_type" \
-                    -z "$patch_size" \
-                    -b "$binary_level" \
-                    -o "$OUTPUT_CSV"
-            done
-        done
-    done
-done
+# for mesh in "${MESHES[@]}"; do
+#     for patch_type in "${PATCH_TYPES[@]}"; do
+#         for patch_size in "${PATCH_SIZES[@]}"; do
+#             for binary_level in "${BINARY_LEVELS[@]}"; do
+#                 echo "Processing: $mesh | patch_type=$patch_type | patch_size=$patch_size | binary_level=$binary_level"
+#                 "$BENCHMARK_BIN" \
+#                     -i "$mesh" \
+#                     -s CUDSS \
+#                     -a PATCH_ORDERING \
+#                     -g 0 \
+#                     -p "$patch_type" \
+#                     -z "$patch_size" \
+#                     -b "$binary_level" \
+#                     -o "$OUTPUT_CSV"
+#             done
+#         done
+#     done
+# done
 
-echo "=== Benchmark complete ==="
+# echo "=== Benchmark complete ==="

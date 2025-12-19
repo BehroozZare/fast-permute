@@ -13,14 +13,22 @@
 #include "ordering.h"
 #include "gpu_ordering_with_patch.h"
 #include "cpu_ordering_with_patch.h"
-#include <rxmesh/rxmesh_static.h>
+
+// Forward declaration - RXMesh is a private dependency
+namespace rxmesh {
+class RXMeshStatic;
+}
 
 namespace RXMESH_SOLVER {
 
+// Custom deleter for RXMeshStatic - allows unique_ptr with incomplete type
+struct RXMeshDeleter {
+    void operator()(rxmesh::RXMeshStatic* ptr) const;
+};
 
 class PatchOrdering: public Ordering
 {
-private:
+public:
     std::vector<std::vector<uint32_t>> _fv;
     std::vector<std::vector<float>> _vertices;
     int _patch_size = 512;
@@ -36,7 +44,7 @@ private:
 
     bool _use_gpu = false;
     PatchOrderingType _patch_ordering_type = PatchOrderingType::RXMESH_PATCH;
-    std::unique_ptr<rxmesh::RXMeshStatic> _rxmesh;
+    std::unique_ptr<rxmesh::RXMeshStatic, RXMeshDeleter> _rxmesh;
     GPUOrdering_PATCH _gpu_order;
     CPUOrdering_PATCH _cpu_order;
     
