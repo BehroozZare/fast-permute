@@ -68,6 +68,7 @@ public:
     
     virtual void init() override;
     virtual bool needsMesh() const override;
+    virtual void getEtree(std::vector<int> &new_labels, std::vector<int> &sep_ptr) override;
 
     //Given the binary tree order, it assembles the permutation
     void assemble_perm(std::vector<int>& level_numbering, std::vector<int>& perm);

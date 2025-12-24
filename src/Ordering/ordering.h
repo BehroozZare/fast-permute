@@ -68,6 +68,8 @@ public:
         spdlog::error("Reset is not implemented for this ordering.");
         return;
     }
+
+    virtual void getEtree(std::vector<int>& new_labels, std::vector<int>& sep_ptr) {};
 };
 
 }  // namespace PARTH_SOLVER

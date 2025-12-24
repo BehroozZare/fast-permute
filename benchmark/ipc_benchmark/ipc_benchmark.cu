@@ -303,7 +303,7 @@ int main(int argc, char* argv[])
                                                     mat.rows(),
                                                     mat.nonZeros(),
                                                     org_metis_perm);
-        spdlog::info("The ratio of patching factor to metis factor is {}", (org_metis_factor_nnz * 1.0 /metis_factor_nnz));
+        spdlog::info("The ratio of lagging factor to metis factor is {}", (org_metis_factor_nnz * 1.0 /metis_factor_nnz));
 
 
         solver->setMatrix(mat.outerIndexPtr(),

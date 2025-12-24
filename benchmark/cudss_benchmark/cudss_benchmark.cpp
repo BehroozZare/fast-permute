@@ -26,13 +26,13 @@
 struct CLIArgs
 {
     std::string input_mesh;
-    int binary_level = 9; // It is zero-based so 9 is 10 levels
+    int binary_level = 7; // It is zero-based so 9 is 10 levels
     std::string output_csv_address;//Include absolute path with csv file name without .csv extension
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
     std::string check_point_address = "/media/behrooz/FarazHard/new_spd_matrices";
-    int patch_size = 24;
+    int patch_size = 512;
     bool use_gpu = false;
     bool store_check_points = true;
 

@@ -305,4 +305,22 @@ void PatchOrdering::reset()
     }
 }
 
+
+void PatchOrdering::getEtree(std::vector<int> &new_labels, std::vector<int> &sep_ptr) {
+    //Get the new labels and separator pointers
+    auto& etree = _cpu_order._decomposition_tree.decomposition_nodes;
+    int cnt = 0;
+    new_labels.resize(G_N, -1);
+    sep_ptr.resize(etree.size() + 1, 0);
+    for(int i = 0; i < etree.size(); i++){
+        auto& node = etree[i];
+        for(int j = 0; j < node.assigned_g_nodes.size(); j++){
+            new_labels[cnt] = node.assigned_g_nodes[j];
+            cnt++;
+        }
+        sep_ptr[i + 1] = cnt;
+    }
+    assert(cnt == G_N);
+    assert(sep_ptr[etree.size()] == G_N);
+}
 }

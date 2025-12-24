@@ -71,7 +71,6 @@ public:
         std::vector<int> decomposition_node_offset; // The offset of the nodes in the tree for permutation
         std::vector<char> is_sep;
         std::vector<int> g_node_to_tree_node;
-        std::vector<int> q_node_to_tree_node;
         int _num_patches = -1;
 
         void init_decomposition_tree(int num_decomposition_nodes,
@@ -84,7 +83,6 @@ public:
             this->decomposition_nodes.resize(num_decomposition_nodes);
             this->decomposition_level = decomposition_level;
             this->g_node_to_tree_node.resize(total_nodes, 0);
-            this->q_node_to_tree_node.resize(num_patches, 0);
             this->is_sep.clear();
             this->is_sep.resize(total_nodes, 0);
         }
@@ -126,7 +124,7 @@ public:
 
     QuotientGraph _quotient_graph;
 
-    std::string local_permute_method = "amd";
+    std::string local_permute_method = "metis";
     // std::string separator_refinement_method = "nothing";
     DecompositionTree _decomposition_tree;
     int _decomposition_max_level;
@@ -151,7 +149,8 @@ public:
     //This function updates the q_node_to_tree_node map for the current decomposition node
     //The left and right q nodes are mark as tree_node_idx * 2 + 1 and tree_node_idx * 2 + 2 respectively
     void two_way_Q_partition(int tree_node_idx,///<[in] The index of the current decomposition node
-        std::vector<int>& assigned_g_nodes///<[in] Assigned G nodes for current decomposition
+        std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
+        std::vector<int>& where///<[out] a vector with the size of assigned_g_node
     );
   
     void compute_bipartition(
@@ -165,6 +164,7 @@ public:
 
     void find_separator_superset(
         std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
+        std::vector<int>& map,///<[in] a mapping from nodes to their partition -> unassigned nodes get -1 as parition id
         std::vector<int>& separator_superset///<[out] The superset of separator nodes
     );
 
@@ -175,16 +175,25 @@ public:
         std::vector<int>& separator_superset///<[in] The separator superset
         );
 
+    //Refine separator using METIS FM-based node refinement
+    //Performs balance pass + refinement pass similar to METIS separator refinement
+    void refine_separator_metis(
+        int tree_node_idx,///<[in] The tree decomposition node
+        std::vector<int>& assigned_g_nodes,///<[in] All nodes in current decomposition level
+        std::vector<int>& separator_g_nodes,///<[in/out] The separator nodes to refine
+        std::vector<int>& where///<[out] The where array
+        );
+
     //Given a subset of nodes (filtered nodes are marked with -1), partition the graph into three parts: left, right, and separator
     void three_way_G_partition(int tree_node_idx,///<[in] The index of the current decomposition node
         std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
-        std::vector<int>& separator_g_nodes///<[out] The separator nodes
+        std::vector<int>& where///<[out] the partition assignment where = 2 is separator, 0, and 1 is left and right
     );
 
     void decompose();
 
     void compute_local_quotient_graph(
-        int tree_node_idx,///<[in] The index of the current decomposition node
+        std::vector<int>& assigned_g_node,///<[in] The index of the current decomposition node
         int& local_Q_n,
         std::vector<int>& local_Qp,
         std::vector<int>& local_Qi,

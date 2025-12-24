@@ -83,8 +83,23 @@ if(${PROJECT_NAME}_WITH_STRUMPACK)
     )
 endif()
 
+
+# Parth Patch Comparison Benchmark executable
+add_executable(${PROJECT_NAME}_parth_patch_comparison parth_patch_comparison/parth_patch_comparison.cu)
+
+# Configure CUDA device linking for the parth patch comparison executable
+set_property(TARGET ${PROJECT_NAME}_parth_patch_comparison PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET ${PROJECT_NAME}_parth_patch_comparison PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
+# Add include directory for parth patch comparison headers
+target_include_directories(${PROJECT_NAME}_parth_patch_comparison PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/parth_patch_comparison)
+target_include_directories(${PROJECT_NAME}_parth_patch_comparison PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/parth_patch_comparison/utils)
+
+# Link rxmesh_dev_helpers and polyscope
+target_link_libraries(${PROJECT_NAME}_parth_patch_comparison PUBLIC rxmesh_dev_helpers polyscope)
+
 # Common compile options for all benchmarks
-foreach(tgt ${PROJECT_NAME}_cudss_benchmark ${PROJECT_NAME}_ordering_benchmark ${PROJECT_NAME}_etree_analysis ${PROJECT_NAME}_ipc_benchmark)
+foreach(tgt ${PROJECT_NAME}_cudss_benchmark ${PROJECT_NAME}_ordering_benchmark ${PROJECT_NAME}_etree_analysis ${PROJECT_NAME}_ipc_benchmark ${PROJECT_NAME}_parth_patch_comparison)
   set_property(TARGET ${tgt} PROPERTY INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
   target_compile_options(${tgt} PUBLIC
     $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-O0;-Xptxas=-O0;-lineinfo;-Xcompiler=-O0,-g3>

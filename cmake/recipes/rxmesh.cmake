@@ -25,7 +25,7 @@ set(RX_BUILD_APPS OFF CACHE BOOL "Build RXMesh applications" FORCE)
 set(RX_WITH_DEV OFF CACHE BOOL "Add DEV folder to build" FORCE)
 set(RX_USE_POLYSCOPE OFF CACHE BOOL "Enable Ployscope for visualization" FORCE)
 # Enable CUDSS support if available/needed
-set(RX_USE_CUDSS ON CACHE BOOL "Use cuDSS" FORCE)
+set(RX_USE_CUDSS OFF CACHE BOOL "Use cuDSS" FORCE)
 
 # Make RXMesh available
 FetchContent_MakeAvailable(rxmesh)

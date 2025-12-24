@@ -8,6 +8,9 @@
 #include <chrono>
 #include <unordered_set>
 #include "cpu_ordering_with_patch.h"
+
+#include <set>
+
 #include "min_vertex_cover_bipartite.h"
 #include "spdlog/spdlog.h"
 
@@ -103,7 +106,7 @@ void CPUOrdering_PATCH::local_permute(int G_n, int* Gp, int* Gi,
 }
 
 void CPUOrdering_PATCH::compute_local_quotient_graph(
-    int tree_node_idx,///<[in] The index of the current decomposition node
+    std::vector<int>& assigned_g_node,///<[in] The index of the current decomposition node
     int& local_Q_n,
     std::vector<int>& local_Qp,
     std::vector<int>& local_Qi,
@@ -118,19 +121,25 @@ void CPUOrdering_PATCH::compute_local_quotient_graph(
     q_local_to_global_map.clear();
     q_local_to_global_map.reserve(this->_num_patches);
     std::vector<int> global_q_to_local_map(this->_num_patches, -1);
-    for(int q_node = 0; q_node < this->_quotient_graph._Q_n; q_node++) {
-        if(this->_decomposition_tree.q_node_to_tree_node[q_node] == tree_node_idx){
-            q_local_to_global_map.push_back(q_node);
-            global_q_to_local_map[q_node] = q_local_to_global_map.size() - 1;
-        }
+    std::set<int> label_set;
+    for(auto& g_node: assigned_g_node) {
+        label_set.insert(this->_g_node_to_patch[g_node]);
     }
-
+    q_local_to_global_map.resize(label_set.size());
+    int cnt = 0;
+    for (auto& q: label_set) {
+        q_local_to_global_map[cnt] = q;
+        cnt++;
+    }
+    for (int q = 0; q < q_local_to_global_map.size(); q++) {
+        global_q_to_local_map[q_local_to_global_map[q]] = q;
+    }
     //Create the local Q
     local_Q_n = q_local_to_global_map.size();
     local_Qp.resize(local_Q_n + 1, 0);
     local_Qi.reserve(this->_quotient_graph._Qp[this->_quotient_graph._Q_n]);
     local_Q_node_weights.resize(q_local_to_global_map.size(), 0);
-    int cnt = 0;
+    cnt = 0;
     for(size_t local_q = 0; local_q < q_local_to_global_map.size(); local_q++) {
         int global_q = q_local_to_global_map[local_q];
         local_Q_node_weights[local_q] = this->_quotient_graph._Q_node_weights[global_q];
@@ -203,7 +212,8 @@ void CPUOrdering_PATCH::compute_bipartition(
 
 void CPUOrdering_PATCH::two_way_Q_partition(
     int tree_node_idx,///<[in] The index of the current decomposition node
-    std::vector<int>& assigned_g_nodes///<[in] Assigned G nodes for current decomposition
+    std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
+    std::vector<int>& where///<[out] a vector with the size of assigned_g_node
 ){
     //Compute local quotient graph
     std::vector<int> two_way_q_partition_map;
@@ -213,7 +223,7 @@ void CPUOrdering_PATCH::two_way_Q_partition(
         std::vector<int> local_Qi;
         std::vector<int> local_Q_node_to_global_Q_node;
         std::vector<int> local_Q_node_weights;
-        compute_local_quotient_graph(tree_node_idx,
+        compute_local_quotient_graph(assigned_g_nodes,
             local_Q_n,
             local_Qp,
             local_Qi,
@@ -223,17 +233,26 @@ void CPUOrdering_PATCH::two_way_Q_partition(
         compute_bipartition(local_Q_n, local_Qp.data(), local_Qi.data(), local_Q_node_weights, two_way_q_partition_map);
 
         //Converting the q map to node map
-        for(size_t i = 0; i < local_Q_node_to_global_Q_node.size(); i++) {
-            int q_global_node = local_Q_node_to_global_Q_node[i];
-            //Assign the q to left and right nodes
-            this->_decomposition_tree.q_node_to_tree_node[q_global_node] = tree_node_idx * 2 + two_way_q_partition_map[i] + 1;
+        where.resize(assigned_g_nodes.size());
+        std::vector<int> global_q_node_to_local(_quotient_graph._Q_n, -1);
+        for (int i = 0; i < local_Q_node_to_global_Q_node.size(); i++) {
+            global_q_node_to_local[local_Q_node_to_global_Q_node[i]] = i;
+        }
+
+        for(size_t i = 0; i < assigned_g_nodes.size(); i++) {
+            int g_node = assigned_g_nodes[i];
+            int q_node = _g_node_to_patch[g_node];
+            int q_local = global_q_node_to_local[q_node];
+            where[i] = two_way_q_partition_map[q_local];
+            assert(where[i] == 0 || where[i] == 1);
         }
     } else {
         compute_bipartition(_quotient_graph._Q_n, _quotient_graph._Qp.data(), _quotient_graph._Qi.data(), _quotient_graph._Q_node_weights, two_way_q_partition_map);
-        //Converting the q map to node map
-        for(int i = 0; i < _quotient_graph._Q_n; i++) {
-            //Assign the q to left and right nodes
-            this->_decomposition_tree.q_node_to_tree_node[i] = tree_node_idx * 2 + two_way_q_partition_map[i] + 1;
+        where.resize(assigned_g_nodes.size());
+        for (int i = 0; i <assigned_g_nodes.size(); i++) {
+            int g_node = assigned_g_nodes[i];
+            int q_node = _g_node_to_patch[g_node];
+            where[i] = two_way_q_partition_map[q_node];
         }
     }
 
@@ -247,24 +266,20 @@ double CPUOrdering_PATCH::compute_separator_ratio()
 
 void CPUOrdering_PATCH::find_separator_superset(
     std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
+    std::vector<int>& map,///<[in] a map from all the nodes to regions (unassigned nodes are mapped to -1)
     std::vector<int>& separator_superset///<[out] The superset of separator nodes
 )
 {
 
-    auto get_partition_id = [&](int g_node_id) -> int {
-        int q_node_id = this->_g_node_to_patch[g_node_id];
-        return this->_decomposition_tree.q_node_to_tree_node[q_node_id];
-    };
-
     separator_superset.clear();
     for(int g_node : assigned_g_nodes) {
         assert(g_node < this->_G_n);
-        int partition_id = get_partition_id(g_node);
+        int partition_id = map[g_node];
+        assert(partition_id != -1);
         for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; ++nbr_ptr) {
             int nbr_id = this->_Gi[nbr_ptr];
-            assert(nbr_id < _decomposition_tree.is_sep.size());
-            if(this->_decomposition_tree.is_sep[nbr_id] == 1) continue;
-            int nbr_partition_id = get_partition_id(nbr_id);
+            int nbr_partition_id = map[nbr_id];
+            if (nbr_partition_id == -1) continue;
             if(partition_id == nbr_partition_id) continue;
             separator_superset.push_back(g_node);
             break;
@@ -280,145 +295,231 @@ void CPUOrdering_PATCH::find_separator_superset(
     #endif
 }
 
-void CPUOrdering_PATCH::refine_bipartate_separator(
-    int parent_node_id,
-    std::vector<int>& separator_superset)
+// void CPUOrdering_PATCH::refine_bipartate_separator(
+//     int parent_node_id,
+//     std::vector<int>& sep_where,
+//     std::vector<int>& separator_superset)
+// {
+//     // The boundary nodes to be used for extracting bipartite graph
+//     if (separator_superset.empty()) {
+//         return;
+//     }
+//     // Extract the bipartite graph from the separator nodes
+//     // Overall flow:
+//     // Step 1: Extract the bipartite graph from the separator nodes
+//     // Step 2: Use the min_vertex_cover_bipartite to compute the max matching
+//     // and thus min vertex cover Step 4: Update the separator with min vertex
+//     // cover
+//
+//     //Step 1: Extract the bipartite graph from the separator nodes
+//     // mapping from separator nodes to local nodes
+//     std::map<int, int> separator_node_to_local_node;
+//     for (size_t i = 0; i < separator_superset.size(); i++) {
+//         separator_node_to_local_node[separator_superset[i]] = i;
+//     }
+//
+//     auto get_tree_id = [&](int g_node) -> int {
+//         int partition_id = this->_g_node_to_patch[g_node];
+//         int tree_node_id = this->_decomposition_tree.q_node_to_tree_node[partition_id];
+//         return tree_node_id;
+//     };
+//
+//     // Extract the bipartite graph
+//     std::vector<int> bipart_p(separator_superset.size() + 1, 0);
+//     std::vector<int> bipart_i;
+//     int bipartition_nnz = 0;
+//     for (int i = 0; i < separator_superset.size(); i++) {
+//         int g_node = separator_superset[i];
+//         assert(!this->_decomposition_tree.is_separator(g_node));
+//         int part_id = sep_where[i];
+//         for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; nbr_ptr++) {
+//             int nbr_id = this->_Gi[nbr_ptr];
+//             //Not in the separator set
+//             if(separator_node_to_local_node.find(nbr_id) == separator_node_to_local_node.end()) continue;
+//             //They should not be in the same partition
+//             int nbr_part_id =
+//             if (g_node_tree_id == nbr_node_tree_id) continue;
+//             int bipart_nbr_id = separator_node_to_local_node[nbr_id];
+//             // triplets.emplace_back(separator_node_to_local_node[g_node], separator_node_to_local_node[nbr_id], 1);
+//             // triplets.emplace_back(separator_node_to_local_node[nbr_id], separator_node_to_local_node[g_node], 1);
+//             bipart_i.push_back(bipart_nbr_id);
+//             bipartition_nnz++;
+//         }
+//         bipart_p[bipart_node_id + 1] = bipartition_nnz;
+//     }
+//
+//
+//     //=========== Step : assign bipartition for max match
+//     std::vector<int> local_graph_to_partition(separator_superset.size(), -1);
+//     for(size_t i = 0; i < separator_superset.size(); i++) {
+//         int tree_node_id = get_tree_id(separator_superset[i]);
+//         if (parent_node_id * 2 + 1 == tree_node_id) {
+//             local_graph_to_partition[i] = 0;
+//         } else {
+//             local_graph_to_partition[i] = 1;
+//             assert(parent_node_id * 2 + 2 == tree_node_id);
+//         }
+//     }
+//
+// #ifdef DEBUG
+//     //Check for symmetric
+//     for (int i = 0; i < separator_superset.size(); i++) {
+//         for (int j_ptr = bipart_p[i]; j_ptr < bipart_p[i + 1]; ++j_ptr) {
+//             int j = bipart_i[j_ptr];
+//             // Check if edge (j, i) exists
+//             bool found_reverse_edge = false;
+//             for (int i_ptr = bipart_p[j]; i_ptr < bipart_p[j + 1]; ++i_ptr) {
+//                 if (bipart_i[i_ptr] == i) {
+//                     found_reverse_edge = true;
+//                     break;
+//                 }
+//             }
+//             if (!found_reverse_edge) {
+//                 spdlog::error("The matrix is not symmetric: edge ({}, {}) exists but ({}, {}) does not", i, j, j, i);
+//                 assert(false);
+//             }
+//         }
+//     }
+//
+//
+//     //Check for bipartite
+//     for (int node = 0; node < separator_superset.size(); node++) {
+//         for (int nbr_ptr = bipart_p[node];
+//              nbr_ptr < bipart_p[node + 1];
+//              ++nbr_ptr) {
+//             int nbr_id = bipart_i[nbr_ptr];
+//             int partition_id = local_graph_to_partition[node];
+//             int nbr_partition_id = local_graph_to_partition[nbr_id];
+//             if (partition_id == nbr_partition_id) {
+//                 spdlog::error("The graph is not bipartite");
+//                 assert(false);
+//             }
+//         }
+//     }
+// #endif
+//
+//
+//     RXMESH_SOLVER::MinVertexCoverBipartite solver(
+//         separator_superset.size(),
+//         bipart_p.data(),
+//         bipart_i.data(),
+//         local_graph_to_partition);
+//     std::vector<int> min_vertex_cover = solver.compute_min_vertex_cover();
+//     //=========== Step 4: Update the separator nodes ============
+//     int initial_separator_size = separator_superset.size();
+//     std::vector<int> tmp = separator_superset;
+//     separator_superset.clear();
+//     //Converting the local min_vertex_cover to global one
+//     for (size_t i = 0; i < min_vertex_cover.size(); i++) {
+//         separator_superset.push_back(tmp[min_vertex_cover[i]]);
+//     }
+//     int final_separator_size = separator_superset.size();
+// #ifdef DEBUG
+//     spdlog::info("Bipartite graph refinement reduced separator from {} to {}",
+//                  initial_separator_size,
+//                  final_separator_size);
+//     //Check whether the separator nodes are repetitive or not
+//     std::vector<bool> visited(_G_n, false);
+//     for (int i = 0; i < separator_superset.size(); i++) {
+//         assert(visited[i] == false);
+//         visited[i] = true;
+//     }
+// #endif
+// }
+//
+
+void CPUOrdering_PATCH::refine_separator_metis(
+    int tree_node_idx,
+    std::vector<int>& assigned_g_nodes,
+    std::vector<int>& separator_g_nodes,
+    std::vector<int>& where)
 {
-    // The boundary nodes to be used for extracting bipartite graph
-    if (separator_superset.empty()) {
-        return;
-    }
-    // Extract the bipartite graph from the separator nodes
-    // Overall flow:
-    // Step 1: Extract the bipartite graph from the separator nodes
-    // Step 2: Use the min_vertex_cover_bipartite to compute the max matching
-    // and thus min vertex cover Step 4: Update the separator with min vertex
-    // cover
+    #ifndef NDEBUG
+    spdlog::info("METIS refinement: separator size before refinement: {}", separator_g_nodes.size());
+    #endif
+    if (separator_g_nodes.empty()) return;
+    
+    int local_nvtxs = assigned_g_nodes.size();
+    if (local_nvtxs == 0) return;
 
-#ifdef DEBUG
-    //Make sure that there is only two partitions
-    std::unordered_set<int> partition_unique_ids;
-    for(int i = 0; i < separator_superset.size(); i++) {
-        int partition_id = this->_g_node_to_patch[separator_superset[i]];
-        int tree_node_id = this->_decomposition_tree.q_node_to_tree_node[partition_id];
-        partition_unique_ids.insert(tree_node_id);
-    }
-    assert(partition_unique_ids.size() == 2 && "There should be only two partitions");
-#endif
-
-    //Step 1: Extract the bipartite graph from the separator nodes
-    // mapping from separator nodes to local nodes
-    std::map<int, int> separator_node_to_local_node;
-    for (size_t i = 0; i < separator_superset.size(); i++) {
-        separator_node_to_local_node[separator_superset[i]] = i;
+    // 1. Build global-to-local mapping for all involved nodes
+    std::vector<int> global_to_local(this->_G_n, -1);
+    std::vector<int> local_to_global(local_nvtxs);
+    for (int i = 0; i < local_nvtxs; i++) {
+        int g_node = assigned_g_nodes[i];
+        global_to_local[g_node] = i;
+        local_to_global[i] = g_node;
     }
 
-    auto get_tree_id = [&](int g_node) -> int {
-        int partition_id = this->_g_node_to_patch[g_node];
-        int tree_node_id = this->_decomposition_tree.q_node_to_tree_node[partition_id];
-        return tree_node_id;
-    };
+    // Mark separator superset nodes
+    std::vector<char> is_sepsuper(local_nvtxs, 0);
+    for(size_t i = 0; i < separator_g_nodes.size(); i++) {
+        int g_node = separator_g_nodes[i];
+        int local_node = global_to_local[g_node];
+        is_sepsuper[local_node] = 1;
+    }
+    separator_g_nodes.clear();
 
-    // Extract the bipartite graph
-    std::vector<int> bipart_p(separator_superset.size() + 1, 0);
-    std::vector<int> bipart_i;
-    int bipartition_nnz = 0;
-    for (auto& g_node : separator_superset) {
-        assert(!this->_decomposition_tree.is_separator(g_node));
-        int g_node_tree_id = get_tree_id(g_node);
-        int bipart_node_id = separator_node_to_local_node[g_node];
+    // 2. Build local CSR graph - count degrees first
+    std::vector<idx_t> local_xadj(assigned_g_nodes.size() + 1, 0);
+    for (int i = 0; i < assigned_g_nodes.size(); i++) {
+        int g_node = assigned_g_nodes[i];
         for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; nbr_ptr++) {
             int nbr_id = this->_Gi[nbr_ptr];
-            //Not in the separator set
-            if(separator_node_to_local_node.find(nbr_id) == separator_node_to_local_node.end()) continue;
-            //They should not be in the same partition
-            int nbr_node_tree_id = get_tree_id(nbr_id);
-            if (g_node_tree_id == nbr_node_tree_id) continue;
-            int bipart_nbr_id = separator_node_to_local_node[nbr_id];
-            // triplets.emplace_back(separator_node_to_local_node[g_node], separator_node_to_local_node[nbr_id], 1);
-            // triplets.emplace_back(separator_node_to_local_node[nbr_id], separator_node_to_local_node[g_node], 1);
-            bipart_i.push_back(bipart_nbr_id);
-            bipartition_nnz++;
-        }
-        bipart_p[bipart_node_id + 1] = bipartition_nnz;
-    }
-
-
-    //=========== Step : assign bipartition for max match
-    std::vector<int> local_graph_to_partition(separator_superset.size(), -1);
-    for(size_t i = 0; i < separator_superset.size(); i++) {
-        int tree_node_id = get_tree_id(separator_superset[i]);
-        if (parent_node_id * 2 + 1 == tree_node_id) {
-            local_graph_to_partition[i] = 0;
-        } else {
-            local_graph_to_partition[i] = 1;
-            assert(parent_node_id * 2 + 2 == tree_node_id);
-        }
-    }
-
-#ifdef DEBUG
-    //Check for symmetric
-    for (int i = 0; i < separator_superset.size(); i++) {
-        for (int j_ptr = bipart_p[i]; j_ptr < bipart_p[i + 1]; ++j_ptr) {
-            int j = bipart_i[j_ptr];
-            // Check if edge (j, i) exists
-            bool found_reverse_edge = false;
-            for (int i_ptr = bipart_p[j]; i_ptr < bipart_p[j + 1]; ++i_ptr) {
-                if (bipart_i[i_ptr] == i) {
-                    found_reverse_edge = true;
-                    break;
-                }
-            }
-            if (!found_reverse_edge) {
-                spdlog::error("The matrix is not symmetric: edge ({}, {}) exists but ({}, {}) does not", i, j, j, i);
-                assert(false);
+            if (global_to_local[nbr_id] != -1) {
+                local_xadj[i + 1]++;
             }
         }
     }
 
+    // Prefix sum to get row pointers
+    for (int i = 0; i < assigned_g_nodes.size(); i++) {
+        local_xadj[i + 1] += local_xadj[i];
+    }
 
-    //Check for bipartite
-    for (int node = 0; node < separator_superset.size(); node++) {
-        for (int nbr_ptr = bipart_p[node];
-             nbr_ptr < bipart_p[node + 1];
-             ++nbr_ptr) {
-            int nbr_id = bipart_i[nbr_ptr];
-            int partition_id = local_graph_to_partition[node];
-            int nbr_partition_id = local_graph_to_partition[nbr_id];
-            if (partition_id == nbr_partition_id) {
-                spdlog::error("The graph is not bipartite");
-                assert(false);
+    // Allocate and fill adjacency array
+    idx_t total_edges = local_xadj[assigned_g_nodes.size()];
+    std::vector<idx_t> local_adjncy(total_edges);
+    std::vector<idx_t> write_pos(local_xadj.begin(), local_xadj.end() - 1);
+
+    for (int i = 0; i < local_nvtxs; i++) {
+        int g_node = local_to_global[i];
+        for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; nbr_ptr++) {
+            int nbr_id = this->_Gi[nbr_ptr];
+            int local_nbr = global_to_local[nbr_id];
+            if (local_nbr != -1) {
+                local_adjncy[write_pos[i]++] = local_nbr;
             }
         }
     }
-#endif
 
+    // 3. Initialize where array from bipartition + separator
+    // where: 0 = left partition, 1 = right partition, 2 = separator
+    where.resize(local_nvtxs, 0);
+    for (int i = 0; i < local_nvtxs; i++) {
+        int g_node = local_to_global[i];
+        if (is_sepsuper[i] == 1) {
+            where[i] = 2;  // Separator
+        }
+    }
 
-    RXMESH_SOLVER::MinVertexCoverBipartite solver(
-        separator_superset.size(),
-        bipart_p.data(),
-        bipart_i.data(),
-        local_graph_to_partition);
-    std::vector<int> min_vertex_cover = solver.compute_min_vertex_cover();
-    //=========== Step 4: Update the separator nodes ============
-    int initial_separator_size = separator_superset.size();
-    std::vector<int> tmp = separator_superset;
-    separator_superset.clear();
-    //Converting the local min_vertex_cover to global one
-    for (size_t i = 0; i < min_vertex_cover.size(); i++) {
-        separator_superset.push_back(tmp[min_vertex_cover[i]]);
+    // 4. All vertices can move freely during refinement
+    std::vector<idx_t> hmarker(local_nvtxs, -1);
+    real_t ubfactor = 1.03;  // 3% imbalance tolerance
+
+    // 5. Call METIS refinement
+    METIS_NodeRefine(local_nvtxs, local_xadj.data(), nullptr,
+                     local_adjncy.data(), where.data(),
+                     hmarker.data(), ubfactor);
+
+#ifndef NDEBUG
+    int total = 0;
+    for (int i = 0; i < where.size(); i++) {
+        if (where[i] == 2) {
+            total++;
+        }
     }
-    int final_separator_size = separator_superset.size();
-#ifdef DEBUG
-    spdlog::info("Bipartite graph refinement reduced separator from {} to {}",
-                 initial_separator_size,
-                 final_separator_size);
-    //Check whether the separator nodes are repetitive or not
-    std::vector<bool> visited(_G_n, false);
-    for (int i = 0; i < separator_superset.size(); i++) {
-        assert(visited[i] == false);
-        visited[i] = true;
-    }
+    spdlog::info("METIS refinement: separator size after refinement: {}", total);
 #endif
 }
 
@@ -426,11 +527,75 @@ void CPUOrdering_PATCH::refine_bipartate_separator(
 void CPUOrdering_PATCH::three_way_G_partition(
     int tree_node_idx,
     std::vector<int>& assigned_g_nodes,
-    std::vector<int>& separator_g_nodes)
+    std::vector<int>& where)
 {
+    std::vector<int> separator_g_nodes;
+    std::vector<int> parition_id(this->_G_n, -1);
+    for (int i = 0; i < assigned_g_nodes.size(); i++) {
+        parition_id[assigned_g_nodes[i]] = where[i];
+    }
+    find_separator_superset(assigned_g_nodes, parition_id, separator_g_nodes);
 
-    find_separator_superset(assigned_g_nodes, separator_g_nodes);
-    refine_bipartate_separator(tree_node_idx, separator_g_nodes);
+    #ifdef DEBUG
+    auto check_valid_separator = [&](std::vector<int>& map) -> bool {
+        std::vector<char> check_separator(this->_G_n, 0);
+        std::vector<int> l_to_g(assigned_g_nodes.size(), -1);
+        std::vector<int> g_to_l(_G_n, -1);
+        for (int i = 0; i < assigned_g_nodes.size(); i++) {
+            l_to_g[i] = assigned_g_nodes[i];
+            g_to_l[assigned_g_nodes[i]] = i;
+        }
+    
+        for(int i = 0; i < assigned_g_nodes.size(); i++) {
+            int map_id = map[i];
+            int g_node = assigned_g_nodes[i];
+            if (map_id == 2) continue;
+            for(int j = this->_Gp[g_node]; j < this->_Gp[g_node + 1]; j++) {
+                int nbr = this->_Gi[j];
+                if (g_to_l[nbr] == -1) continue;
+                int nbr_map_id = map[g_to_l[nbr]];
+                if (nbr_map_id == 2) continue;
+                //If the nbr is in the same part, continue
+                if(map_id == nbr_map_id) continue;
+                //If the nbr is not in the separator, return false
+                if(check_separator[nbr] == 0)
+                    return false;
+            }
+        }
+        return true;
+    };
+    std::vector<int> map(assigned_g_nodes.size(), -1);
+    std::vector<int> check(_G_n, 0);
+    for (auto& sep: separator_g_nodes) {
+        check[sep] = 1;
+    }
+    for(int i = 0; i < assigned_g_nodes.size(); i++) {
+        int g_node = assigned_g_nodes[i];
+        int map_id = where[i];
+        if (check[g_node] == 1) {
+            map[i] = 2;
+        } else if(map_id == tree_node_idx * 2 + 1) {
+            map[i] = 0;
+        } else if(map_id == tree_node_idx * 2 + 2) {
+            map[i] = 1;
+        }
+    }
+    bool is_valid = check_valid_separator(map);
+    assert(is_valid && "The separator is not valid before refinement");
+    #endif
+
+    if (separator_g_nodes.empty()) {
+        return;
+    }
+
+
+    // METIS-based separator refinement (balance + refine)
+    refine_separator_metis(tree_node_idx, assigned_g_nodes, separator_g_nodes, where);
+    #ifdef DEBUG
+    is_valid = check_valid_separator(where);
+    assert(is_valid && "The separator is not valid");
+    #endif
+    // refine_bipartate_separator(tree_node_idx, separator_g_nodes);
 }
 
 
@@ -543,15 +708,24 @@ void CPUOrdering_PATCH::decompose()
 
                 // Step 1: Compute two equal size partitions from the assigned dofs
                 // auto two_way_start = std::chrono::high_resolution_clock::now();
+                std::vector<int> where;
                 this->two_way_Q_partition(tree_node_id,
-                    assigned_g_nodes);
+                    assigned_g_nodes,
+                    where);
 
                 // Step 2: Find the separator nodes of the two partitions
+
                 std::vector<int> separator_g_nodes;
                 auto three_way_start = std::chrono::high_resolution_clock::now();
-                this->three_way_G_partition(tree_node_id, assigned_g_nodes, separator_g_nodes);
+                this->three_way_G_partition(tree_node_id, assigned_g_nodes, where);
                 auto three_way_end = std::chrono::high_resolution_clock::now();
                 auto three_way_duration = std::chrono::duration_cast<std::chrono::milliseconds>(three_way_end - three_way_start).count();
+                assert(where.size() == assigned_g_nodes.size());
+                for (int i = 0; i < where.size(); i++) {
+                    if (where[i] == 2) {
+                        separator_g_nodes.emplace_back(assigned_g_nodes[i]);
+                    }
+                }
                 this->_decomposition_tree.assign_nodes_to_tree(separator_g_nodes, tree_node_id);
                 
                 // spdlog::info("two_way_Q_partition time: {} ms", two_way_duration);
@@ -562,15 +736,14 @@ void CPUOrdering_PATCH::decompose()
                 left_assigned_g_nodes.reserve(assigned_g_nodes.size());
                 right_assigned_g_nodes.reserve(assigned_g_nodes.size());
                 for(size_t i = 0; i < assigned_g_nodes.size(); i++) {
-                    int g_node = assigned_g_nodes[i];
-                    int q_node = this->_g_node_to_patch[g_node];
-                    if(this->_decomposition_tree.is_separator(g_node)) continue;
-                    int q_partition = this->_decomposition_tree.q_node_to_tree_node[q_node];
-                    if(q_partition == tree_node_id * 2 + 1) {
-                        left_assigned_g_nodes.push_back(g_node);
+                    if (where[i] == 2) continue;
+                    if (where[i] == 0){
+                        left_assigned_g_nodes.push_back(assigned_g_nodes[i]);
+                    } else if (where[i] == 1){
+                        right_assigned_g_nodes.push_back(assigned_g_nodes[i]);
                     } else {
-                        right_assigned_g_nodes.push_back(g_node);
-                        assert(q_partition == tree_node_id * 2 + 2);
+                        spdlog::info("The where is invalid");
+                        assert(false);
                     }
                 }
                 //Compress
@@ -971,7 +1144,7 @@ void CPUOrdering_PATCH::step3_compute_local_permutations()
 
     //Compute the local permutations
     auto local_perm_start = std::chrono::high_resolution_clock::now();
-    #pragma omp parallel for 
+    // #pragma omp parallel for
     for (int i = 0; i < this->_decomposition_tree.decomposition_nodes.size(); i++) {
         std::vector<int> local_permutation;
         if (sub_graphs[i]._num_nodes == 0) continue;
@@ -1072,7 +1245,6 @@ void CPUOrdering_PATCH::reset(){
     this->_decomposition_tree.decomposition_node_offset.clear();
     this->_decomposition_tree.is_sep.clear();
     this->_decomposition_tree.g_node_to_tree_node.clear();
-    this->_decomposition_tree.q_node_to_tree_node.clear();
     this->_decomposition_tree._num_patches = -1;
 }
 
