@@ -34,7 +34,7 @@ public:
     int _patch_size = 512;
     int _binary_level = 9;
     bool m_has_mesh = false;
-
+    float _patching_time;
     enum class PatchOrderingType {
         RXMESH_PATCH,
         METIS_KWAY_PATCH,
@@ -85,6 +85,8 @@ public:
     virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) override;
 
     virtual void reset() override;
+
+    virtual void getStatistics(std::map<std::string, double>& stat) override;
 
     double compute_separator_ratio();
 };

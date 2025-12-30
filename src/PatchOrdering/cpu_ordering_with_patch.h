@@ -124,7 +124,7 @@ public:
 
     QuotientGraph _quotient_graph;
 
-    std::string local_permute_method = "metis";
+    std::string local_permute_method = "amd";
     // std::string separator_refinement_method = "nothing";
     DecompositionTree _decomposition_tree;
     int _decomposition_max_level;

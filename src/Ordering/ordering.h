@@ -70,6 +70,7 @@ public:
     }
 
     virtual void getEtree(std::vector<int>& new_labels, std::vector<int>& sep_ptr) {};
+    virtual void getStatistics(std::map<std::string, double>& stat) {};
 };
 
 }  // namespace PARTH_SOLVER

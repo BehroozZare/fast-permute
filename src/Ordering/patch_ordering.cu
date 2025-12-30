@@ -59,10 +59,35 @@ void PatchOrdering::setMesh(const double* V_data, int V_rows, int V_cols,
 }
 
 void PatchOrdering::init(){
-    if(_patch_ordering_type == PatchOrderingType::RXMESH_PATCH) {
+    spdlog::info("Initializing Patches for {} binary level", this->_binary_level);
+    int number_of_leaves_in_etree = (1 << (this->_binary_level));
+    spdlog::info("Number of leaves in the etree: {}", number_of_leaves_in_etree);
+    int number_of_patches = 2 * number_of_leaves_in_etree;
+    this->_patch_size = G_N / number_of_patches;
+    spdlog::info(" First estimation Number of patches: {} with patch size {}", number_of_patches, _patch_size);
+    //Round to nearest power of 2
+    size_t power = std::ceil(std::log2(this->_patch_size));
+    this->_patch_size = 1 << power;
+    //Make the upperbound to 512
+    if (this->_patch_size > 512) {
+        this->_patch_size = 512;
+    }
+    if (this->_patch_size < 128) {
+        _patch_size = 128;
+    }
+    spdlog::info("Final Patch size: {}", this->_patch_size);
+
+    if (_patch_size == 1) {
+        _num_patches = G_N;
+        _g_node_to_patch.resize(G_N);
+        for (int i = 0; i < G_N; ++i) {
+            _g_node_to_patch[i] = i;
+        }
+        spdlog::info("Skip patching because patch size is 1.");
+    } else if(_patch_ordering_type == PatchOrderingType::RXMESH_PATCH) {
         rxmesh::rx_init(0);
         _rxmesh.reset(new rxmesh::RXMeshStatic(_fv, "", this->_patch_size));
-
+        _patching_time = _rxmesh->get_patching_time();
         spdlog::info(
             "RXMesh initialized with {} vertices, {} edges, {} faces, {} patches",
             _rxmesh->get_num_vertices(),
@@ -83,7 +108,7 @@ void PatchOrdering::init(){
     } else if(_patch_ordering_type == PatchOrderingType::METIS_KWAY_PATCH) {
         rxmesh::rx_init(0);
         _rxmesh.reset(new rxmesh::RXMeshStatic(_fv, "", this->_patch_size, true));
-
+        _patching_time = _rxmesh->get_patching_time();
         spdlog::info(
             "RXMesh initialized with {} vertices, {} edges, {} faces, {} patches",
             _rxmesh->get_num_vertices(),
@@ -107,7 +132,7 @@ void PatchOrdering::init(){
         //Reuse the previous patch
         spdlog::info("Reusing the previous patch to node mapping with size {}", this->_g_node_to_patch.size());
     }
-
+    spdlog::info("Patching time is {}.", _patching_time);
 
     if(_use_gpu) {
         this->_gpu_order.init_patches(this->_num_patches, this->_g_node_to_patch, this->_binary_level);
@@ -322,5 +347,12 @@ void PatchOrdering::getEtree(std::vector<int> &new_labels, std::vector<int> &sep
     }
     assert(cnt == G_N);
     assert(sep_ptr[etree.size()] == G_N);
+}
+
+void PatchOrdering::getStatistics(std::map<std::string, double>& stat) {
+    stat["patch_size"] = this->_patch_size;
+    stat["binary_level"] = this->_binary_level;
+    stat["patching_time"] = this->_patching_time;
+    stat["num_patches"] = this->_num_patches;
 }
 }

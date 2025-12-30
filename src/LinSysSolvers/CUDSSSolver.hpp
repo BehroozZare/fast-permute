@@ -35,6 +35,7 @@ public:                // Access specifier
     CUDSSSolver();
 
     void setMatrix(int *p, int *i, double *x, int A_N, int NNZ) override;
+    void innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree) override;
     void innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree) override;
     void innerFactorize(void) override;
     void innerSolve(Eigen::VectorXd &rhs, Eigen::VectorXd &result) override;

@@ -47,6 +47,14 @@ class LinSysSolver
                            int               A_N,
                            int               NNZ) = 0;
 
+
+    virtual void ordering(std::vector<int>& perm, std::vector<int>&etree)
+    {
+        innerOrdering(perm, etree);
+    }
+
+    virtual void innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree) {return;}
+
     virtual void analyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
     {
         innerAnalyze_pattern(user_defined_perm, etree);

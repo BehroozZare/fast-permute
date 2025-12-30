@@ -825,10 +825,13 @@ void CPUOrdering_PATCH::init_patches(int num_patches,std::vector<int> & g_node_t
     this->_num_patches = num_patches;
     this->_g_node_to_patch = g_node_to_patch;
 
-    int total_number_of_decomposition_nodes = (1 << (num_levels + 1)) - 1;
+    int reasonable_num_levels = std::log2(num_patches);
+    int final_num_levels = std::min(num_levels, reasonable_num_levels);
+    spdlog::info("The final number of levels is: {}", final_num_levels);
+    int total_number_of_decomposition_nodes = (1 << (final_num_levels + 1)) - 1;
     this->_decomposition_tree.init_decomposition_tree(
         total_number_of_decomposition_nodes,
-        num_levels, this->_G_n, this->_num_patches);
+        final_num_levels, this->_G_n, this->_num_patches);
 }
 
 
@@ -1144,7 +1147,7 @@ void CPUOrdering_PATCH::step3_compute_local_permutations()
 
     //Compute the local permutations
     auto local_perm_start = std::chrono::high_resolution_clock::now();
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < this->_decomposition_tree.decomposition_nodes.size(); i++) {
         std::vector<int> local_permutation;
         if (sub_graphs[i]._num_nodes == 0) continue;

@@ -124,11 +124,14 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     // Log matrix properties for debugging
     spdlog::info("CUDSSSolver::setMatrix - N={}, NNZ={}", A_N, NNZ);
     
+    // Check if reallocation is needed BEFORE updating member variables
+    bool needs_realloc = !is_allocated || this->NNZ != NNZ || this->N != A_N;
+    
     this->N   = A_N;
     this->NNZ = NNZ;
 
     // Allocating memory
-    if (!is_allocated || this->NNZ != NNZ || this->N != A_N) {
+    if (needs_realloc) {
         clean_sparse_matrix_mem();
         CUDA_ERROR(
             cudaMalloc((void**)&rowOffsets_dev, (A_N + 1) * sizeof(int)));
@@ -166,7 +169,7 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     }
 }
 
-void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     assert(is_allocated);
     cudssStatus_t status;
@@ -180,10 +183,10 @@ void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std:
         assert(sum == N);
 #endif
         // REUSE MODE: Both perm and etree provided
-        spdlog::info("CUDSS: Reusing user-defined permutation (size={}) and etree (size={})", 
+        spdlog::info("CUDSS: Reusing user-defined permutation (size={}) and etree (size={})",
                      N, etree.size());
 
-        
+
         // Set user permutation (device pointer)
         status = cudssDataSet(handle,
                               data,
@@ -194,7 +197,7 @@ void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std:
             spdlog::error("CUDSSSolver::cudssDataSet for user permutation failed with status: {}", status);
             exit(EXIT_FAILURE);
         }
-        
+
         // Set user elimination tree (HOST pointer per CUDSS docs)
         status = cudssDataSet(handle,
                               data,
@@ -216,7 +219,7 @@ void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std:
             spdlog::error("CUDSSSolver::cudssConfigSet for ND_NLEVELS failed with status: {}", status);
             exit(EXIT_FAILURE);
         }
-        
+
         // Execute reordering phase (cuDSS still needs this to process user perm/etree)
         status = cudssExecute(
             handle,
@@ -230,37 +233,43 @@ void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std:
             spdlog::error("CUDSSSolver::reordering failed with status: {}", status);
             exit(EXIT_FAILURE);
         }
-        
-        // Execute symbolic factorization
-        status = cudssExecute(
-            handle,
-            CUDSS_PHASE_SYMBOLIC_FACTORIZATION,
-            config,
-            data,
-            A,
-            nullptr,
-            nullptr);
-        if (status != CUDSS_STATUS_SUCCESS) {
-            spdlog::error("CUDSSSolver::symbolic factorization failed with status: {}", status);
-            exit(EXIT_FAILURE);
-        }
-    } else {
+    }  else {
         // DEFAULT MODE: Let CUDSS handle reordering
         spdlog::info("CUDSS: Using default reordering");
-        
+
         // Run both reordering and symbolic factorization
         status = cudssExecute(
             handle,
-            CUDSS_PHASE_REORDERING | CUDSS_PHASE_SYMBOLIC_FACTORIZATION,
+            CUDSS_PHASE_REORDERING,
             config,
             data,
             A,
             nullptr,
             nullptr);
         if (status != CUDSS_STATUS_SUCCESS) {
-            spdlog::error("CUDSSSolver::symbolic analysis failed with status: {}", status);
+            spdlog::error("CUDSSSolver::reordering failed with status: {}", status);
             exit(EXIT_FAILURE);
         }
+    }
+}
+
+
+void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+{
+    assert(is_allocated);
+    cudssStatus_t status;
+    // Execute symbolic factorization
+    status = cudssExecute(
+        handle,
+        CUDSS_PHASE_SYMBOLIC_FACTORIZATION,
+        config,
+        data,
+        A,
+        nullptr,
+        nullptr);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::symbolic factorization failed with status: {}", status);
+        exit(EXIT_FAILURE);
     }
 }
 
