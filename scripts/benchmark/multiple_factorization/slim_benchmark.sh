@@ -8,7 +8,7 @@
 # Configuration
 # -----------------------------------------------------------------------------
 SOLVER="CUDSS"  # Options: CUDSS, MKL
-INPUT_DIR="/media/behrooz/FarazHard/Last_Project/slim_benchmark/armadillo_cut_high"
+INPUT_DIR="/media/behrooz/FarazHard/Last_Project/slim_benchmark/hand_high_res"
 OUTPUT_CSV=""/home/behrooz/Desktop/Last_Project/gpu_ordering/output/SLIM/slim""
 BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/multiple_factorization/gpu_ordering_multi_slim_benchmark"
 DIM=2

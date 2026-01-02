@@ -10,6 +10,8 @@
 #include <CLI/CLI.hpp>
 #include <Eigen/Core>
 #include <chrono>
+#include <cmath>
+#include <map>
 #include <unsupported/Eigen/SparseExtra>
 #include <iostream>
 #include <filesystem>
@@ -143,11 +145,9 @@ int main(int argc, char* argv[])
     // ========== Compute ordering (once, outside the loop) ==========
     std::vector<int> matrix_perm;
     std::vector<int> matrix_etree;
-    long int ordering_time = 0;
-    long int ordering_init_time = 0;
+    long int ordering_time = -1;
+    long int ordering_init_time = -1;
     RXMESH_SOLVER::Ordering* ordering = nullptr;
-
-    auto ordering_start = std::chrono::high_resolution_clock::now();
 
     if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING.");
@@ -172,17 +172,23 @@ int main(int argc, char* argv[])
         }
         ordering->setGraph(Gp, Gi, G_N, G_NNZ);
         
-        // Initialize ordering
-        auto init_start = std::chrono::high_resolution_clock::now();
+        // Initialize ordering (timed separately like laplace_benchmark)
+        auto ordering_init_start = std::chrono::high_resolution_clock::now();
         ordering->init();
-        auto init_end = std::chrono::high_resolution_clock::now();
-        ordering_init_time = std::chrono::duration_cast<std::chrono::milliseconds>(init_end - init_start).count();
+        auto ordering_init_end = std::chrono::high_resolution_clock::now();
+        ordering_init_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            ordering_init_end - ordering_init_start).count();
         spdlog::info("Ordering initialization time: {} ms", ordering_init_time);
 
-        // Compute permutation on compressed graph
+        // Compute permutation on compressed graph (timed separately)
         std::vector<int> compressed_perm, compressed_etree;
         bool compute_etree = (args.solver_type == "CUDSS");
+        auto ordering_start = std::chrono::high_resolution_clock::now();
         ordering->compute_permutation(compressed_perm, compressed_etree, compute_etree);
+        auto ordering_end = std::chrono::high_resolution_clock::now();
+        ordering_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            ordering_end - ordering_start).count();
+        spdlog::info("Ordering time: {} ms", ordering_time);
 
         // Expand permutation to full matrix size
         matrix_perm.resize(compressed_perm.size() * args.DIM);
@@ -207,10 +213,23 @@ int main(int argc, char* argv[])
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
         ordering->setGraph(Gp, Gi, G_N, G_NNZ);
 
-        // Compute permutation on compressed graph
+        // Initialize ordering (timed separately like laplace_benchmark)
+        auto ordering_init_start = std::chrono::high_resolution_clock::now();
+        ordering->init();
+        auto ordering_init_end = std::chrono::high_resolution_clock::now();
+        ordering_init_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            ordering_init_end - ordering_init_start).count();
+        spdlog::info("Ordering initialization time: {} ms", ordering_init_time);
+
+        // Compute permutation on compressed graph (timed separately)
         std::vector<int> compressed_perm, compressed_etree;
         bool compute_etree = (args.solver_type == "CUDSS");
+        auto ordering_start = std::chrono::high_resolution_clock::now();
         ordering->compute_permutation(compressed_perm, compressed_etree, compute_etree);
+        auto ordering_end = std::chrono::high_resolution_clock::now();
+        ordering_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            ordering_end - ordering_start).count();
+        spdlog::info("Ordering time: {} ms", ordering_time);
 
         // Expand permutation to full matrix size
         matrix_perm.resize(compressed_perm.size() * args.DIM);
@@ -236,10 +255,6 @@ int main(int argc, char* argv[])
         delete solver;
         return 1;
     }
-
-    auto ordering_end = std::chrono::high_resolution_clock::now();
-    ordering_time = std::chrono::duration_cast<std::chrono::milliseconds>(ordering_end - ordering_start).count();
-    spdlog::info("Ordering computation time: {} ms", ordering_time);
 
     // Validate permutation if using custom ordering
     if (!matrix_perm.empty()) {
@@ -318,8 +333,14 @@ int main(int argc, char* argv[])
     header.emplace_back("solver_type");
     header.emplace_back("G_N");
     header.emplace_back("G_NNZ");
+    header.emplace_back("nd_levels");
+    header.emplace_back("patch_type");
+    header.emplace_back("patch_size");
+    header.emplace_back("patch_time");
     header.emplace_back("factor/matrix NNZ ratio");
+    header.emplace_back("ordering_init_time");
     header.emplace_back("ordering_time");
+    header.emplace_back("ordering_integration_time");
     header.emplace_back("analysis_time");
     header.emplace_back("factorization_time");
     header.emplace_back("solve_time");
@@ -393,12 +414,32 @@ int main(int argc, char* argv[])
         runtime_csv.addElementToRecord(args.solver_type, "solver_type");
         runtime_csv.addElementToRecord(hessian.rows(), "G_N");
         runtime_csv.addElementToRecord(hessian.nonZeros(), "G_NNZ");
+        
+        // ND levels from etree
+        int nd_levels = matrix_etree.empty() ? 0 : static_cast<int>(std::log2(matrix_etree.size() + 1));
+        runtime_csv.addElementToRecord(nd_levels, "nd_levels");
+        
+        // Patch statistics (similar to laplace_benchmark)
+        if (args.ordering_type == "PATCH_ORDERING" && ordering != nullptr) {
+            std::map<std::string, double> stat;
+            ordering->getStatistics(stat);
+            runtime_csv.addElementToRecord(args.patch_type, "patch_type");
+            runtime_csv.addElementToRecord(stat["patch_size"], "patch_size");
+            runtime_csv.addElementToRecord(stat["patching_time"], "patch_time");
+        } else {
+            runtime_csv.addElementToRecord("", "patch_type");
+            runtime_csv.addElementToRecord(0, "patch_size");
+            runtime_csv.addElementToRecord(0, "patch_time");
+        }
+        
         if (factor_nnz > 0) {
             runtime_csv.addElementToRecord(factor_nnz * 1.0 / hessian.nonZeros(), "factor/matrix NNZ ratio");
         } else {
             runtime_csv.addElementToRecord(solver->getFactorNNZ() * 1.0 / hessian.nonZeros(), "factor/matrix NNZ ratio");
         }
+        runtime_csv.addElementToRecord(ordering_init_time, "ordering_init_time");
         runtime_csv.addElementToRecord(ordering_time, "ordering_time");
+        runtime_csv.addElementToRecord(ordering_integration_time, "ordering_integration_time");
         runtime_csv.addElementToRecord(analysis_time, "analysis_time");
         runtime_csv.addElementToRecord(factorization_time, "factorization_time");
         runtime_csv.addElementToRecord(solve_time, "solve_time");
