@@ -88,6 +88,8 @@ public:
 
     virtual void getStatistics(std::map<std::string, double>& stat) override;
 
+    virtual void getPatch(std::vector<int> &patches) override;
+
     double compute_separator_ratio();
 };
 

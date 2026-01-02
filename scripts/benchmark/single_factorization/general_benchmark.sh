@@ -7,7 +7,6 @@ l#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-SOLVER="MKL"  # Options: CUDSS, MKL
 INPUT_ROOT="/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/final"
 OUTPUT_CSV="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/laplace_full_benchmark"
 BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/single_factorization/gpu_ordering_laplace_benchmark"
@@ -26,28 +25,28 @@ for mesh in "${MESHES[@]}"; do
     echo "Processing: $mesh"
     "$BENCHMARK_BIN" \
         -i "$mesh" \
-        -s "$SOLVER" \
+        -s CUDSS \
         -a DEFAULT \
         -g 0 \
         -o "$OUTPUT_CSV"
 done
 
-# # -----------------------------------------------------------------------------
-# # Section B: PARTH ordering (binary_level: ()8, 10)
-# # -----------------------------------------------------------------------------
-#  echo "=== Running PARTH ordering ==="
-#  for mesh in "${MESHES[@]}"; do
-#      for binary_level in 8 10; do
-#          echo "Processing: $mesh | binary_level=$binary_level"
-#          "$BENCHMARK_BIN" \
-#              -i "$mesh" \
-#              -s "$SOLVER" \
-#              -a PARTH \
-#              -g 0 \
-#              -b "$binary_level" \
-#              -o "$OUTPUT_CSV"
-#      done
-#  done
+# -----------------------------------------------------------------------------
+# Section B: PARTH ordering (binary_level: ()8, 10)
+# -----------------------------------------------------------------------------
+ echo "=== Running PARTH ordering ==="
+ for mesh in "${MESHES[@]}"; do
+     for binary_level in 8 10; do
+         echo "Processing: $mesh | binary_level=$binary_level"
+         "$BENCHMARK_BIN" \
+             -i "$mesh" \
+             -s CUDSS \
+             -a PARTH \
+             -g 0 \
+             -b "$binary_level" \
+             -o "$OUTPUT_CSV"
+     done
+ done
 
 # -----------------------------------------------------------------------------
 # Section C: PATCH_ORDERING (patch_type × patch_size × binary_level)
@@ -64,7 +63,7 @@ done
                  echo "Processing: $mesh | patch_type=$patch_type | patch_size=$patch_size | binary_level=$binary_level"
                  "$BENCHMARK_BIN" \
                      -i "$mesh" \
-                     -s "$SOLVER" \
+                     -s CUDSS \
                      -a PATCH_ORDERING \
                      -g 0 \
                      -p "$patch_type" \

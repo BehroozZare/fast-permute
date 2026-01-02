@@ -14,6 +14,10 @@
 #include <STRUMPACKSolver.hpp>
 #endif
 
+#ifdef USE_MKL
+#include "MKLSolver.hpp"
+#endif
+
 
 namespace RXMESH_SOLVER {
 
@@ -35,6 +39,11 @@ namespace RXMESH_SOLVER {
 #ifdef USE_STRUMPACK
             case LinSysSolverType::GPU_STRUMPACK:
                 return new STRUMPACKSolver();
+#endif
+
+#ifdef USE_MKL
+            case LinSysSolverType::CPU_MKL:
+                return new MKLSolver();
 #endif
             default:
                 std::cerr << "Uknown linear system solver type" << std::endl;

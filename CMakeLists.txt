@@ -137,6 +137,7 @@ target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
 ################################################################################
 option(${PROJECT_NAME}_WITH_PARTH "Use Parth for fill-reducing orderings" ON)
 option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark" ON)
+option(${PROJECT_NAME}_WITH_MKL "Use Intel MKL PARDISO for benchmark" ON)
 option(${PROJECT_NAME}_WITH_STRUMPACK "Use Strumpack for benchmark" OFF)
 option(${PROJECT_NAME}_WITH_PROFILE "Use Profile for benchmark" ON)
 
@@ -183,6 +184,16 @@ if (${PROJECT_NAME}_WITH_SUITESPARSE)
     message(STATUS "CHOLMOD configured for CPU-only support")
 endif ()
 
+# Intel MKL PARDISO
+if(${PROJECT_NAME}_WITH_MKL)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/find")
+    find_package(MKL REQUIRED)
+    target_link_libraries(gpu_ordering_deps INTERFACE ${MKL_LIBRARIES})
+    target_include_directories(gpu_ordering_deps INTERFACE ${MKL_INCLUDE_DIRS})
+    target_compile_definitions(gpu_ordering_deps INTERFACE USE_MKL)
+    message(STATUS "Intel MKL PARDISO configured")
+endif()
+
 # Parth for fill-reducing orderings
 if(${PROJECT_NAME}_WITH_PARTH)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/parth.cmake)
@@ -227,6 +238,7 @@ add_library(rxmesh_dev_helpers
         src/LinSysSolvers/LinSysSolver.cpp
         src/LinSysSolvers/CUDSSSolver.cu
         src/LinSysSolvers/CHOLMODSolver.cpp
+        src/LinSysSolvers/MKLSolver.cpp
         src/LinSysSolvers/STRUMPACKSolver.cpp
         src/utils/get_factor_nnz.cpp
         src/utils/remove_diagonal.cpp

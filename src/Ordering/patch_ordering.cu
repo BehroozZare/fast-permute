@@ -355,4 +355,8 @@ void PatchOrdering::getStatistics(std::map<std::string, double>& stat) {
     stat["patching_time"] = this->_patching_time;
     stat["num_patches"] = this->_num_patches;
 }
+
+void PatchOrdering::getPatch(std::vector<int> &patches) {
+    patches = _g_node_to_patch;
+}
 }

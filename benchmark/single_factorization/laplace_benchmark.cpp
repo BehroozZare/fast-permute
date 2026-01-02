@@ -31,9 +31,9 @@ struct CLIArgs
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
-    std::string check_point_address = "/media/behrooz/FarazHard/new_spd_matrices";
+    std::string check_point_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/benchmark/single_factorization/test_data";
     int patch_size = 512;
-    bool use_gpu = false;
+    bool use_gpu = true;
     bool store_check_points = false;
 
     CLIArgs(int argc, char* argv[])
@@ -155,6 +155,10 @@ int main(int argc, char* argv[])
     } else if (args.solver_type == "STRUMPACK"){
         solver = RXMESH_SOLVER::LinSysSolver::create(
             RXMESH_SOLVER::LinSysSolverType::GPU_STRUMPACK);
+    } else if (args.solver_type == "MKL") {
+        solver = RXMESH_SOLVER::LinSysSolver::create(
+            RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
+        spdlog::info("Using Intel MKL PARDISO direct solver.");
     } else {
         spdlog::error("Unknown solver type.");
     }
@@ -227,11 +231,24 @@ int main(int argc, char* argv[])
     }
 
 
-    solver->setMatrix(OL.outerIndexPtr(),
-                      OL.innerIndexPtr(),
-                      OL.valuePtr(),
-                      OL.rows(),
-                      OL.nonZeros());
+    // MKL PARDISO expects upper triangular in CSR format.
+    // Since Eigen uses CSC, passing lower triangular CSC is equivalent
+    // (the CSC-to-CSR transpose makes lower become upper).
+    Eigen::SparseMatrix<double> lower_OL;
+    if (args.solver_type == "MKL") {
+        lower_OL = OL.triangularView<Eigen::Lower>();
+        solver->setMatrix(lower_OL.outerIndexPtr(),
+                          lower_OL.innerIndexPtr(),
+                          lower_OL.valuePtr(),
+                          lower_OL.rows(),
+                          lower_OL.nonZeros());
+    } else {
+        solver->setMatrix(OL.outerIndexPtr(),
+                          OL.innerIndexPtr(),
+                          OL.valuePtr(),
+                          OL.rows(),
+                          OL.nonZeros());
+    }
 
     auto start = std::chrono::high_resolution_clock::now();
     solver->ordering(perm, etree);
@@ -352,6 +369,12 @@ int main(int argc, char* argv[])
         }
         if (!etree.empty()) {
             RXMESH_SOLVER::save_vector_to_file(etree, etree_save_address);
+        }
+        if(args.ordering_type == "PATCH_ORDERING") {
+            std::vector<int> node_to_patch;
+            ordering->getPatch(node_to_patch);
+            std::string node_to_patch_save_address = check_point_address + "/node_to_patch_" + mesh_name + ".txt";
+            RXMESH_SOLVER::save_vector_to_file(node_to_patch, node_to_patch_save_address);
         }
     }
 

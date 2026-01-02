@@ -12,6 +12,8 @@
 #include <unsupported/Eigen/SparseExtra>
 #include <iostream>
 #include <filesystem>
+#include <parth/parth.h>
+#include <unordered_set>
 
 #include "SPD_cot_matrix.h"
 #include "LinSysSolver.hpp"
@@ -23,32 +25,29 @@
 #include "save_vector.h"
 
 
+
 struct CLIArgs
 {
-    std::string input_mesh;
+    std::string input_node_to_patch = "/home/behrooz/Desktop/Last_Project/gpu_ordering/benchmark/single_factorization/test_data/rocker-arm_67_node_to_patch";//It should be in the form of "<mesh_name>_<time(ms)>_node_to_patch.txt"
+    std::string input_matrix = "/home/behrooz/Desktop/Last_Project/gpu_ordering/benchmark/single_factorization/test_data/rocker-arm.mtx";//It should be in the form of "<mesh_name>.mtx"
     int binary_level = 7; // It is zero-based so 9 is 10 levels
-    std::string output_csv_address;//Include absolute path with csv file name without .csv extension
-    std::string solver_type   = "CHOLMOD";
+    std::string output_csv_address="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/general";//Include absolute path with csv file name without .csv extension
+    std::string solver_type   = "CUDSS";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
-    std::string check_point_address = "/media/behrooz/FarazHard/new_spd_matrices";
-    int patch_size = 512;
-    bool use_gpu = false;
-    bool store_check_points = true;
-
+    int DIM = 3;
+    
     CLIArgs(int argc, char* argv[])
     {
         CLI::App app{"Separator analysis"};
         app.add_option("-a,--ordering", ordering_type, "ordering type");
         app.add_option("-s,--solver", solver_type, "solver type");
         app.add_option("-o,--output", output_csv_address, "output folder name");
-        app.add_option("-i,--input", input_mesh, "input mesh name");
-        app.add_option("-g,--use_gpu", use_gpu, "use gpu");
+        app.add_option("-i,--input_patch", input_node_to_patch, "input patch file name");
+        app.add_option("-m,--input_matrix", input_matrix, "input matrix name");
         app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
-        app.add_option("-z,--patch_size", patch_size, "patch size");
+        app.add_option("-d,--DIM", DIM, "dimension of the mesh");
         app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
-        app.add_option("-c,--store_check_points", store_check_points, "store check points");
-        app.add_option("-k,--check_point_address", check_point_address, "check point address");
 
         try {
             app.parse(argc, argv);
@@ -64,29 +63,29 @@ int main(int argc, char* argv[])
     // Load the mesh
     CLIArgs args(argc, argv);
 
-    if (args.input_mesh.empty()) {
-        std::cerr << "Error: Input mesh file not specified. Use -i or --input "
-                     "to specify the mesh file."
+    if (args.input_node_to_patch.empty()) {
+        std::cerr << "Error: Input node_to_patch file not specified. Use -i or --input "
+                     "to specify the patch file."
                   << std::endl;
         return 1;
     }
 
-    std::cout << "Loading mesh from: " << args.input_mesh << std::endl;
-    std::cout << "Output folder: " << args.output_csv_address << std::endl;
-
-    Eigen::MatrixXd OV;
-    Eigen::MatrixXi OF;
-    if (!igl::read_triangle_mesh(args.input_mesh, OV, OF)) {
-        std::cerr << "Failed to read the mesh: " << args.input_mesh
+    if (args.input_matrix.empty()) {
+        std::cerr << "Error: Input matrix file not specified. Use -m or --input_matrix "
+                     "to specify the matrix file."
                   << std::endl;
         return 1;
     }
 
-    // Create SPD cotangent matrix (already positive definite with regularization)
+    spdlog::info("reading patch information from: {}", args.input_node_to_patch);
+    spdlog::info("Loading matrix from: {}", args.input_matrix);
+    spdlog::info("Output csv folder is: {}", args.output_csv_address);
+    std::string mesh_name = std::filesystem::path(args.input_matrix).stem().string();
+    spdlog::info("Mesh name is: {}", mesh_name);
+
     Eigen::SparseMatrix<double> OL;
-    RXMESH_SOLVER::computeSPD_cot_matrix(OV, OF, OL);
-
-    // Print laplacian size and sparsity
+    Eigen::loadMarket(OL, args.input_matrix);
+    assert(OL.rows() == OL.cols());
     spdlog::info("Number of rows: {}", OL.rows());
     spdlog::info("Number of non-zeros: {}", OL.nonZeros());
     spdlog::info(
@@ -94,46 +93,41 @@ int main(int argc, char* argv[])
         (1 - (OL.nonZeros() / static_cast<double>(OL.rows() * OL.rows()))) *
             100);
 
+    std::vector<int> node_to_patch;
+    std::ifstream node_to_patch_file(args.input_node_to_patch);
+    std::string line;
+    while (std::getline(node_to_patch_file, line)) {
+        node_to_patch.push_back(std::stoi(line));
+    }
+    node_to_patch_file.close();
+    spdlog::info("Number of nodes to patch: {}", node_to_patch.size());
+    std::unordered_set<int> patch_ids;
+    for (int i = 0; i < node_to_patch.size(); i++) {
+        patch_ids.insert(node_to_patch[i]);
+    }
+    spdlog::info("Number of patch ids are: {}", patch_ids.size());
+
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(OL.rows());
     Eigen::VectorXd result;
 
     // Init permuter
+    std::vector<int>     graph_perm;
     std::vector<int>         perm;
     std::vector<int> etree;
     RXMESH_SOLVER::Ordering* ordering = nullptr;
-    std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
+    
     if (args.ordering_type == "DEFAULT") {
         spdlog::info("Using default ordering (default for each solver).");
         ordering = nullptr;
-    } else if (args.ordering_type == "METIS") {
-        spdlog::info("Using METIS ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
-        if(args.solver_type == "CUDSS") {
-            std::cerr << "METIS ordering is not supported with CUDSS solver." << std::endl;
-            return 1;
-        }
-    } else if (args.ordering_type == "RXMESH_ND") {
-        spdlog::info("Using RXMESH ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::RXMESH_ND);
     } else if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING ordering.");
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
-        ordering->setOptions(
-            {{"use_gpu", args.use_gpu ? "1" : "0"},
-                {"patch_type", args.patch_type},
-                {"patch_size", std::to_string(args.patch_size)},
-                {"binary_level", std::to_string(args.binary_level)}});
+        ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
     } else if (args.ordering_type == "PARTH") {
         ordering = RXMESH_SOLVER::Ordering::create(
             RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
-    } else if (args.ordering_type == "NEUTRAL"){
-        spdlog::info("Using NEUTRAL ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::NEUTRAL);
     } else {
         spdlog::error("Unknown Ordering type.");
     }
@@ -161,15 +155,17 @@ int main(int argc, char* argv[])
     assert(solver != nullptr);
 
     // Create the graph
-    std::vector<int> Gp;
-    std::vector<int> Gi;
-    RXMESH_SOLVER::remove_diagonal(
-        OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), Gp, Gi);
-
+    PARTH::ParthAPI parth_compressor;
+    parth_compressor.setMatrix(OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), DIM);
+    int* Gp = parth_compressor.Mp;
+    int* Gi = parth_compressor.Mi;
+    int G_N = parth_compressor.M_n;
+    assert(G_N == OL.rows() / DIM);
 
     double residual = 0;
     long int ordering_init_time = -1;
     long int ordering_time = -1;
+    long int ordering_integration_time = -1;
     long int analysis_time = -1;
     long int factorization_time = -1;
     long int solve_time = -1;
@@ -177,15 +173,14 @@ int main(int argc, char* argv[])
     // Init the permuter
     if (ordering != nullptr) {
         spdlog::info("Start Customized Ordering ...");
-        // Provide mesh data if the ordering needs it (e.g., RXMesh ND)
-        if (ordering->needsMesh()) {
-            // Pass raw pointers to avoid ABI issues between C++ and CUDA compilation
-            ordering->setMesh(OV.data(), OV.rows(), OV.cols(),
-                            OF.data(), OF.rows(), OF.cols());
-        }
-        ordering->setGraph(Gp.data(), Gi.data(), OL.rows(), Gi.size());
+        ordering->setGraph(Gp, Gi, G_N, Gp[G_N]); 
         auto ordering_init_start = std::chrono::high_resolution_clock::now();
-        ordering->init();
+        if(args.ordering_type == "PATCH_ORDERING") {
+            reinterpret_cast<RXMESH_SOLVER::PatchOrdering*>(ordering)->_g_node_to_patch = node_to_patch;
+            reinterpret_cast<RXMESH_SOLVER::PatchOrdering*>(ordering)->_cpu_order.init_patches(patch_ids.size(), node_to_patch, args.binary_level);
+        } else {
+            ordering->init();
+        }
         auto ordering_init_end = std::chrono::high_resolution_clock::now();
         ordering_init_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                          ordering_init_end - ordering_init_start)
@@ -194,9 +189,19 @@ int main(int argc, char* argv[])
                      ordering_init_time);
         auto ordering_start = std::chrono::high_resolution_clock::now();
         if(args.solver_type=="CUDSS") {
-            ordering->compute_permutation(perm, etree, true);
+            ordering->compute_permutation(graph_perm, etree, true);
         } else {
-            ordering->compute_permutation(perm, etree, false);
+            ordering->compute_permutation(graph_perm, etree, false);
+        }
+        if(args.DIM == 1){
+            perm = graph_perm;
+        } else {
+            perm.resize(graph_perm.size() * args.DIM);
+            for(int i1 = 0; i1 < graph_perm.size(); i1++){
+                for(int j1 = 0; j1 < args.DIM; j1++){
+                    perm[i1 * args.DIM + j1] = graph_perm[i1] * args.DIM + j1;
+                }
+            }
         }
 
         auto ordering_end = std::chrono::high_resolution_clock::now();
@@ -232,10 +237,16 @@ int main(int argc, char* argv[])
                       OL.rows(),
                       OL.nonZeros());
 
-    // Symbolic analysis time
     auto start = std::chrono::high_resolution_clock::now();
-    solver->analyze_pattern(perm, etree);
+    solver->ordering(perm, etree);
     auto end = std::chrono::high_resolution_clock::now();
+    ordering_integration_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    spdlog::info("Ordering integration time: {} ms",
+             ordering_integration_time);
+    // Symbolic analysis time
+    start = std::chrono::high_resolution_clock::now();
+    solver->analyze_pattern(perm, etree);
+    end = std::chrono::high_resolution_clock::now();
     analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     spdlog::info(
         "Analysis time: {} ms",
@@ -278,8 +289,10 @@ int main(int argc, char* argv[])
     header.emplace_back("nd_levels");
     header.emplace_back("patch_type");
     header.emplace_back("patch_size");
+    header.emplace_back("patch_time");
     header.emplace_back("factor/matrix NNZ ratio");
     header.emplace_back("ordering_time");
+    header.emplace_back("ordering_integration_time");
     header.emplace_back("analysis_time");
     header.emplace_back("factorization_time");
     header.emplace_back("solve_time");
@@ -298,40 +311,28 @@ int main(int argc, char* argv[])
     }
     int nd_levels = std::log2(etree.size() + 1);
     runtime_csv.addElementToRecord(nd_levels, "nd_levels");
-    runtime_csv.addElementToRecord(args.patch_type, "patch_type");
-    runtime_csv.addElementToRecord(args.patch_size, "patch_size");
+    runtime_csv.addElementToRecord(-1, "patch_size");
+    if (args.ordering_type == "PATCH_ORDERING") {
+        std::map<std::string, double> stat;
+        assert(ordering != nullptr);
+        ordering->getStatistics(stat);
+        runtime_csv.addElementToRecord(args.patch_type, "patch_type");
+        //Get the patch time from the name of the file
+        std::string patch_time_str = args.input_node_to_patch.substr(args.input_node_to_patch.find("_") + 1, args.input_node_to_patch.find("_node_to_patch.txt") - args.input_node_to_patch.find("_") - 1);
+        double patch_time = std::stod(patch_time_str);
+        runtime_csv.addElementToRecord(patch_time, "patch_time");
+    } else {
+        runtime_csv.addElementToRecord("", "patch_type");
+        runtime_csv.addElementToRecord(0, "patch_time");
+    }
     runtime_csv.addElementToRecord(factor_nnz * 1.0 / OL.nonZeros(), "factor/matrix NNZ ratio");
     runtime_csv.addElementToRecord(ordering_time, "ordering_time");
+    runtime_csv.addElementToRecord(ordering_integration_time, "ordering_integration_time");
     runtime_csv.addElementToRecord(analysis_time, "analysis_time");
     runtime_csv.addElementToRecord(factorization_time, "factorization_time");
     runtime_csv.addElementToRecord(solve_time, "solve_time");
     runtime_csv.addElementToRecord(residual, "residual");
     runtime_csv.addRecord();
-
-
-    //Save the matrix
-    if(args.store_check_points) {
-        spdlog::info("Saving checkpoints ...");
-        std::string check_point_address = args.check_point_address;
-        std::string matirx_save_address = check_point_address + "/" + mesh_name + ".mtx";
-        std::string parameters = "level=" + std::to_string(args.binary_level) +
-            ",patch_type=" + args.patch_type + ",patch_size=" + std::to_string(args.patch_size) + ",ordering_time=" + std::to_string(ordering_time);
-        std::string ordering_name = "DEFAULT";
-        if (ordering != nullptr) {
-            ordering_name = ordering->typeStr();
-        }
-        std::string perm_save_address = check_point_address + "/perm_" + mesh_name + "_" + ordering_name + "_" + parameters + ".txt";
-        std::string etree_save_address = check_point_address + "/etree_" + mesh_name + "_" + ordering_name + "_" + parameters + ".txt";
-        if (ordering_name == "DEFAULT") {
-            Eigen::saveMarket(OL, matirx_save_address);
-        }
-        if (!perm.empty()) {
-            RXMESH_SOLVER::save_vector_to_file(perm, perm_save_address);
-        }
-        if (!etree.empty()) {
-            RXMESH_SOLVER::save_vector_to_file(etree, etree_save_address);
-        }
-    }
 
     delete solver;
     delete ordering;
