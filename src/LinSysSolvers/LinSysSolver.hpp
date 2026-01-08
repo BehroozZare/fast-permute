@@ -33,6 +33,7 @@ class LinSysSolver
     int    N        = 0;
     double residual = 0;
     std::string ordering_name = "DEFAULT";
+    std::string ordering_type = "METIS";
 
    public:
     virtual ~LinSysSolver(void) {};

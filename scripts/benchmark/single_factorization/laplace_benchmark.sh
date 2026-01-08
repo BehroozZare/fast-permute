@@ -10,7 +10,7 @@ l#!/usr/bin/env bash
 SOLVER="MKL"  # Options: CUDSS, MKL
 INPUT_ROOT="/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/final"
 OUTPUT_CSV="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/laplace_full_benchmark"
-BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/single_factorization/gpu_ordering_laplace_benchmark"
+BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/single_factorization/gpu_ordering_tri_mesh_laplace_benchmark"
 
 # -----------------------------------------------------------------------------
 # Mesh Discovery

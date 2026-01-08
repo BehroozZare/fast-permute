@@ -59,22 +59,22 @@ void PatchOrdering::setMesh(const double* V_data, int V_rows, int V_cols,
 }
 
 void PatchOrdering::init(){
-    spdlog::info("Initializing Patches for {} binary level", this->_binary_level);
-    int number_of_leaves_in_etree = (1 << (this->_binary_level));
-    spdlog::info("Number of leaves in the etree: {}", number_of_leaves_in_etree);
-    int number_of_patches = 2 * number_of_leaves_in_etree;
-    this->_patch_size = G_N / number_of_patches;
-    spdlog::info(" First estimation Number of patches: {} with patch size {}", number_of_patches, _patch_size);
-    //Round to nearest power of 2
-    size_t power = std::ceil(std::log2(this->_patch_size));
-    this->_patch_size = 1 << power;
-    //Make the upperbound to 512
-    if (this->_patch_size > 512) {
-        this->_patch_size = 512;
-    }
-    if (this->_patch_size < 128) {
-        _patch_size = 128;
-    }
+    // spdlog::info("Initializing Patches for {} binary level", this->_binary_level);
+    // int number_of_leaves_in_etree = (1 << (this->_binary_level));
+    // spdlog::info("Number of leaves in the etree: {}", number_of_leaves_in_etree);
+    // int number_of_patches = 2 * number_of_leaves_in_etree;
+    // this->_patch_size = G_N / number_of_patches;
+    // spdlog::info(" First estimation Number of patches: {} with patch size {}", number_of_patches, _patch_size);
+    // //Round to nearest power of 2
+    // size_t power = std::ceil(std::log2(this->_patch_size));
+    // this->_patch_size = 1 << power;
+    // //Make the upperbound to 512
+    // if (this->_patch_size > 512) {
+    //     this->_patch_size = 512;
+    // }
+    // if (this->_patch_size < 128) {
+    //     _patch_size = 128;
+    // }
     spdlog::info("Final Patch size: {}", this->_patch_size);
 
     if (_patch_size == 1) {
@@ -142,6 +142,22 @@ void PatchOrdering::init(){
 
 
 }
+
+void PatchOrdering::setPatch(std::vector<int>& patches) {
+    this->_g_node_to_patch = patches;
+    std::unordered_set<int> patch_ids;
+    for (int patche : patches) {
+        patch_ids.insert(patche);
+    }
+    this->_num_patches = patch_ids.size();
+    spdlog::info("Number of patches: {}", this->_num_patches);
+    if(_use_gpu) {
+        this->_gpu_order.init_patches(this->_num_patches, this->_g_node_to_patch, this->_binary_level);
+    } else {
+        this->_cpu_order.init_patches(this->_num_patches, this->_g_node_to_patch, this->_binary_level);
+    }
+}
+
 bool PatchOrdering::needsMesh() const
 {
     return true;
@@ -200,18 +216,26 @@ void PatchOrdering::assemble_perm(std::vector<int>& level_numbering, std::vector
 
 void PatchOrdering::compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool with_etree)
 {
-    assert(!_g_node_to_patch.empty());
+    if (_g_node_to_patch.empty()) {
+        throw std::runtime_error("The patch is empty");
+    }
     if(_use_gpu) {
         this->_gpu_order.compute_permutation(perm);
     } else {
         this->_cpu_order.compute_permutation(perm);
     }
     if(with_etree) {
+        spdlog::info("Computing etree for patch ordering");
         perm.clear();
         std::vector<int> level_numbering;
+        if (_cpu_order._decomposition_tree.decomposition_nodes.size() == 0) {
+            throw std::runtime_error("The etree does not exist");
+        }
         get_level_numbering(_cpu_order._decomposition_tree.decomposition_nodes.size(), level_numbering);
         compute_etree(level_numbering, etree);
         assemble_perm(level_numbering, perm);
+        spdlog::info("etree size is: {}", etree.size());
+        spdlog::info("perm size: {}", perm.size());
     }
 }
 

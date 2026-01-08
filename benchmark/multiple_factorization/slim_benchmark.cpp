@@ -116,6 +116,7 @@ int main(int argc, char* argv[])
     // ========== Load the first Hessian to get matrix structure ==========
     Eigen::SparseMatrix<double> base_hessian;
     Eigen::loadMarket(base_hessian, hessian_addresses[0]);
+    base_hessian = -1 * base_hessian;
     spdlog::info("Base Hessian size: {} x {}, NNZ: {}", base_hessian.rows(), base_hessian.cols(), base_hessian.nonZeros());
 
     // ========== Initialize solver ==========
@@ -357,11 +358,11 @@ int main(int argc, char* argv[])
         // Load Hessian matrix
         Eigen::SparseMatrix<double> hessian;
         Eigen::loadMarket(hessian, hessian_addresses[iter]);
-
+        hessian = -hessian;
         // Load gradient as RHS (dense vector in MatrixMarket array format)
         Eigen::VectorXd rhs;
         Eigen::loadMarketVector(rhs, grad_addresses[iter]);
-
+        // rhs = -rhs;
         // For result
         Eigen::VectorXd result;
 

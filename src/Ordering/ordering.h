@@ -72,6 +72,7 @@ public:
     virtual void getEtree(std::vector<int>& new_labels, std::vector<int>& sep_ptr) {};
     virtual void getStatistics(std::map<std::string, double>& stat) {};
     virtual void getPatch(std::vector<int>& patches) {};
+    virtual void setPatch(std::vector<int>& patches) {};
 };
 
 }  // namespace PARTH_SOLVER

@@ -18,7 +18,7 @@ namespace RXMESH_SOLVER
     inline void MakeSymmetricMatrixSPD(Eigen::MatrixXd& matrix) {
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix);
         Eigen::VectorXd eigenValues = eigensolver.eigenvalues();
-        double eps = 1e-8; // or something scale-dependent
+        double eps = 1e-5; // or something scale-dependent
 
         for (int i = 0; i < eigenValues.rows(); ++i) {
             if (eigenValues[i] < eps) {
@@ -100,7 +100,7 @@ namespace RXMESH_SOLVER
         std::vector<Triplet<double>> IJV;
         IJV.reserve(F.rows() * edges.rows() * 4);
         
-        Eigen::MatrixXd C_matrix(3,3);
+        Eigen::MatrixXd C_matrix(simplex_size, simplex_size);
         for(int i = 0; i < F.rows(); i++)
         {
             if(simplex_size == 3){
@@ -119,15 +119,20 @@ namespace RXMESH_SOLVER
                     for(int k = 0; k < C_matrix.cols(); k++)
                         IJV.push_back(Triplet<double>(F(i,j), F(i,k), C_matrix(j,k)));
             } else {
+                C_matrix.setZero();
                 for(int e = 0; e < edges.rows(); e++)
                 {
-                    int source = F(i, edges(e,0));
-                    int dest = F(i, edges(e,1));
-                    IJV.push_back(Triplet<double>(source, dest, -C(i,e)));
-                    IJV.push_back(Triplet<double>(dest, source, -C(i,e)));
-                    IJV.push_back(Triplet<double>(source, source, C(i,e)));
-                    IJV.push_back(Triplet<double>(dest, dest, C(i,e)));
+                    int source = edges(e,0);
+                    int dest = edges(e,1);
+                    C_matrix(source,dest) += C(i,e);
+                    C_matrix(dest,source) += C(i,e);
+                    C_matrix(source,source) += -C(i,e);
+                    C_matrix(dest,dest) += -C(i,e);
                 }
+                MakeSymmetricMatrixSPD(C_matrix);
+                for(int j = 0; j < C_matrix.rows(); j++)
+                    for(int k = 0; k < C_matrix.cols(); k++)
+                        IJV.push_back(Triplet<double>(F(i,j), F(i,k), C_matrix(j,k)));
             }
         }
         L.setFromTriplets(IJV.begin(), IJV.end());

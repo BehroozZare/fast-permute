@@ -30,16 +30,18 @@ struct CLIArgs
     std::string output_csv_address="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/laplace";//Include absolute path with csv file name without .csv extension
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
+    std::string default_ordering_type = "METIS";
     std::string patch_type = "rxmesh";
     std::string check_point_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/benchmark/single_factorization/test_data";
     int patch_size = 512;
-    bool use_gpu = true;
+    bool use_gpu = false;
     bool store_check_points = false;
 
     CLIArgs(int argc, char* argv[])
     {
         CLI::App app{"Separator analysis"};
         app.add_option("-a,--ordering", ordering_type, "ordering type");
+        app.add_option("-d,--default_ordering_type", default_ordering_type, "default ordering type");
         app.add_option("-s,--solver", solver_type, "solver type");
         app.add_option("-o,--output", output_csv_address, "output folder name");
         app.add_option("-i,--input", input_mesh, "input mesh name");
@@ -159,6 +161,16 @@ int main(int argc, char* argv[])
         solver = RXMESH_SOLVER::LinSysSolver::create(
             RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
         spdlog::info("Using Intel MKL PARDISO direct solver.");
+        if(args.default_ordering_type == "METIS") {
+            solver->ordering_type = "METIS";
+        } else if(args.default_ordering_type == "AMD") {
+            solver->ordering_type = "AMD";
+        } else if (args.default_ordering_type == "ParMETIS") {
+            solver->ordering_type = "ParMETIS";
+        } else {
+            spdlog::error("Unknown default ordering type.");
+            return 1;
+        }
     } else {
         spdlog::error("Unknown solver type.");
     }
@@ -338,7 +350,11 @@ int main(int argc, char* argv[])
     }
 
 
-    runtime_csv.addElementToRecord(factor_nnz * 1.0 / OL.nonZeros(), "factor/matrix NNZ ratio");
+    if(args.solver_type == "MKL") {
+        runtime_csv.addElementToRecord(solver->getFactorNNZ() * 1.0 / OL.nonZeros(), "factor/matrix NNZ ratio");
+    } else {
+        runtime_csv.addElementToRecord(factor_nnz * 1.0 / OL.nonZeros(), "factor/matrix NNZ ratio");
+    }
     runtime_csv.addElementToRecord(ordering_time, "ordering_time");
     runtime_csv.addElementToRecord(ordering_integration_time, "ordering_integration_time");
     runtime_csv.addElementToRecord(analysis_time, "analysis_time");

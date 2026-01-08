@@ -90,6 +90,8 @@ public:
 
     virtual void getPatch(std::vector<int> &patches) override;
 
+    virtual void setPatch(std::vector<int>& patches) override;
+    
     double compute_separator_ratio();
 };
 

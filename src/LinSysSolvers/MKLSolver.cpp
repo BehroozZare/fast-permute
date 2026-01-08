@@ -111,8 +111,7 @@ void MKLSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::v
         spdlog::info("MKL PARDISO: Using user-provided permutation");
     } else {
         iparm[4] = 0; /* Use internal METIS ordering */
-        iparm[1] = 2; /* Fill-in reordering from METIS */
-        spdlog::info("MKL PARDISO: Using METIS ordering");
+        spdlog::info("MKL PARDISO: Using DEFAULT ordering");
     }
 
     assert(N == N_MKL);
@@ -127,6 +126,14 @@ void MKLSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::v
     setMKLConfigParam();
     if (use_user_perm) {
         iparm[4] = 1;
+    } else {
+        if (ordering_type == "AMD") {
+            iparm[1] = 0;
+        } else if (ordering_type == "ParMETIS") {
+            iparm[1] = 3;
+        } else {
+            iparm[1] = 2;
+        }
     }
 
     // Symbolic factorization
