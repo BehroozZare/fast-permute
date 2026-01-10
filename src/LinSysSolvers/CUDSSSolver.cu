@@ -284,6 +284,69 @@ void CUDSSSolver::innerFactorize(void)
     }
 }
 
+
+void CUDSSSolver::innerSolve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result)
+{
+    // Delegate to raw pointer version to avoid ABI issues
+    result.resize(rhs.rows(), rhs.cols());
+    innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
+}
+
+void CUDSSSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data)
+{
+    // Validate input dimensions
+    if (rows != N) {
+        spdlog::error("CUDSSSolver::solve - RHS rows {} doesn't match matrix size {}", rows, N);
+        exit(EXIT_FAILURE);
+    }
+    
+    int nrhs = cols;
+    spdlog::info("CUDSSSolver::solve - Matrix size: {}, nrhs: {}", N, nrhs);
+    
+    // Clean up any existing memory
+    clean_rhs_sol_mem();
+    
+    // Allocate device memory for N × nrhs matrices
+    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(double)));
+    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(double)));
+    
+    // Copy RHS to device (data is column-major)
+    CUDA_ERROR(cudaMemcpy(
+        bvalues_dev, rhs_data, N * nrhs * sizeof(double), cudaMemcpyHostToDevice));
+    
+    // Create RHS dense matrix (N × nrhs, leading dimension = N)
+    auto status = cudssMatrixCreateDn(
+        &b_mat, N, nrhs, N, bvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    // Create solution dense matrix (N × nrhs, leading dimension = N)
+    status = cudssMatrixCreateDn(
+        &x_mat, N, nrhs, N, xvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    // Execute solve phase
+    status = cudssExecute(
+        handle, CUDSS_PHASE_SOLVE, config, data, A, x_mat, b_mat);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solve failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+    
+    // Copy result back to host
+    CUDA_ERROR(cudaMemcpy(result_data,
+                          xvalues_dev,
+                          N * nrhs * sizeof(double),
+                          cudaMemcpyDeviceToHost));
+    
+    clean_rhs_sol_mem();
+}
+
 void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
 {
     // Validate input dimensions

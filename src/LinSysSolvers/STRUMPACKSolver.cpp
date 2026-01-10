@@ -83,6 +83,27 @@ void STRUMPACKSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
     memcpy(result.data(), _x.data(), result.rows() * sizeof(double));
 }
 
+void STRUMPACKSolver::innerSolve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result)
+{
+    // Delegate to raw pointer version
+    result.resize(rhs.rows(), rhs.cols());
+    innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
+}
+
+void STRUMPACKSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data)
+{
+    // Solve column by column
+    for (int c = 0; c < cols; c++) {
+        // Map column c of input (column-major layout)
+        Eigen::VectorXd rhs_col = Eigen::Map<const Eigen::VectorXd>(rhs_data + c * rows, rows);
+        Eigen::VectorXd result_col(rows);
+        
+        innerSolve(rhs_col, result_col);
+        
+        // Copy result to output column
+        memcpy(result_data + c * rows, result_col.data(), rows * sizeof(double));
+    }
+}
 
 void STRUMPACKSolver::resetSolver()
 {

@@ -39,6 +39,8 @@ public:                // Access specifier
     void innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree) override;
     void innerFactorize(void) override;
     void innerSolve(Eigen::VectorXd &rhs, Eigen::VectorXd &result) override;
+    void innerSolve(Eigen::MatrixXd &rhs, Eigen::MatrixXd &result) override;
+    void innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data) override;
     void resetSolver() override;
     int getFactorNNZ() override;
     void clean_sparse_matrix_mem();

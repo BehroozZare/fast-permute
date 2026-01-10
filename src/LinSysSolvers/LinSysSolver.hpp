@@ -80,6 +80,14 @@ class LinSysSolver
         innerSolve(rhs, result);
     }
 
+    virtual void solve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result)
+    {
+        // Use raw pointer interface to avoid ABI issues between GCC and NVCC
+        // when passing Eigen types across compilation boundaries
+        result.resize(rhs.rows(), rhs.cols());
+        innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
+    }
+
     virtual void computeResidual(Eigen::SparseMatrix<double>& mtr, Eigen::VectorXd& sol, Eigen::VectorXd& rhs)
     {
         assert(mtr.rows() == mtr.cols());
@@ -89,6 +97,12 @@ class LinSysSolver
     }
 
     virtual void innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result) = 0;
+    virtual void innerSolve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result) = 0;
+    
+    // Raw pointer interface to avoid ABI issues between compilers (GCC vs NVCC)
+    // rhs_data and result_data are column-major arrays of size rows x cols
+    virtual void innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data) = 0;
+
 
     virtual void resetSolver() = 0;
 
