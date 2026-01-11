@@ -259,6 +259,12 @@ void PatchOrdering::setOptions(const std::map<std::string, std::string>& options
             this->_cpu_order.local_permute_method = options.at("local_permute_method");
         }
     }
+    if (options.find("use_patch_separator") != options.end()) {
+        this->_cpu_order.use_patch_separator = std::stoi(options.at("use_patch_separator"));
+    }
+    if (options.find("patch_ordering_local_permute_method") != options.end()) {
+        this->_cpu_order.local_permute_method = options.at("patch_ordering_local_permute_method");
+    }
 
     if (options.find("use_gpu") != options.end()) {
         this->_use_gpu = std::stoi(options.at("use_gpu"));
@@ -378,6 +384,10 @@ void PatchOrdering::getStatistics(std::map<std::string, double>& stat) {
     stat["binary_level"] = this->_binary_level;
     stat["patching_time"] = this->_patching_time;
     stat["num_patches"] = this->_num_patches;
+    stat["node_to_patch_time"] = this->_cpu_order.node_to_patch_time;
+    stat["decompose_time"] = this->_cpu_order.decompose_time;
+    stat["local_permute_time"] = this->_cpu_order.local_permute_time;
+    stat["assemble_time"] = this->_cpu_order.assemble_time;
 }
 
 void PatchOrdering::getPatch(std::vector<int> &patches) {

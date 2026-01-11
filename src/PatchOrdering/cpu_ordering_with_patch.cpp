@@ -442,13 +442,10 @@ void CPUOrdering_PATCH::refine_separator_metis(
     int local_nvtxs = assigned_g_nodes.size();
     if (local_nvtxs == 0) return;
 
-    // 1. Build global-to-local mapping for all involved nodes
+    // 1. Build global-to-local mapping for marking separator nodes
     std::vector<int> global_to_local(this->_G_n, -1);
-    std::vector<int> local_to_global(local_nvtxs);
     for (int i = 0; i < local_nvtxs; i++) {
-        int g_node = assigned_g_nodes[i];
-        global_to_local[g_node] = i;
-        local_to_global[i] = g_node;
+        global_to_local[assigned_g_nodes[i]] = i;
     }
 
     // Mark separator superset nodes
@@ -460,44 +457,14 @@ void CPUOrdering_PATCH::refine_separator_metis(
     }
     separator_g_nodes.clear();
 
-    // 2. Build local CSR graph - count degrees first
-    std::vector<idx_t> local_xadj(assigned_g_nodes.size() + 1, 0);
-    for (int i = 0; i < assigned_g_nodes.size(); i++) {
-        int g_node = assigned_g_nodes[i];
-        for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; nbr_ptr++) {
-            int nbr_id = this->_Gi[nbr_ptr];
-            if (global_to_local[nbr_id] != -1) {
-                local_xadj[i + 1]++;
-            }
-        }
-    }
-
-    // Prefix sum to get row pointers
-    for (int i = 0; i < assigned_g_nodes.size(); i++) {
-        local_xadj[i + 1] += local_xadj[i];
-    }
-
-    // Allocate and fill adjacency array
-    idx_t total_edges = local_xadj[assigned_g_nodes.size()];
-    std::vector<idx_t> local_adjncy(total_edges);
-    std::vector<idx_t> write_pos(local_xadj.begin(), local_xadj.end() - 1);
-
-    for (int i = 0; i < local_nvtxs; i++) {
-        int g_node = local_to_global[i];
-        for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; nbr_ptr++) {
-            int nbr_id = this->_Gi[nbr_ptr];
-            int local_nbr = global_to_local[nbr_id];
-            if (local_nbr != -1) {
-                local_adjncy[write_pos[i]++] = local_nbr;
-            }
-        }
-    }
+    // 2. Build local CSR graph using reusable function
+    SubGraph subgraph;
+    build_subgraph_csr(assigned_g_nodes, subgraph);
 
     // 3. Initialize where array from bipartition + separator
     // where: 0 = left partition, 1 = right partition, 2 = separator
     where.resize(local_nvtxs, 0);
     for (int i = 0; i < local_nvtxs; i++) {
-        int g_node = local_to_global[i];
         if (is_sepsuper[i] == 1) {
             where[i] = 2;  // Separator
         }
@@ -508,8 +475,8 @@ void CPUOrdering_PATCH::refine_separator_metis(
     real_t ubfactor = 1.03;  // 3% imbalance tolerance
 
     // 5. Call METIS refinement
-    METIS_NodeRefine(local_nvtxs, local_xadj.data(), nullptr,
-                     local_adjncy.data(), where.data(),
+    METIS_NodeRefine(local_nvtxs, subgraph._Gp.data(), nullptr,
+                     subgraph._Gi.data(), where.data(),
                      hmarker.data(), ubfactor);
 
 #ifndef NDEBUG
@@ -647,12 +614,11 @@ void CPUOrdering_PATCH::decompose()
     // auto omp_parallel_start = std::chrono::high_resolution_clock::now();
     #pragma omp parallel
     {
-        int tid = omp_get_thread_num();
         for (int l = 0; l < this->_decomposition_tree.decomposition_level + 1; l++) {
             int start_level_idx = (1 << l) - 1;
             int end_level_idx   = (1 << (l + 1)) - 1;
             assert(end_level_idx <= this->_decomposition_tree.get_number_of_decomposition_nodes());
-            #pragma omp for schedule(dynamic)
+            #pragma omp for schedule(static)
             for (int tree_node_id = start_level_idx; tree_node_id < end_level_idx;
                  ++tree_node_id) {
 
@@ -708,19 +674,37 @@ void CPUOrdering_PATCH::decompose()
 
                 // Step 1: Compute two equal size partitions from the assigned dofs
                 // auto two_way_start = std::chrono::high_resolution_clock::now();
-                std::vector<int> where;
-                this->two_way_Q_partition(tree_node_id,
-                    assigned_g_nodes,
-                    where);
-
-                // Step 2: Find the separator nodes of the two partitions
-
                 std::vector<int> separator_g_nodes;
-                auto three_way_start = std::chrono::high_resolution_clock::now();
-                this->three_way_G_partition(tree_node_id, assigned_g_nodes, where);
-                auto three_way_end = std::chrono::high_resolution_clock::now();
-                auto three_way_duration = std::chrono::duration_cast<std::chrono::milliseconds>(three_way_end - three_way_start).count();
-                assert(where.size() == assigned_g_nodes.size());
+                std::vector<int> where;
+
+                if(use_patch_separator) {
+                    this->two_way_Q_partition(tree_node_id,
+                        assigned_g_nodes,
+                        where);
+
+                    // Step 2: Find the separator nodes of the two partitions
+                    auto three_way_start = std::chrono::high_resolution_clock::now();
+                    this->three_way_G_partition(tree_node_id, assigned_g_nodes, where);
+                    auto three_way_end = std::chrono::high_resolution_clock::now();
+                    auto three_way_duration = std::chrono::duration_cast<std::chrono::milliseconds>(three_way_end - three_way_start).count();
+                    assert(where.size() == assigned_g_nodes.size());
+                } else {
+                    // Build local subgraph in CSR format
+                    SubGraph subgraph;
+                    build_subgraph_csr(assigned_g_nodes, subgraph);
+
+                    // Convert to METIS idx_t type
+                    idx_t nVertices = subgraph._num_nodes;
+                    idx_t sepsize;
+                    where.resize(nVertices);
+                    int ret = METIS_ComputeVertexSeparator(&nVertices, subgraph._Gp.data(), subgraph._Gi.data(),
+                                                           nullptr, nullptr, &sepsize,
+                                                           where.data());
+                    assert(ret == METIS_OK);
+                }
+
+
+
                 for (int i = 0; i < where.size(); i++) {
                     if (where[i] == 2) {
                         separator_g_nodes.emplace_back(assigned_g_nodes[i]);
@@ -878,6 +862,61 @@ void CPUOrdering_PATCH::compute_sub_graph(
     local_graph.resize(nodes.size(), nodes.size());
     local_graph.setFromTriplets(triplets.begin(), triplets.end());
     local_graph.makeCompressed();
+}
+
+
+void CPUOrdering_PATCH::build_subgraph_csr(
+    const std::vector<int>& assigned_g_nodes,
+    SubGraph& subgraph) const
+{
+    int local_nvtxs = assigned_g_nodes.size();
+    subgraph._num_nodes = local_nvtxs;
+    
+    if (local_nvtxs == 0) {
+        subgraph._Gp.clear();
+        subgraph._Gi.clear();
+        return;
+    }
+
+    // 1. Build global-to-local mapping
+    std::vector<int> global_to_local(this->_G_n, -1);
+    for (int i = 0; i < local_nvtxs; i++) {
+        int g_node = assigned_g_nodes[i];
+        global_to_local[g_node] = i;
+    }
+
+    // 2. Build local CSR graph - count degrees first
+    subgraph._Gp.assign(local_nvtxs + 1, 0);
+    for (int i = 0; i < local_nvtxs; i++) {
+        int g_node = assigned_g_nodes[i];
+        for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; nbr_ptr++) {
+            int nbr_id = this->_Gi[nbr_ptr];
+            if (global_to_local[nbr_id] != -1) {
+                subgraph._Gp[i + 1]++;
+            }
+        }
+    }
+
+    // Prefix sum to get row pointers
+    for (int i = 0; i < local_nvtxs; i++) {
+        subgraph._Gp[i + 1] += subgraph._Gp[i];
+    }
+
+    // Allocate and fill adjacency array
+    int total_edges = subgraph._Gp[local_nvtxs];
+    subgraph._Gi.resize(total_edges);
+    std::vector<int> write_pos(subgraph._Gp.begin(), subgraph._Gp.end() - 1);
+
+    for (int i = 0; i < local_nvtxs; i++) {
+        int g_node = assigned_g_nodes[i];
+        for (int nbr_ptr = this->_Gp[g_node]; nbr_ptr < this->_Gp[g_node + 1]; nbr_ptr++) {
+            int nbr_id = this->_Gi[nbr_ptr];
+            int local_nbr = global_to_local[nbr_id];
+            if (local_nbr != -1) {
+                subgraph._Gi[write_pos[i]++] = local_nbr;
+            }
+        }
+    }
 }
 
 
@@ -1213,28 +1252,28 @@ void CPUOrdering_PATCH::compute_permutation(std::vector<int>& perm)
     step1_compute_quotient_graph();
     auto end_time = std::chrono::high_resolution_clock::now();
     node_to_patch_time = std::chrono::duration<double>(end_time - start_time).count();
-    spdlog::info("Step 1 (compute quotient graph) completed in {:.6f} seconds", node_to_patch_time);
+    // spdlog::info("Step 1 (compute quotient graph) completed in {:.6f} seconds", node_to_patch_time);
 
     // Step 2: Create decomposition tree
     start_time = std::chrono::high_resolution_clock::now();
     step2_create_decomposition_tree();
     end_time = std::chrono::high_resolution_clock::now();
     decompose_time = std::chrono::duration<double>(end_time - start_time).count();
-    spdlog::info("Step 2 (decomposition tree) completed in {:.6f} seconds", decompose_time);
+    // spdlog::info("Step 2 (decomposition tree) completed in {:.6f} seconds", decompose_time);
 
     // Step 3: Compute the local permutations
     start_time = std::chrono::high_resolution_clock::now();
     step3_compute_local_permutations();
     end_time = std::chrono::high_resolution_clock::now();
     local_permute_time = std::chrono::duration<double>(end_time - start_time).count();
-    spdlog::info("Step 3 (local permutations) completed in {:.6f} seconds", local_permute_time);
+    // spdlog::info("Step 3 (local permutations) completed in {:.6f} seconds", local_permute_time);
 
     // Step 4: Assemble the final permutation
     start_time = std::chrono::high_resolution_clock::now();
     step4_assemble_final_permutation(perm);
     end_time = std::chrono::high_resolution_clock::now();
     assemble_time = std::chrono::duration<double>(end_time - start_time).count();
-    spdlog::info("Step 4 (assemble permutation) completed in {:.6f} seconds", assemble_time);
+    // spdlog::info("Step 4 (assemble permutation) completed in {:.6f} seconds", assemble_time);
 }
 
 void CPUOrdering_PATCH::reset(){

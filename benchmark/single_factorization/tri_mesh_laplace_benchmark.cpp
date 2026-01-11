@@ -31,6 +31,9 @@ struct CLIArgs
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string default_ordering_type = "METIS";
+    int use_patch_separator = 1;
+    std::string patch_ordering_local_permute_method = "amd";
+
     std::string patch_type = "rxmesh";
     std::string check_point_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/benchmark/single_factorization/test_data";
     int patch_size = 512;
@@ -51,7 +54,8 @@ struct CLIArgs
         app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
         app.add_option("-c,--store_check_points", store_check_points, "store check points");
         app.add_option("-k,--check_point_address", check_point_address, "check point address");
-
+        app.add_option("-u,--use_patch_separator", use_patch_separator, "use patch separator");
+        app.add_option("-m,--patch_ordering_local_permute_method", patch_ordering_local_permute_method, "patch ordering local permute method");
         try {
             app.parse(argc, argv);
         } catch (const CLI::ParseError& e) {
@@ -127,6 +131,8 @@ int main(int argc, char* argv[])
             {{"use_gpu", args.use_gpu ? "1" : "0"},
                 {"patch_type", args.patch_type},
                 {"patch_size", std::to_string(args.patch_size)},
+                {"use_patch_separator", std::to_string(args.use_patch_separator)},
+                {"patch_ordering_local_permute_method", args.patch_ordering_local_permute_method},  
                 {"binary_level", std::to_string(args.binary_level)}});
     } else if (args.ordering_type == "PARTH") {
         ordering = RXMESH_SOLVER::Ordering::create(
@@ -313,8 +319,14 @@ int main(int argc, char* argv[])
     header.emplace_back("ordering_type");
     header.emplace_back("nd_levels");
     header.emplace_back("patch_type");
+    header.emplace_back("use_patch_separator");
+    header.emplace_back("local_permute_method");
     header.emplace_back("patch_size");
     header.emplace_back("patch_time");
+    header.emplace_back("node_to_patch_time");
+    header.emplace_back("decompose_time");
+    header.emplace_back("local_permute_time");
+    header.emplace_back("assemble_time");
     header.emplace_back("factor/matrix NNZ ratio");
     header.emplace_back("ordering_time");
     header.emplace_back("ordering_integration_time");
@@ -336,6 +348,8 @@ int main(int argc, char* argv[])
     }
     int nd_levels = std::log2(etree.size() + 1);
     runtime_csv.addElementToRecord(nd_levels, "nd_levels");
+    runtime_csv.addElementToRecord(args.use_patch_separator, "use_patch_separator");
+    runtime_csv.addElementToRecord(args.patch_ordering_local_permute_method, "local_permute_method");
     if (args.ordering_type == "PATCH_ORDERING") {
         std::map<std::string, double> stat;
         assert(ordering != nullptr);
@@ -343,10 +357,18 @@ int main(int argc, char* argv[])
         runtime_csv.addElementToRecord(args.patch_type, "patch_type");
         runtime_csv.addElementToRecord(stat["patch_size"], "patch_size");
         runtime_csv.addElementToRecord(stat["patching_time"], "patch_time");
+        runtime_csv.addElementToRecord(stat["node_to_patch_time"], "node_to_patch_time");
+        runtime_csv.addElementToRecord(stat["decompose_time"], "decompose_time");
+        runtime_csv.addElementToRecord(stat["local_permute_time"], "local_permute_time");
+        runtime_csv.addElementToRecord(stat["assemble_time"], "assemble_time");
     } else {
         runtime_csv.addElementToRecord("", "patch_type");
         runtime_csv.addElementToRecord(0, "patch_size");
         runtime_csv.addElementToRecord(0, "patch_time");
+        runtime_csv.addElementToRecord(0, "node_to_patch_time");
+        runtime_csv.addElementToRecord(0, "decompose_time");
+        runtime_csv.addElementToRecord(0, "local_permute_time");
+        runtime_csv.addElementToRecord(0, "assemble_time");
     }
 
 

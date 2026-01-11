@@ -255,6 +255,24 @@ add_library(rxmesh_dev_helpers
         src/Ordering/parth_ordering.cpp
 )
 
+# Remesher library for mesh remeshing operations
+add_library(remesher
+    src/remesher/collapse_edges.cpp
+    src/remesher/equalize_valences.cpp
+    src/remesher/remesh_botsch.cpp
+    src/remesher/split_edges.cpp
+    src/remesher/split_edges_until_bound.cpp
+    src/remesher/tangential_relaxation.cpp
+)
+target_link_libraries(remesher PUBLIC igl::core Eigen3::Eigen)
+target_include_directories(remesher PUBLIC src/remesher)
+# Force include Eigen compatibility header that:
+# 1. Includes cassert (fixes libigl's missing include)
+# 2. Brings Eigen::placeholders::all into Eigen namespace (fixes Eigen/libigl version mismatch)
+target_compile_options(remesher PUBLIC
+    $<$<COMPILE_LANGUAGE:CXX>:-include$<SEMICOLON>${CMAKE_SOURCE_DIR}/src/remesher/eigen_compat.h>
+)
+
 # Link additional dependencies required by dev helpers
 target_link_libraries(rxmesh_dev_helpers PUBLIC
         libigl_utils

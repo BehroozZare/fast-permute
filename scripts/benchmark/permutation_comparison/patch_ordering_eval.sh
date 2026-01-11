@@ -17,7 +17,7 @@ echo "Found ${#MESHES[@]} meshes"
 # -----------------------------------------------------------------------------
 # Section B: PATCH_ORDERING (patch_type × patch_size × binary_level)
 # -----------------------------------------------------------------------------
-OUTPUT_CSV="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/tri_mesh_patch_parameter_benchmark"
+OUTPUT_CSV="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/tri_mesh_patch_size_type_benchmark"
 echo "=== Running PATCH_ORDERING ==="
 PATCH_TYPES=("rxmesh" "metis_kway")
 PATCH_SIZES=(32 64 128 256 512)

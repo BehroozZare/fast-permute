@@ -123,7 +123,7 @@ public:
     };
 
     QuotientGraph _quotient_graph;
-
+    bool use_patch_separator = true;
     std::string local_permute_method = "amd";
     // std::string separator_refinement_method = "nothing";
     DecompositionTree _decomposition_tree;
@@ -224,6 +224,12 @@ public:
     void compute_sub_graph(
         std::vector<int>&         nodes,
         Eigen::SparseMatrix<int>& local_graph) const;
+
+    //Build a CSR subgraph from a set of global node IDs
+    void build_subgraph_csr(
+        const std::vector<int>& assigned_g_nodes,  ///< [in] Global node IDs to include
+        SubGraph& subgraph                          ///< [out] Populated subgraph in CSR format
+    ) const;
 
     void compute_sub_graphs(std::vector<SubGraph>& sub_graphs);
 
