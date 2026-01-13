@@ -23,6 +23,16 @@ target_include_directories(${PROJECT_NAME}_multi_slim_benchmark PRIVATE
 configure_benchmark_target(${PROJECT_NAME}_multi_slim_benchmark)
 
 # -----------------------------------------------------------------------------
+# SCP Benchmark (Single Factorization, Multiple Solves)
+# -----------------------------------------------------------------------------
+add_executable(${PROJECT_NAME}_multi_scp_benchmark scp_benchmark.cpp)
+target_include_directories(${PROJECT_NAME}_multi_scp_benchmark PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+)
+configure_benchmark_target(${PROJECT_NAME}_multi_scp_benchmark)
+
+# -----------------------------------------------------------------------------
 # Mesh Smoothing Benchmark (Multiple Factorization)
 # -----------------------------------------------------------------------------
 add_executable(${PROJECT_NAME}_multi_mesh_smoothing_benchmark mesh_smoothing_benchmark.cpp)
