@@ -91,6 +91,8 @@ public:
     virtual void getPatch(std::vector<int> &patches) override;
 
     virtual void setPatch(std::vector<int>& patches) override;
+
+    virtual void getNodeToEtreeMapping(std::vector<std::pair<int, int>>& node_to_etree_mapping) override;
     
     double compute_separator_ratio();
 };

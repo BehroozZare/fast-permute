@@ -393,4 +393,15 @@ void PatchOrdering::getStatistics(std::map<std::string, double>& stat) {
 void PatchOrdering::getPatch(std::vector<int> &patches) {
     patches = _g_node_to_patch;
 }
+
+void PatchOrdering::getNodeToEtreeMapping(std::vector<std::pair<int, int>>& node_to_etree_mapping) {
+    node_to_etree_mapping.clear();
+    auto& etree = _cpu_order._decomposition_tree.decomposition_nodes;
+    for(int i = 0; i < etree.size(); i++){
+        auto& node = etree[i];
+        for(int j = 0; j < node.assigned_g_nodes.size(); j++){
+            node_to_etree_mapping.push_back(std::make_pair(node.assigned_g_nodes[j], i));
+        }
+    }
+}
 }

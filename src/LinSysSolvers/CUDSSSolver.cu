@@ -150,6 +150,8 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
         values_dev, x, NNZ * sizeof(double), cudaMemcpyHostToDevice));
 
     // Creating matrix
+    // Note: Eigen::SparseMatrix is CSC (column-major) by default
+    // The caller should expand symmetric matrices to full format using selfadjointView
     auto status = cudssMatrixCreateCsr(&A,
                          N,                    // nrows
                          N,                    // ncols  
@@ -161,7 +163,7 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
                          CUDA_R_32I,           // csrRowOffsetsType
                          CUDA_R_64F,           // csrValuesType (double precision)
                          CUDSS_MTYPE_SPD,      // matrixType (Symmetric Positive Definite)
-                         CUDSS_MVIEW_FULL,     // viewType
+                         CUDSS_MVIEW_FULL,     // viewType (full matrix expected)
                          CUDSS_BASE_ZERO);     // indexBase
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::matrix creation failed with status: {}", status);

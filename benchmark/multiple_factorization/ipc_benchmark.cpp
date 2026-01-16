@@ -23,8 +23,6 @@
 #include "save_vector.h"
 #include <parth/parth.h>
 #include <ordering.h>
-
-#include "patch_ordering.h"
 #include "create_patch_with_metis.h"
 
 #ifndef _CUDA_ERROR_
@@ -49,14 +47,15 @@ CUDA_ERROR(cudaDeviceSynchronize());                       \
 
 struct CLIArgs
 {
-    int binary_level = 7; // It is zero-based so 9 is 10 levels
-    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/IPC";//Include absolute path with csv file name without .csv extension
+    int binary_level = 9; // It is zero-based so 9 is 10 levels
+    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/IPC/ipc";//Include absolute path with csv file name without .csv extension
     std::string solver_type   = "CUDSS";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
-    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/test";
-    int patch_size = 512;
-    bool use_gpu = false;
+    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/mat225x225t40-mat225x225t40_fall_NH_BE_interiorPoint_20260115020027";
+    std::string V_address = "";
+    std::string F_address = "";
+    int patch_size = 128;
 
     CLIArgs(int argc, char* argv[])
     {
@@ -64,11 +63,12 @@ struct CLIArgs
         app.add_option("-a,--ordering", ordering_type, "ordering type");
         app.add_option("-s,--solver", solver_type, "solver type");
         app.add_option("-o,--output", output_csv_address, "output folder name");
-        app.add_option("-g,--use_gpu", use_gpu, "use gpu");
         app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
         app.add_option("-z,--patch_size", patch_size, "patch size");
         app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
         app.add_option("-k,--check_point_address", check_point_address, "check point address");
+        app.add_option("-v,--V_address", V_address, "V address");
+        app.add_option("-f,--F_address", F_address, "F address");
 
         try {
             app.parse(argc, argv);
@@ -98,7 +98,12 @@ int main(int argc, char* argv[])
     std::vector<int> node_to_patch;
     std::vector<int> parth_perm, parth_new_labels, parth_sep_ptr;
     RXMESH_SOLVER::create_patch_with_metis(base.rows(), base.outerIndexPtr(), base.innerIndexPtr(), DIM, args.patch_size, node_to_patch);
-    assert(node_to_patch.size() == base.rows() / DIM);
+    if (node_to_patch.size() != (base.rows() / DIM)) {
+        spdlog::info("node to patch size is :{}, and the matrix size is: {}", node_to_patch.size(), base.rows());
+        throw std::runtime_error("Node to patch size is not equal to the number of rows of the matrix");
+    } else {
+        spdlog::info("Node to patch size: {}", node_to_patch.size());
+    }
 
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(base.rows());
     Eigen::VectorXd result;
@@ -124,18 +129,12 @@ int main(int argc, char* argv[])
     std::vector<int> Gp_prev;
     std::vector<int> Gi_prev;
 
-    std::unordered_set<int> patch_ids;
-    for (int i = 0; i < node_to_patch.size(); i++) {
-        patch_ids.insert(node_to_patch[i]);
-    }
-    spdlog::info("Number of patch ids are: ", patch_ids.size());
     std::vector<int> lag_perm;
     std::vector<int> metis_perm;
 
 
-    for(int i = 0; i < matrix_addresses.size(); i++) {
+    for(auto & matrix_address : matrix_addresses) {
         //==============Read the matrix==============
-        auto& matrix_address = matrix_addresses[i];
         //From the name of the matrix get the frame and iteration number
         int frame = -1;
         int iteration = -1;
@@ -176,12 +175,12 @@ int main(int argc, char* argv[])
 
         RXMESH_SOLVER::Ordering* patch_ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
         patch_ordering->setGraph(Gp, Gi, G_N, Gp[G_N]);
-        reinterpret_cast<RXMESH_SOLVER::PatchOrdering*>(patch_ordering)->_g_node_to_patch = node_to_patch;
-        reinterpret_cast<RXMESH_SOLVER::PatchOrdering*>(patch_ordering)->_cpu_order.init_patches(patch_ids.size(), node_to_patch, args.binary_level);
+        patch_ordering->setPatch(node_to_patch);
 
         double residual = 0;
         long int ordering_init_time = -1;
         long int ordering_time = -1;
+        long int ordering_integration_time = -1;
         long int analysis_time = -1;
         long int factorization_time = -1;
         long int solve_time = -1;
@@ -263,11 +262,30 @@ int main(int argc, char* argv[])
                                                         lag_perm);
         }
 
-        solver->setMatrix(mat.outerIndexPtr(),
-                          mat.innerIndexPtr(),
-                          mat.valuePtr(),
-                          mat.rows(),
-                          mat.nonZeros());
+        // For CUDSS, we need:
+        // 1. Expand symmetric matrix to full format (MatrixMarket only stores lower triangle)
+        // 2. Convert to CSR format (Eigen default is CSC, cuDSS requires CSR)
+        Eigen::SparseMatrix<double> mat_full_csc = mat.selfadjointView<Eigen::Lower>();
+        Eigen::SparseMatrix<double, Eigen::RowMajor> mat_full(mat_full_csc);  // Convert CSC to CSR
+        solver->setMatrix(mat_full.outerIndexPtr(),
+                          mat_full.innerIndexPtr(),
+                          mat_full.valuePtr(),
+                          mat_full.rows(),
+                          mat_full.nonZeros());
+
+        // Reordering phase (required before symbolic analysis)
+        auto ordering_int_start = std::chrono::high_resolution_clock::now();
+        if (!is_graph_equal) {
+            solver->ordering(matrix_perm, matrix_etree);
+        }
+        auto ordering_int_end = std::chrono::high_resolution_clock::now();
+        if (!is_graph_equal) {
+            ordering_integration_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                ordering_int_end - ordering_int_start).count();
+            spdlog::info("Ordering integration time: {} ms", ordering_integration_time);
+        } else {
+            ordering_integration_time = 0;
+        }
 
         // Symbolic analysis time
         auto start = std::chrono::high_resolution_clock::now();
@@ -307,8 +325,7 @@ int main(int argc, char* argv[])
 
         // Compute residual
         assert(mat.rows() == mat.cols());
-        //Make mat full (it is lower triangular with Eigen)
-        Eigen::SparseMatrix<double> mat_full = mat.selfadjointView<Eigen::Lower>();
+        // mat_full was already computed above for the solver
         residual = (rhs - mat_full * result).norm();
         spdlog::info("Residual: {}", residual);
         spdlog::info("Final factor/matrix NNZ ratio: {}",
@@ -327,6 +344,7 @@ int main(int argc, char* argv[])
         header.emplace_back("patch_factor_ratio");
         header.emplace_back("lag_factor_ratio");
         header.emplace_back("ordering_time");
+        header.emplace_back("ordering_integration_time");
         header.emplace_back("analysis_time");
         header.emplace_back("factorization_time");
         header.emplace_back("solve_time");
@@ -349,12 +367,18 @@ int main(int argc, char* argv[])
             runtime_csv.addElementToRecord(0, "lag_factor_ratio");
         }
         runtime_csv.addElementToRecord(ordering_time, "ordering_time");
+        runtime_csv.addElementToRecord(ordering_integration_time, "ordering_integration_time");
         runtime_csv.addElementToRecord(analysis_time, "analysis_time");
         runtime_csv.addElementToRecord(factorization_time, "factorization_time");
         runtime_csv.addElementToRecord(solve_time, "solve_time");
         runtime_csv.addElementToRecord(residual, "residual");
         runtime_csv.addRecord();
 
+        // Reset timing variables for next iteration (ordering/analysis times are only meaningful when graph changes)
+        ordering_init_time = 0;
+        ordering_time = 0;
+        ordering_integration_time = 0;
+        analysis_time = 0;
 
         //Save the Gp_curr into Gp_prev and Gi_curr into Gi_prev
         Gp_prev.resize(G_N + 1);

@@ -38,3 +38,4 @@ endfunction()
 # -----------------------------------------------------------------------------
 add_subdirectory(single_factorization)
 add_subdirectory(multiple_factorization)
+add_subdirectory(render_helper)

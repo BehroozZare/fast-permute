@@ -41,6 +41,7 @@ public:
 
     virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree = false) override;
     virtual void setOptions(const std::map<std::string, std::string>& options) override;
+    virtual void getNodeToEtreeMapping(std::vector<std::pair<int, int>>& node_to_etree_mapping) override;
     void computeRatioOfBoundaryVertices();
     void computeTheStatisticsOfPatches();
 };

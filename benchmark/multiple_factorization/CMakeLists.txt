@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 # IPC Benchmark (Multiple Factorization)
 # -----------------------------------------------------------------------------
-add_executable(${PROJECT_NAME}_multi_ipc_benchmark ipc_benchmark.cu)
+add_executable(${PROJECT_NAME}_multi_ipc_benchmark ipc_benchmark.cpp)
 target_include_directories(${PROJECT_NAME}_multi_ipc_benchmark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/utils

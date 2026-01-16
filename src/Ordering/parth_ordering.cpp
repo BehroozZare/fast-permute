@@ -141,6 +141,14 @@ void ParthOrdering::computeTheStatisticsOfPatches()
     spdlog::info("The avg patch size is {:.2f}", avg_patch_size / parth.hmd.HMD_tree.size());
 }
 
-
+void ParthOrdering::getNodeToEtreeMapping(std::vector<std::pair<int, int>>& node_to_etree_mapping) {
+    node_to_etree_mapping.clear();
+    for(int i = 0; i < parth.hmd.HMD_tree.size(); i++){
+        auto& node = parth.hmd.HMD_tree[i];
+        for(int j = 0; j < node.DOFs.size(); j++){
+            node_to_etree_mapping.push_back(std::make_pair(node.DOFs[j], i));
+        }
+    }
+}
 }
 #endif

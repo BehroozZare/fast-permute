@@ -401,7 +401,7 @@ int main(int argc, char* argv[])
         runtime_csv.addElementToRecord(nd_levels, "nd_levels");
         
         // Patch statistics (similar to laplace_benchmark)
-        if (args.ordering_type == "PATCH_ORDERING" && ordering != nullptr) {
+        if (args.ordering_type == "PATCH_ORDERING" && ordering != nullptr && iter == 0) {
             std::map<std::string, double> stat;
             ordering->getStatistics(stat);
             runtime_csv.addElementToRecord(args.patch_type, "patch_type");

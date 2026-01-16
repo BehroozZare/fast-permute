@@ -247,7 +247,7 @@ struct CLIArgs
     int num_iterations = 10;
     double delta = 0.001;
     int binary_level = 7;
-    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/multiple_factorization/mesh_smoothing";
+    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Smoothing/smoothing";
     std::string solver_type = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string default_ordering_type = "METIS";
@@ -603,7 +603,7 @@ int main(int argc, char* argv[])
         runtime_csv.addElementToRecord(nd_levels, "nd_levels");
 
         // Patch statistics
-        if (args.ordering_type == "PATCH_ORDERING" && ordering != nullptr) {
+        if (args.ordering_type == "PATCH_ORDERING" && ordering != nullptr && iter == 0) {
             std::map<std::string, double> stat;
             ordering->getStatistics(stat);
             runtime_csv.addElementToRecord(args.patch_type, "patch_type");
@@ -630,6 +630,13 @@ int main(int argc, char* argv[])
         runtime_csv.addElementToRecord(solve_time, "solve_time");
         runtime_csv.addElementToRecord(residual, "residual");
         runtime_csv.addRecord();
+
+        ordering_init_time = 0;
+        ordering_time = 0;
+        ordering_integration_time = 0;
+        analysis_time = 0;
+        factorization_time = 0;
+        solve_time = 0;
     }
 
     spdlog::info("=== Mesh Smoothing Benchmark Complete ===");

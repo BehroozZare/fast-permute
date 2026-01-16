@@ -326,3 +326,4 @@ target_compile_options(rxmesh_dev_helpers PUBLIC
 # Development targets use both the RXMesh library and the dev helpers library
 
 add_subdirectory(benchmark)
+add_subdirectory(tools)

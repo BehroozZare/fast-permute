@@ -73,6 +73,8 @@ public:
     virtual void getStatistics(std::map<std::string, double>& stat) {};
     virtual void getPatch(std::vector<int>& patches) {};
     virtual void setPatch(std::vector<int>& patches) {};
+    //Returns the node to etree mapping based on the etree numbering
+    virtual void getNodeToEtreeMapping(std::vector<std::pair<int, int>>& node_to_etree_mapping) {};
 };
 
 }  // namespace PARTH_SOLVER
