@@ -52,7 +52,8 @@ struct CLIArgs
     std::string solver_type   = "CUDSS";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
-    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/mat225x225t40-mat225x225t40_fall_NH_BE_interiorPoint_20260115020027";
+    // std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/mat225x225t40-mat225x225t40_fall_NH_BE_interiorPoint_20260115020027";
+    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/test";
     std::string V_address = "";
     std::string F_address = "";
     int patch_size = 128;
