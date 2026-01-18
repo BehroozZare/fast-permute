@@ -41,6 +41,23 @@ endif()
 # =============================================================================
 if(NOT BLAS_FOUND OR NOT LAPACK_FOUND)
     message(STATUS "Searching for Intel OneAPI MKL...")
+    
+    # Hint MKL location for CMake's find_package(BLAS) if MKLROOT is not set
+    # Check common Intel OneAPI installation paths
+    if(NOT DEFINED ENV{MKLROOT})
+        foreach(_mkl_hint 
+                "/opt/intel/oneapi/mkl/latest"
+                "$ENV{HOME}/intel/oneapi/mkl/latest"
+                "/usr/local/intel/oneapi/mkl/latest")
+            if(EXISTS "${_mkl_hint}/lib/intel64/libmkl_intel_lp64.so" OR 
+               EXISTS "${_mkl_hint}/lib/intel64/libmkl_intel_lp64.a")
+                set(ENV{MKLROOT} "${_mkl_hint}")
+                message(STATUS "Auto-detected MKLROOT: ${_mkl_hint}")
+                break()
+            endif()
+        endforeach()
+    endif()
+    
     set(BLA_VENDOR Intel10_64lp)
     find_package(BLAS QUIET)
     find_package(LAPACK QUIET)

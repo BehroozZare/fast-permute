@@ -74,7 +74,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
 endif()
 
-
 # OpenMP
 find_package(OpenMP)
 if (OpenMP_CXX_FOUND)
@@ -127,7 +126,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/recipes/metis.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/polyscope.cmake)
 
-
 # Create a dependency interface target to hold configuration
 add_library(gpu_ordering_deps INTERFACE)
 target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
@@ -137,7 +135,7 @@ target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
 ################################################################################
 option(${PROJECT_NAME}_WITH_PARTH "Use Parth for fill-reducing orderings" ON)
 option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark" ON)
-option(${PROJECT_NAME}_WITH_MKL "Use Intel MKL PARDISO for benchmark" ON)
+option(${PROJECT_NAME}_WITH_MKL "Use Intel MKL PARDISO for benchmark" OFF)
 option(${PROJECT_NAME}_WITH_STRUMPACK "Use Strumpack for benchmark" OFF)
 option(${PROJECT_NAME}_WITH_PROFILE "Use Profile for benchmark" ON)
 
@@ -272,6 +270,14 @@ target_include_directories(remesher PUBLIC src/remesher)
 target_compile_options(remesher PUBLIC
     $<$<COMPILE_LANGUAGE:CXX>:-include$<SEMICOLON>${CMAKE_SOURCE_DIR}/src/remesher/eigen_compat.h>
 )
+
+# Address Sanitizer (ASAN) for remesher only - helps detect memory errors in remeshing code
+#option(ENABLE_REMESHER_ASAN "Enable Address Sanitizer for remesher library" OFF)
+#if(ENABLE_REMESHER_ASAN)
+#    message(STATUS "Address Sanitizer (ASAN) ENABLED for remesher library")
+#    target_compile_options(remesher PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
+#    target_link_options(remesher PUBLIC -fsanitize=address)
+#endif()
 
 # Link additional dependencies required by dev helpers
 target_link_libraries(rxmesh_dev_helpers PUBLIC

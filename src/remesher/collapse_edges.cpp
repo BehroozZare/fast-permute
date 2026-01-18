@@ -26,6 +26,7 @@
 #include <igl/shortest_edge_and_midpoint.h>
 #include <igl/infinite_cost_stopping_condition.h>
 #include <igl/decimate_callback_types.h>
+#include <igl/min_heap.h>
 
 using namespace std;
 
@@ -170,10 +171,39 @@ void collapse_edges(Eigen::MatrixXd &V, Eigen::MatrixXi &F, Eigen::VectorXi &fea
 
     igl::infinite_cost_stopping_condition(shortest_edge_and_midpoint_lambda, stopping_condition);
 
+    // Pre-collapse callback: return true to allow collapse, false to skip
+    igl::decimate_pre_collapse_callback pre_collapse = 
+        [](const Eigen::MatrixXd &,
+           const Eigen::MatrixXi &,
+           const Eigen::MatrixXi &,
+           const Eigen::VectorXi &,
+           const Eigen::MatrixXi &,
+           const Eigen::MatrixXi &,
+           const igl::min_heap<std::tuple<double,int,int>> &,
+           const Eigen::VectorXi &,
+           const Eigen::MatrixXd &,
+           const int) -> bool { return true; };
 
+    // Post-collapse callback: called after each collapse attempt
+    igl::decimate_post_collapse_callback post_collapse = 
+        [](const Eigen::MatrixXd &,
+           const Eigen::MatrixXi &,
+           const Eigen::MatrixXi &,
+           const Eigen::VectorXi &,
+           const Eigen::MatrixXi &,
+           const Eigen::MatrixXi &,
+           const igl::min_heap<std::tuple<double,int,int>> &,
+           const Eigen::VectorXi &,
+           const Eigen::MatrixXd &,
+           const int,
+           const int,
+           const int,
+           const int,
+           const int,
+           const bool) -> void {};
 
     //std::cout << "??" << std::endl;
-    igl::decimate(V, F, shortest_edge_and_midpoint_lambda, stopping_condition, U, G, J, I);
+    igl::decimate(V, F, shortest_edge_and_midpoint_lambda, stopping_condition, pre_collapse, post_collapse, U, G, J, I);
     //std::cout << "!!" << std::endl;
 
     Eigen::VectorXd high_new, low_new;
@@ -190,8 +220,9 @@ void collapse_edges(Eigen::MatrixXd &V, Eigen::MatrixXi &F, Eigen::VectorXi &fea
             j = j + 1;
         }
     }
-
-    // PLACEHOLDER
+    
+    // Resize feature_new to actual count (j elements are valid, rest are garbage)
+    feature_new.conservativeResize(j);
 
     V = U;
     F = G;

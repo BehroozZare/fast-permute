@@ -33,14 +33,18 @@ void remesh_botsch_map(Eigen::MatrixXd & V,Eigen::MatrixXi & F, std::vector<int>
 
     // Iterate the four steps
     for (int i = 0; i<iters; i++) {
+
         //=============== Step 1: Split ===============
+    	// std::cout << "Step 1" << std::endl;
         // New vertices are added to the end of V
         split_edges_until_bound(V,F,feature,high,low);
         //=============== Step 2: Collapse ===============
+    	// std::cout << "Step 2" << std::endl;
         Eigen::VectorXi I; // indices to the birth vertices
         int prev_num_vertices = V.rows();
         collapse_edges(V,F,feature,high,low, I); // Collapse
         //--------- compute the map per iteration
+    	// std::cout << "Step 2 - mapping" << std::endl;
         //Create the mapping vector between old and new dofs ids
         assert(I.rows() == V.rows());
         std::vector<int> old_to_new_iter_dof_map(prev_num_vertices, -1);
@@ -54,6 +58,7 @@ void remesh_botsch_map(Eigen::MatrixXd & V,Eigen::MatrixXi & F, std::vector<int>
             }
         }
         //=============== Step 3: Flip ===============
+    	// std::cout << "Step 3" << std::endl;
         equalize_valences(V,F,feature); // Flip
         int n = V.rows();
         lambda = Eigen::VectorXd::Constant(n,1.0);
@@ -62,6 +67,7 @@ void remesh_botsch_map(Eigen::MatrixXd & V,Eigen::MatrixXi & F, std::vector<int>
             F0 = F;
         }
         //=============== Step 4: Relax ===============
+    	// std::cout << "Step 4" << std::endl;
         tangential_relaxation(V,F,feature,V0,F0,lambda); // Relax
     }
 }

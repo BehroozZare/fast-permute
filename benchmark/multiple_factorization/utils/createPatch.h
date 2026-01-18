@@ -5,24 +5,63 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <igl/vertex_triangle_adjacency.h>
+#include <Eigen/Sparse>
 #include <queue>
 #include <vector>
+#include <unordered_set>
+#include <spdlog/spdlog.h>
+#include <igl/vertex_triangle_adjacency.h>
 
-namespace PARTHDEMO {
+namespace RXMESH_SOLVER {
+    void createPatch(int fid, ///<[in] center of the patch
+                     double ring_size, ///<[in] how many ring of neighbors in BFS around a face should be included
+                     Eigen::VectorXi &SelectedFaces,///<[in] selected faces ids
+                     Eigen::MatrixXi &F,///<[in] Faces
+                     Eigen::MatrixXd &V///<[in] Vertices
+    ) {
+        // paint hit red
+        Eigen::VectorXi Fp;
+        Eigen::VectorXi Fi;
+        igl::vertex_triangle_adjacency(F, V.rows(), Fi, Fp);
 
-/**
- * @brief Creates a patch of faces around a center face using BFS
- * @param fid Center face ID to start the patch from
- * @param ring_size Fraction of total faces to include in patch (0.0 to 1.0)
- * @param SelectedFaces Output vector of selected face IDs
- * @param F Face matrix (num_faces x 3)
- * @param V Vertex matrix (num_vertices x 3)
- */
-void createPatch(int fid,
-                 double ring_size,
-                 Eigen::VectorXi& SelectedFaces,
-                 Eigen::MatrixXi& F,
-                 Eigen::MatrixXd& V);
+        std::vector<int> Nfaces;
+        std::queue<int> first_ring, second_ring;
+        std::queue<int> *empty_ring;
+        std::queue<int> *full_ring;
+        std::queue<int>* tmp;
+        std::vector<bool> visited(F.rows(), false);
 
-}  // namespace PARTHDEMO
+        //Create a random face
+        first_ring.push(fid);
+        full_ring = &first_ring;
+        empty_ring = &second_ring;
+        while((Nfaces.size() * 1.0 / F.rows()) < ring_size){
+            while (!(*full_ring).empty()) {
+                int curr_f = (*full_ring).front();
+                (*full_ring).pop();
+                //For all faces
+                for (int v_ptr = 0; v_ptr < 3; v_ptr++) {
+                    int v = F(curr_f, v_ptr);
+                    for (int f_ptr = Fp[v]; f_ptr < Fp[v + 1]; f_ptr++) {
+                        int f = Fi(f_ptr);
+                        if (!visited[f]) {
+                            visited[f] = true;
+                            Nfaces.emplace_back(f);
+                            (*empty_ring).push(f);
+                        }
+                    }
+                }
+            }
+            tmp = full_ring;
+            full_ring = empty_ring;
+            empty_ring = tmp;
+        }
+
+        //Assign Nfaces into the SelectedFaces
+        SelectedFaces.resize(Nfaces.size());
+        for (int i = 0; i < Nfaces.size(); i++) {
+            SelectedFaces(i) = Nfaces[i];
+        }
+    }
+
+}

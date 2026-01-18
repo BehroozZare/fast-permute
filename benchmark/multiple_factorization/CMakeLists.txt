@@ -48,7 +48,6 @@ target_link_libraries(${PROJECT_NAME}_multi_mesh_smoothing_benchmark PRIVATE pol
 # -----------------------------------------------------------------------------
 add_executable(${PROJECT_NAME}_patch_remeshing_benchmark 
     patch_remeshing_benchmark.cpp
-    utils/createPatch.cpp
 )
 target_include_directories(${PROJECT_NAME}_patch_remeshing_benchmark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -57,3 +56,25 @@ target_include_directories(${PROJECT_NAME}_patch_remeshing_benchmark PRIVATE
 )
 configure_benchmark_target(${PROJECT_NAME}_patch_remeshing_benchmark)
 target_link_libraries(${PROJECT_NAME}_patch_remeshing_benchmark PRIVATE remesher polyscope)
+
+# -----------------------------------------------------------------------------
+# Vector Field Smoothing Benchmark
+# -----------------------------------------------------------------------------
+add_executable(${PROJECT_NAME}_vector_field_smoothing vector_field_smoothing.cpp)
+target_include_directories(${PROJECT_NAME}_vector_field_smoothing PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+)
+configure_benchmark_target(${PROJECT_NAME}_vector_field_smoothing)
+target_link_libraries(${PROJECT_NAME}_vector_field_smoothing PRIVATE polyscope)
+
+# -----------------------------------------------------------------------------
+# Data Smoothing Benchmark
+# -----------------------------------------------------------------------------
+add_executable(${PROJECT_NAME}_data_smoothing data_smoothing.cpp)
+target_include_directories(${PROJECT_NAME}_data_smoothing PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+)
+configure_benchmark_target(${PROJECT_NAME}_data_smoothing)
+target_link_libraries(${PROJECT_NAME}_data_smoothing PRIVATE polyscope)

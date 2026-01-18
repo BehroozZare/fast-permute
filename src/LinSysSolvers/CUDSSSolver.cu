@@ -404,6 +404,24 @@ void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
 
 void CUDSSSolver::resetSolver()
 {
+    // Destroy old data object (contains stale symbolic factorization)
+    if (data != nullptr) {
+        cudssDataDestroy(handle, data);
+        data = nullptr;
+    }
+    
+    // Clean matrix and RHS/solution memory
+    clean_sparse_matrix_mem();
+    clean_rhs_sol_mem();
+    
+    // Recreate data object for new matrix structure
+    auto status = cudssDataCreate(handle, &data);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::resetSolver - cudssDataCreate failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+    
+    spdlog::info("CUDSSSolver::resetSolver - Solver state reset successfully");
 }
 
 LinSysSolverType CUDSSSolver::type() const

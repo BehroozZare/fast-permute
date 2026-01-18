@@ -7,7 +7,6 @@
 //
 
 #include <igl/read_triangle_mesh.h>
-#include <igl/cotmatrix.h>
 #include <igl/slice.h>
 #include <igl/setdiff.h>
 #include <igl/colon.h>
@@ -25,6 +24,7 @@
 #include <unordered_map>
 
 #include "LinSysSolver.hpp"
+#include "SPD_cot_matrix.h"
 #include "get_factor_nnz.h"
 #include "check_valid_permutation.h"
 #include "csv_utils.h"
@@ -32,7 +32,8 @@
 #include "ordering.h"
 #include "create_patch_with_metis.h"
 #include "createPatch.h"
-#include "remesh_botsch.h"
+#include "update_perm_with_boundary.h"
+#include "remesh_the_patch.h"
 
 // Polyscope for visualization
 #include "polyscope/polyscope.h"
@@ -166,44 +167,44 @@ int get_max_neighbor_patch(
  * @param adjacency New mesh adjacency list
  * @param new_node_to_patch Output: new node_to_patch for interior vertices
  */
-void update_node_to_patch(
-    const std::vector<int>& old_to_new_dof_map,
-    const Eigen::VectorXi& old_in,
-    const Eigen::VectorXi& old_interior_inv,
-    const std::vector<int>& old_node_to_patch,
-    const Eigen::VectorXi& new_in,
-    const Eigen::VectorXi& new_interior_inv,
-    const std::vector<std::vector<int>>& adjacency,
-    std::vector<int>& new_node_to_patch)
-{
-    new_node_to_patch.resize(new_in.rows(), -1);
-    
-    // 1. Map existing interior vertices
-    for (int old_interior_idx = 0; old_interior_idx < old_in.rows(); old_interior_idx++) {
-        int old_global_v = old_in[old_interior_idx];
-        if (old_global_v < 0 || old_global_v >= static_cast<int>(old_to_new_dof_map.size())) {
-            continue;
-        }
-        
-        int new_global_v = old_to_new_dof_map[old_global_v];
-        if (new_global_v != -1 && new_global_v < new_interior_inv.rows()) {
-            int new_interior_idx = new_interior_inv[new_global_v];
-            if (new_interior_idx != -1 && new_interior_idx < static_cast<int>(new_node_to_patch.size())) {
-                new_node_to_patch[new_interior_idx] = old_node_to_patch[old_interior_idx];
-            }
-        }
-    }
-    
-    // 2. Assign new vertices using max neighbor patch
-    for (int i = 0; i < static_cast<int>(new_node_to_patch.size()); i++) {
-        if (new_node_to_patch[i] == -1) {
-            int global_v = new_in[i];
-            new_node_to_patch[i] = get_max_neighbor_patch(global_v, adjacency, new_interior_inv, new_node_to_patch);
-        }
-    }
-    
-    spdlog::info("Updated node_to_patch: {} interior vertices", new_node_to_patch.size());
-}
+// void update_node_to_patch(
+//     const std::vector<int>& old_to_new_dof_map,
+//     const Eigen::VectorXi& old_in,
+//     const Eigen::VectorXi& old_interior_inv,
+//     const std::vector<int>& old_node_to_patch,
+//     const Eigen::VectorXi& new_in,
+//     const Eigen::VectorXi& new_interior_inv,
+//     const std::vector<std::vector<int>>& adjacency,
+//     std::vector<int>& new_node_to_patch)
+// {
+//     new_node_to_patch.resize(new_in.rows(), -1);
+//
+//     // 1. Map existing interior vertices
+//     for (int old_interior_idx = 0; old_interior_idx < old_in.rows(); old_interior_idx++) {
+//         int old_global_v = old_in[old_interior_idx];
+//         if (old_global_v < 0 || old_global_v >= static_cast<int>(old_to_new_dof_map.size())) {
+//             continue;
+//         }
+//
+//         int new_global_v = old_to_new_dof_map[old_global_v];
+//         if (new_global_v != -1 && new_global_v < new_interior_inv.rows()) {
+//             int new_interior_idx = new_interior_inv[new_global_v];
+//             if (new_interior_idx != -1 && new_interior_idx < static_cast<int>(new_node_to_patch.size())) {
+//                 new_node_to_patch[new_interior_idx] = old_node_to_patch[old_interior_idx];
+//             }
+//         }
+//     }
+//
+//     // 2. Assign new vertices using max neighbor patch
+//     for (int i = 0; i < static_cast<int>(new_node_to_patch.size()); i++) {
+//         if (new_node_to_patch[i] == -1) {
+//             int global_v = new_in[i];
+//             new_node_to_patch[i] = get_max_neighbor_patch(global_v, adjacency, new_interior_inv, new_node_to_patch);
+//         }
+//     }
+//
+//     spdlog::info("Updated node_to_patch: {} interior vertices", new_node_to_patch.size());
+// }
 
 
 // ============================================================================
@@ -337,10 +338,16 @@ int main(int argc, char* argv[])
     if (center_face < 0 || center_face >= F.rows()) {
         center_face = F.rows() / 2;  // Default to middle face
     }
-    std::vector<int> old_to_new_dof_map; //Mapping from old vertices to new vertices
+    std::vector<int> new_to_old_map; //Mapping from old vertices to new vertices
     std::vector<int> node_to_patch; //Mapping from interior vertices to patches
+    Eigen::VectorXi selected_remesh_patch;
     for (int iter = 0; iter < args.num_iterations; iter++) {
         spdlog::info("========== Iteration {} ==========", iter);
+
+        // Reset solver state when matrix structure changes (after remeshing)
+        if (iter > 0) {
+            solver->resetSolver();
+        }
 
         // ========== Identify boundary vertices ==========
         Eigen::VectorXi old_in = in;
@@ -366,13 +373,14 @@ int main(int argc, char* argv[])
         }
 
         // ========== Build interior Laplacian L_in_in ==========
+        // Use SPD cotangent matrix (guaranteed positive definite via element-wise projection)
         Eigen::SparseMatrix<double> L;
-        igl::cotmatrix(V, F, L);
+        RXMESH_SOLVER::computeSPD_cot_matrix(V, F, L);
         igl::slice(L, in, in, L_in_in);
         igl::slice(L, in, b, L_in_b);
         
-        // Make it positive definite (negate)
-        Eigen::SparseMatrix<double> A_in_in = -L_in_in;
+        // Already positive definite from computeSPD_cot_matrix (no negation needed)
+        Eigen::SparseMatrix<double> A_in_in = L_in_in;
         
         spdlog::info("L_in_in size: {} x {}, NNZ: {}", L_in_in.rows(), L_in_in.cols(), L_in_in.nonZeros());
 
@@ -380,64 +388,65 @@ int main(int argc, char* argv[])
         auto node_to_patch_start = std::chrono::high_resolution_clock::now();
         long int patching_time = 0;
         int num_patches = 0;
-        if (iter == 0) {
-            // Initial computation using METIS
-            RXMESH_SOLVER::create_patch_with_metis(
-                L.rows(),
-                const_cast<int*>(L.outerIndexPtr()),
-                const_cast<int*>(L.innerIndexPtr()),
-                1,  // DIM=1 for scalar Laplacian
-                args.patch_size,
-                node_to_patch
-            );
-            
-            //Update the node_to_patch with the boundary
-            //Conver b from VectorXi to vector<int>
-            std::vector<int> b_vec(b.rows());
-            for(int i = 0; i < b.rows(); i++){
-                b_vec[i] = b(i);
-            }
-            RXMESH_SOLVER::update_perm_with_boundary(node_to_patch, b_vec);
-            assert(node_to_patch.size() == in.rows());
-            // Count unique patches
-            std::unordered_set<int> unique_patches(node_to_patch.begin(), node_to_patch.end());
-            num_patches = unique_patches.size();
-            
-            auto node_to_patch_end = std::chrono::high_resolution_clock::now();
-            patching_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                node_to_patch_end - node_to_patch_start).count();
-            spdlog::info("Initial node_to_patch computed: {} patches in {} ms", num_patches, patching_time);
-        } else {
-            //Create new to old mapping
-            std::vector<int> new_to_old_map(L_in_in.rows(), -1);
-            for(int i = 0; i < old_to_new_dof_map.size(); i++){
-                if(old_to_new_dof_map[i] == -1){
-                    continue;
-                }
-                int new_vertex_id = old_to_new_dof_map[i];
-                new_to_old_map[new_vertex_id] = i;
-            }
-            //Update the node_to_patch
-            std::vector<int> new_node_to_patch(L_in_in.rows(), -1);
-            //Compute new_to_old_map
-            for(int i = 0; i < new_to_old_map.size(); i++){
-                if(new_to_old_map[i] == -1){
-                    //Update with max neighbor patch
-                    int max_neighbor_patch = get_max_neighbor_patch(i, L_in_in.outerIndexPtr(), in_inv, node_to_patch);
-                    new_node_to_patch[i] = max_neighbor_patch;
-                }
-                int old_vertex_id = new_to_old_map[i];
-                new_node_to_patch[i] = node_to_patch[old_vertex_id];
-            }
-            std::unordered_set<int> unique_patches(new_node_to_patch.begin(), new_node_to_patch.end());
-            num_patches = unique_patches.size();
-            
-            auto node_to_patch_end = std::chrono::high_resolution_clock::now();
-            patching_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                node_to_patch_end - node_to_patch_start).count();
-            spdlog::info("Updated node_to_patch: {} patches in {} ms", num_patches, patching_time);
-        }
-
+        // if(args.ordering_type == "PATCH_ORDERING") {
+        //     if (iter == 0) {
+        //         // Initial computation using METIS
+        //         RXMESH_SOLVER::create_patch_with_metis(
+        //             L.rows(),
+        //             const_cast<int*>(L.outerIndexPtr()),
+        //             const_cast<int*>(L.innerIndexPtr()),
+        //             1,  // DIM=1 for scalar Laplacian
+        //             args.patch_size,
+        //             node_to_patch
+        //         );
+        //
+        //         //Update the node_to_patch with the boundary
+        //         //Conver b from VectorXi to vector<int>
+        //         std::vector<int> b_vec(b.rows());
+        //         for(int i = 0; i < b.rows(); i++){
+        //             b_vec[i] = b(i);
+        //         }
+        //         RXMESH_SOLVER::update_perm_with_boundary(node_to_patch, b_vec);
+        //         assert(node_to_patch.size() == in.rows());
+        //         // Count unique patches
+        //         std::unordered_set<int> unique_patches(node_to_patch.begin(), node_to_patch.end());
+        //         num_patches = unique_patches.size();
+        //
+        //         auto node_to_patch_end = std::chrono::high_resolution_clock::now();
+        //         patching_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        //             node_to_patch_end - node_to_patch_start).count();
+        //         spdlog::info("Initial node_to_patch computed: {} patches in {} ms", num_patches, patching_time);
+        //     } else {
+        //         //Create new to old mapping
+        //         std::vector<int> new_to_old_map(L_in_in.rows(), -1);
+        //         for(int i = 0; i < old_to_new_dof_map.size(); i++){
+        //             if(old_to_new_dof_map[i] == -1){
+        //                 continue;
+        //             }
+        //             int new_vertex_id = old_to_new_dof_map[i];
+        //             new_to_old_map[new_vertex_id] = i;
+        //         }
+        //         //Update the node_to_patch
+        //         std::vector<int> new_node_to_patch(L_in_in.rows(), -1);
+        //         //Compute new_to_old_map
+        //         for(int i = 0; i < new_to_old_map.size(); i++){
+        //             if(new_to_old_map[i] == -1){
+        //                 //Update with max neighbor patch
+        //                 int max_neighbor_patch = get_max_neighbor_patch(i, L_in_in.outerIndexPtr(), in_inv, node_to_patch);
+        //                 new_node_to_patch[i] = max_neighbor_patch;
+        //             }
+        //             int old_vertex_id = new_to_old_map[i];
+        //             new_node_to_patch[i] = node_to_patch[old_vertex_id];
+        //         }
+        //         std::unordered_set<int> unique_patches(new_node_to_patch.begin(), new_node_to_patch.end());
+        //         num_patches = unique_patches.size();
+        //
+        //         auto node_to_patch_end = std::chrono::high_resolution_clock::now();
+        //         patching_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        //             node_to_patch_end - node_to_patch_start).count();
+        //         spdlog::info("Updated node_to_patch: {} patches in {} ms", num_patches, patching_time);
+        //     }
+        // }
         // ========== Create/update ordering ==========
         long int ordering_time = 0;
         
@@ -489,72 +498,72 @@ int main(int argc, char* argv[])
         }
 
         // ========== Set matrix and analyze ==========
-        Eigen::SparseMatrix<double> lower_A;
-        if (args.solver_type == "MKL") {
-            lower_A = A_in_in.triangularView<Eigen::Lower>();
-            solver->setMatrix(lower_A.outerIndexPtr(),
-                              lower_A.innerIndexPtr(),
-                              lower_A.valuePtr(),
-                              lower_A.rows(),
-                              lower_A.nonZeros());
-        } else {
-            solver->setMatrix(A_in_in.outerIndexPtr(),
-                              A_in_in.innerIndexPtr(),
-                              A_in_in.valuePtr(),
-                              A_in_in.rows(),
-                              A_in_in.nonZeros());
-        }
-
-        // Set ordering
-        solver->ordering(perm, etree);
-
-        // Symbolic analysis
-        auto analysis_start = std::chrono::high_resolution_clock::now();
-        solver->analyze_pattern(perm, etree);
-        if (args.solver_type == "CUDSS") {
-            CUDA_SYNC_CHECK();
-        }
-        auto analysis_end = std::chrono::high_resolution_clock::now();
-        long int analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-            analysis_end - analysis_start).count();
-        spdlog::info("Symbolic analysis time: {} ms", analysis_time);
-
-        // ========== Factorize ==========
-        auto factor_start = std::chrono::high_resolution_clock::now();
-        solver->factorize();
-        if (args.solver_type == "CUDSS") {
-            CUDA_SYNC_CHECK();
-        }
-        auto factor_end = std::chrono::high_resolution_clock::now();
-        long int factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-            factor_end - factor_start).count();
-        spdlog::info("Factorization time: {} ms", factorization_time);
-
-        // ========== Solve Laplacian with Dirichlet BC ==========
-        // BC: boundary vertices get constant value
-        Eigen::VectorXd Z = V.col(2);  // Use z-coordinate as solution template
-        Z.setConstant(5.0);  // Constant boundary value
-        Eigen::VectorXd bc = Z(b);
-        
-        Eigen::VectorXd rhs = L_in_b * bc;
-        Eigen::VectorXd sol;
-        
-        auto solve_start = std::chrono::high_resolution_clock::now();
-        solver->solve(rhs, sol);
-        if (args.solver_type == "CUDSS") {
-            CUDA_SYNC_CHECK();
-        }
-        auto solve_end = std::chrono::high_resolution_clock::now();
-        long int solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-            solve_end - solve_start).count();
-        spdlog::info("Solve time: {} ms", solve_time);
-        
+        // Eigen::SparseMatrix<double> lower_A;
+        // if (args.solver_type == "MKL") {
+        //     lower_A = A_in_in.triangularView<Eigen::Lower>();
+        //     solver->setMatrix(lower_A.outerIndexPtr(),
+        //                       lower_A.innerIndexPtr(),
+        //                       lower_A.valuePtr(),
+        //                       lower_A.rows(),
+        //                       lower_A.nonZeros());
+        // } else {
+        //     solver->setMatrix(A_in_in.outerIndexPtr(),
+        //                       A_in_in.innerIndexPtr(),
+        //                       A_in_in.valuePtr(),
+        //                       A_in_in.rows(),
+        //                       A_in_in.nonZeros());
+        // }
+        //
+        // // Set ordering
+        // solver->ordering(perm, etree);
+        //
+        // // Symbolic analysis
+        // auto analysis_start = std::chrono::high_resolution_clock::now();
+        // solver->analyze_pattern(perm, etree);
+        // if (args.solver_type == "CUDSS") {
+        //     CUDA_SYNC_CHECK();
+        // }
+        // auto analysis_end = std::chrono::high_resolution_clock::now();
+        // long int analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        //     analysis_end - analysis_start).count();
+        // spdlog::info("Symbolic analysis time: {} ms", analysis_time);
+        //
+        // // ========== Factorize ==========
+        // auto factor_start = std::chrono::high_resolution_clock::now();
+        // solver->factorize();
+        // if (args.solver_type == "CUDSS") {
+        //     CUDA_SYNC_CHECK();
+        // }
+        // auto factor_end = std::chrono::high_resolution_clock::now();
+        // long int factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        //     factor_end - factor_start).count();
+        // spdlog::info("Factorization time: {} ms", factorization_time);
+        //
+        // // ========== Solve Laplacian with Dirichlet BC ==========
+        // // BC: boundary vertices get constant value
+        // Eigen::VectorXd Z = V.col(2);  // Use z-coordinate as solution template
+        // Z.setConstant(5.0);  // Constant boundary value
+        // Eigen::VectorXd bc = Z(b);
+        //
+        // Eigen::VectorXd rhs = L_in_b * bc;
+        // Eigen::VectorXd sol;
+        //
+        // auto solve_start = std::chrono::high_resolution_clock::now();
+        // solver->solve(rhs, sol);
+        // if (args.solver_type == "CUDSS") {
+        //     CUDA_SYNC_CHECK();
+        // }
+        // auto solve_end = std::chrono::high_resolution_clock::now();
+        // long int solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        //     solve_end - solve_start).count();
+        // spdlog::info("Solve time: {} ms", solve_time);
+        //
         // Update solution
-        Z(in) = sol;
+        // Z(in) = sol;
 
         // Compute residual
-        double residual = (rhs - A_in_in * sol).norm();
-        spdlog::info("Residual: {}", residual);
+        // double residual = (rhs - A_in_in * sol).norm();
+        // spdlog::info("Residual: {}", residual);
 
         // ========== Record to CSV ==========
         long int factor_nnz = solver->getFactorNNZ();
@@ -574,43 +583,30 @@ int main(int argc, char* argv[])
         runtime_csv.addElementToRecord(patching_time, "patching_time");
         runtime_csv.addElementToRecord(ordering_time, "ordering_time");
         runtime_csv.addElementToRecord(0, "node_to_patch_update_time");  // Included in patching_time
-        runtime_csv.addElementToRecord(analysis_time, "analysis_time");
-        runtime_csv.addElementToRecord(factorization_time, "factorization_time");
-        runtime_csv.addElementToRecord(solve_time, "solve_time");
+        // runtime_csv.addElementToRecord(analysis_time, "analysis_time");
+        // runtime_csv.addElementToRecord(factorization_time, "factorization_time");
+        // runtime_csv.addElementToRecord(solve_time, "solve_time");
 
         // ========== Remeshing (if not last iteration) ==========
         long int remesh_time = 0;
         if (iter < args.num_iterations - 1) {
-            // Select patch for remeshing
-            Eigen::VectorXi selected_faces;
-            PARTHDEMO::createPatch(center_face, args.patch_percentage, selected_faces, F, V);
-            spdlog::info("Selected {} faces for remeshing around face {}", selected_faces.rows(), center_face);
-            
-            // Compute target edge length
-            double target_edge_length = igl::avg_edge_length(V, F) * args.remesh_target_scale;
-            
-            // Apply remeshing with mapping
-            Eigen::VectorXd target = Eigen::VectorXd::Constant(V.rows(), target_edge_length);
-            Eigen::VectorXi feature;  // Empty - no feature edges
-            feature.resize(0);
-            
-            auto remesh_start = std::chrono::high_resolution_clock::now();
-            remesh_botsch_map(V, F, old_to_new_dof_map, target, args.remesh_iters, feature, false);
-            auto remesh_end = std::chrono::high_resolution_clock::now();
-            remesh_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                remesh_end - remesh_start).count();
-            
-            spdlog::info("Remeshing complete: {} vertices, {} faces in {} ms", 
-                         V.rows(), F.rows(), remesh_time);
-            
-            // Update center face for next iteration (pick a random valid face)
-            if (F.rows() > 0) {
-                center_face = center_face % F.rows();
-            }
+            //Select a random patch for remeshing
+            std::default_random_engine generator (iter);
+            std::uniform_real_distribution<double> distribution (0, F.rows());
+            int fid = distribution(generator);
+            RXMESH_SOLVER::createPatch(fid, 0.01, selected_remesh_patch, F, V);
+            Eigen::MatrixXi F_up;
+            Eigen::MatrixXd V_up;
+    
+            selected_remesh_patch = RXMESH_SOLVER::remesh(selected_remesh_patch, F, V,
+                F_up, V_up, args.remesh_target_scale, new_to_old_map);
+
+            V = V_up;
+            F = F_up;
         }
         
         runtime_csv.addElementToRecord(remesh_time, "remesh_time");
-        runtime_csv.addElementToRecord(residual, "residual");
+        // runtime_csv.addElementToRecord(residual, "residual");
         runtime_csv.addRecord();
     }
 

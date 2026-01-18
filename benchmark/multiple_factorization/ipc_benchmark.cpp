@@ -12,6 +12,7 @@
 #include <unsupported/Eigen/SparseExtra>
 #include <iostream>
 #include <filesystem>
+#include <cmath>
 #include <unordered_set>
 #include <queue>
 
@@ -47,16 +48,17 @@ CUDA_ERROR(cudaDeviceSynchronize());                       \
 
 struct CLIArgs
 {
-    int binary_level = 9; // It is zero-based so 9 is 10 levels
+    int binary_level = 5; // It is zero-based so 9 is 10 levels
     std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/IPC/ipc";//Include absolute path with csv file name without .csv extension
     std::string solver_type   = "CUDSS";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
     // std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/mat225x225t40-mat225x225t40_fall_NH_BE_interiorPoint_20260115020027";
-    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/MatOnBoard/test";
+    std::string check_point_address = "/media/behrooz/FarazHard/IPC_matrices/test";
     std::string V_address = "";
     std::string F_address = "";
-    int patch_size = 128;
+    int patch_size = 256;
+    double patch_update_nnz_threshold = 0.05;  // Update patches if NNZ changes by more than this percentage (e.g., 0.05 = 5%)
 
     CLIArgs(int argc, char* argv[])
     {
@@ -70,6 +72,7 @@ struct CLIArgs
         app.add_option("-k,--check_point_address", check_point_address, "check point address");
         app.add_option("-v,--V_address", V_address, "V address");
         app.add_option("-f,--F_address", F_address, "F address");
+        app.add_option("-u,--patch_update_nnz_threshold", patch_update_nnz_threshold, "NNZ change percentage threshold for updating patches (e.g., 0.05 = 5%)");
 
         try {
             app.parse(argc, argv);
@@ -98,13 +101,6 @@ int main(int argc, char* argv[])
     int DIM = 3;
     std::vector<int> node_to_patch;
     std::vector<int> parth_perm, parth_new_labels, parth_sep_ptr;
-    RXMESH_SOLVER::create_patch_with_metis(base.rows(), base.outerIndexPtr(), base.innerIndexPtr(), DIM, args.patch_size, node_to_patch);
-    if (node_to_patch.size() != (base.rows() / DIM)) {
-        spdlog::info("node to patch size is :{}, and the matrix size is: {}", node_to_patch.size(), base.rows());
-        throw std::runtime_error("Node to patch size is not equal to the number of rows of the matrix");
-    } else {
-        spdlog::info("Node to patch size: {}", node_to_patch.size());
-    }
 
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(base.rows());
     Eigen::VectorXd result;
@@ -133,6 +129,7 @@ int main(int argc, char* argv[])
     std::vector<int> lag_perm;
     std::vector<int> metis_perm;
 
+    int last_patch_update_nnz = -1;  // Track G_NNZ when patches were last updated
 
     for(auto & matrix_address : matrix_addresses) {
         //==============Read the matrix==============
@@ -174,9 +171,41 @@ int main(int argc, char* argv[])
             }
         }
 
-        RXMESH_SOLVER::Ordering* patch_ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
-        patch_ordering->setGraph(Gp, Gi, G_N, Gp[G_N]);
-        patch_ordering->setPatch(node_to_patch);
+        // Update patches when graph changes and NNZ change exceeds threshold (only for PATCH_ORDERING)
+        int current_nnz = Gp[G_N];  // NNZ of the compressed graph
+        if (args.ordering_type == "PATCH_ORDERING") {
+            double nnz_change_ratio = (last_patch_update_nnz > 0) ? 
+                std::abs(current_nnz - last_patch_update_nnz) / static_cast<double>(last_patch_update_nnz) : 1.0;
+            bool should_update_patches = !is_graph_equal && 
+                                         (last_patch_update_nnz < 0 || 
+                                          nnz_change_ratio >= args.patch_update_nnz_threshold);
+            if (should_update_patches) {
+                RXMESH_SOLVER::create_patch_with_metis(mat.rows(), mat.outerIndexPtr(), mat.innerIndexPtr(), 
+                                                       DIM, args.patch_size, node_to_patch);
+                spdlog::info("Updated node_to_patch at frame {} (NNZ changed by {:.2f}%, from {} to {})", 
+                            frame, nnz_change_ratio * 100.0, last_patch_update_nnz, current_nnz);
+                last_patch_update_nnz = current_nnz;
+                
+                if (node_to_patch.size() != (mat.rows() / DIM)) {
+                    spdlog::info("node to patch size is :{}, and the matrix size is: {}", node_to_patch.size(), mat.rows());
+                    throw std::runtime_error("Node to patch size is not equal to the number of rows of the matrix");
+                } else {
+                    spdlog::info("Node to patch size: {}", node_to_patch.size());
+                }
+            }
+        }
+
+        // Create ordering based on ordering_type
+        RXMESH_SOLVER::Ordering* ordering = nullptr;
+        if (args.ordering_type == "PATCH_ORDERING") {
+            ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+            ordering->setGraph(Gp, Gi, G_N, Gp[G_N]);
+            ordering->setPatch(node_to_patch);
+        } else if (args.ordering_type == "PARTH") {
+            ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+            ordering->setGraph(Gp, Gi, G_N, Gp[G_N]);
+            ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
+        }
 
         double residual = 0;
         long int ordering_init_time = -1;
@@ -189,17 +218,17 @@ int main(int argc, char* argv[])
 
         std::vector<int> matrix_perm, matrix_etree;
         auto ordering_start = std::chrono::high_resolution_clock::now();
-        if (args.ordering_type != "DEFAULT" && !is_graph_equal) {
-            std::vector<int> patch_perm, patch_etree;
-            patch_ordering->compute_permutation(patch_perm, patch_etree, true);
-            //Map to global permutation
-            matrix_perm.resize(patch_perm.size() * DIM);
-            for(int i1 = 0; i1 < patch_perm.size(); i1++){
+        if (args.ordering_type != "DEFAULT" && !is_graph_equal && ordering != nullptr) {
+            std::vector<int> perm, etree;
+            ordering->compute_permutation(perm, etree, true);
+            //Map to global permutation (expand DIM times)
+            matrix_perm.resize(perm.size() * DIM);
+            for(int i1 = 0; i1 < perm.size(); i1++){
                 for(int j = 0; j < DIM; j++){
-                    matrix_perm[i1 * DIM + j] = patch_perm[i1] * DIM + j;
+                    matrix_perm[i1 * DIM + j] = perm[i1] * DIM + j;
                 }
             }
-            matrix_etree = patch_etree;
+            matrix_etree = etree;
             for(auto& value: matrix_etree){
                 value = value * DIM;
             }
@@ -386,7 +415,9 @@ int main(int argc, char* argv[])
         Gi_prev.resize(Gp[G_N]);
         std::copy(Gp, Gp + G_N + 1, Gp_prev.begin());
         std::copy(Gi, Gi + G_N, Gi_prev.begin());
-        delete patch_ordering;
+        if (ordering != nullptr) {
+            delete ordering;
+        }
     }
     delete solver;
     // delete metis_ordering;
