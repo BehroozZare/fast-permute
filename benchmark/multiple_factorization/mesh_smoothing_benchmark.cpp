@@ -7,6 +7,7 @@
 //
 
 #include <igl/read_triangle_mesh.h>
+#include <igl/writeOBJ.h>
 #include <igl/cotmatrix.h>
 #include <igl/massmatrix.h>
 #include <igl/doublearea.h>
@@ -255,6 +256,8 @@ struct CLIArgs
     int patch_size = 512;
     bool use_gpu = false;
     bool visualize = false;
+    bool save_meshes = true;
+    std::string mesh_output_dir = "/media/behrooz/FarazHard/Last_Project/Smoothing_benchmark/smoothing_meshes";
 
     CLIArgs(int argc, char* argv[])
     {
@@ -271,6 +274,8 @@ struct CLIArgs
         app.add_option("-b,--binary_level", binary_level, "Binary level for nested dissection tree");
         app.add_option("-g,--use_gpu", use_gpu, "Use GPU for ordering");
         app.add_option("-v,--visualize", visualize, "Show mesh smoothing visualization after benchmark");
+        app.add_option("--save_meshes", save_meshes, "Save mesh at each iteration as OBJ files");
+        app.add_option("--mesh_output_dir", mesh_output_dir, "Directory to save mesh OBJ files");
 
         try {
             app.parse(argc, argv);
@@ -504,6 +509,20 @@ int main(int argc, char* argv[])
         vertex_history.push_back(V);  // Store initial positions
     }
 
+    // ========== Save meshes to OBJ files (optional) ==========
+    if (args.save_meshes) {
+        // Create output directory if it doesn't exist
+        std::filesystem::create_directories(args.mesh_output_dir);
+        
+        // Save initial mesh
+        std::string initial_mesh_path = args.mesh_output_dir + "/" + mesh_name + "_0.obj";
+        if (igl::writeOBJ(initial_mesh_path, V, F)) {
+            spdlog::info("Saved initial mesh to: {}", initial_mesh_path);
+        } else {
+            spdlog::warn("Failed to save initial mesh to: {}", initial_mesh_path);
+        }
+    }
+
     // ========== Smoothing loop ==========
     spdlog::info("Starting smoothing loop with {} iterations...", args.num_iterations);
 
@@ -583,6 +602,16 @@ int main(int argc, char* argv[])
         // Store vertex positions for visualization
         if (args.visualize) {
             vertex_history.push_back(U);
+        }
+
+        // Save mesh to OBJ file
+        if (args.save_meshes) {
+            std::string mesh_path = args.mesh_output_dir + "/" + mesh_name + "_" + std::to_string(iter + 1) + ".obj";
+            if (igl::writeOBJ(mesh_path, U, F)) {
+                spdlog::info("Saved mesh iteration {} to: {}", iter + 1, mesh_path);
+            } else {
+                spdlog::warn("Failed to save mesh iteration {} to: {}", iter + 1, mesh_path);
+            }
         }
 
         // Compute residual (for the first coordinate as representative)

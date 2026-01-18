@@ -52,7 +52,7 @@ struct CLIArgs
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
     std::string check_point_address = "/media/behrooz/FarazHard/Last_Project/slim_benchmark/armadillo_cut_high";
-    bool use_gpu = true;
+    bool use_gpu = false;
 
     CLIArgs(int argc, char* argv[])
     {
@@ -86,21 +86,15 @@ int main(int argc, char* argv[])
     spdlog::info("DIM: {}", args.DIM);
 
     // ========== Load benchmark data ==========
-    std::vector<std::string> grad_addresses;
     std::vector<std::string> hessian_addresses;
     std::string obj_address;
-    RXMESH_SOLVER::prepare_benchmark_data(args.check_point_address, grad_addresses, hessian_addresses, obj_address);
+    RXMESH_SOLVER::prepare_benchmark_data(args.check_point_address, hessian_addresses, obj_address);
     
-    spdlog::info("Number of gradient files: {}", grad_addresses.size());
     spdlog::info("Number of Hessian files: {}", hessian_addresses.size());
     spdlog::info("OBJ file: {}", obj_address);
 
     if (hessian_addresses.empty()) {
         spdlog::error("No Hessian files found. Exiting.");
-        return 1;
-    }
-    if (grad_addresses.size() != hessian_addresses.size()) {
-        spdlog::error("Mismatch between gradient and hessian file counts. Exiting.");
         return 1;
     }
 
@@ -358,11 +352,8 @@ int main(int argc, char* argv[])
         // Load Hessian matrix
         Eigen::SparseMatrix<double> hessian;
         Eigen::loadMarket(hessian, hessian_addresses[iter]);
-        hessian = -hessian;
-        // Load gradient as RHS (dense vector in MatrixMarket array format)
-        Eigen::VectorXd rhs;
-        Eigen::loadMarketVector(rhs, grad_addresses[iter]);
-        // rhs = -rhs;
+        // Generate random RHS vector with the same size as the matrix
+        Eigen::VectorXd rhs = Eigen::VectorXd::Random(hessian.rows());
         // For result
         Eigen::VectorXd result;
 
