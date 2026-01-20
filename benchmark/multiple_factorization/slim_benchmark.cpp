@@ -87,10 +87,12 @@ int main(int argc, char* argv[])
 
     // ========== Load benchmark data ==========
     std::vector<std::string> hessian_addresses;
+    std::vector<std::string> gradient_addresses;
     std::string obj_address;
-    RXMESH_SOLVER::prepare_benchmark_data(args.check_point_address, hessian_addresses, obj_address);
+    RXMESH_SOLVER::prepare_benchmark_data(args.check_point_address, hessian_addresses, gradient_addresses, obj_address);
     
     spdlog::info("Number of Hessian files: {}", hessian_addresses.size());
+    spdlog::info("Number of Gradient files: {}", gradient_addresses.size());
     spdlog::info("OBJ file: {}", obj_address);
 
     if (hessian_addresses.empty()) {
@@ -437,6 +439,14 @@ int main(int argc, char* argv[])
         runtime_csv.addElementToRecord(solve_time, "solve_time");
         runtime_csv.addElementToRecord(residual, "residual");
         runtime_csv.addRecord();
+
+        //Reset timers
+        ordering_init_time = 0;
+        ordering_time = 0;
+        ordering_integration_time = 0;
+        analysis_time = 0;
+        factorization_time = 0;
+        solve_time = 0;
     }
 
     spdlog::info("=== SLIM Benchmark Complete ===");
