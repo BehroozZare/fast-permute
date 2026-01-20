@@ -396,7 +396,7 @@ int main(int argc, char* argv[])
         // Compute residual
         // Make hessian full (it might be stored as lower triangular)
         Eigen::SparseMatrix<double> hessian_full = hessian.selfadjointView<Eigen::Lower>();
-        double residual = (rhs - hessian_full * result).norm();
+        double residual = (rhs - hessian_full * result).norm() / rhs.norm();
         spdlog::info("Residual: {}", residual);
 
         // Record to CSV

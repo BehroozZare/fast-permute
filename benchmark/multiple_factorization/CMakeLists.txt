@@ -71,10 +71,10 @@ target_link_libraries(${PROJECT_NAME}_vector_field_smoothing PRIVATE polyscope)
 # -----------------------------------------------------------------------------
 # Data Smoothing Benchmark
 # -----------------------------------------------------------------------------
-add_executable(${PROJECT_NAME}_data_smoothing data_smoothing.cpp)
-target_include_directories(${PROJECT_NAME}_data_smoothing PRIVATE
+add_executable(${PROJECT_NAME}_data_smoothing_benchmark data_smoothing_benchmark.cpp)
+target_include_directories(${PROJECT_NAME}_data_smoothing_benchmark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
 )
-configure_benchmark_target(${PROJECT_NAME}_data_smoothing)
-target_link_libraries(${PROJECT_NAME}_data_smoothing PRIVATE polyscope)
+configure_benchmark_target(${PROJECT_NAME}_data_smoothing_benchmark)
+target_link_libraries(${PROJECT_NAME}_data_smoothing_benchmark PRIVATE polyscope)
