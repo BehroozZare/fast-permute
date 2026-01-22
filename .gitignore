@@ -23,6 +23,7 @@ cmake-build-release
 cmake-build-debug
 .vscode/
 .idea/
+.cursor/
 scripts/*.log
 scripts/*.ini
 scripts/*.nsys-rep

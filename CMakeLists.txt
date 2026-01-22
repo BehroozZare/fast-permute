@@ -135,7 +135,7 @@ target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
 ################################################################################
 option(${PROJECT_NAME}_WITH_PARTH "Use Parth for fill-reducing orderings" ON)
 option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark" ON)
-option(${PROJECT_NAME}_WITH_MKL "Use Intel MKL PARDISO for benchmark" OFF)
+option(${PROJECT_NAME}_WITH_MKL "Use Intel MKL PARDISO for benchmark" ONshowi)
 option(${PROJECT_NAME}_WITH_STRUMPACK "Use Strumpack for benchmark" OFF)
 option(${PROJECT_NAME}_WITH_PROFILE "Use Profile for benchmark" ON)
 

@@ -245,9 +245,9 @@ inline void show_smoothing_visualization(std::vector<Eigen::MatrixXd>& history,
 struct CLIArgs
 {
     std::string input_mesh;
-    int num_iterations = 10;
+    int num_iterations = 6;
     double delta = 0.001;
-    int binary_level = 7;
+    int binary_level = 9;
     std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Smoothing/smoothing";
     std::string solver_type = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
@@ -256,7 +256,7 @@ struct CLIArgs
     int patch_size = 512;
     bool use_gpu = false;
     bool visualize = false;
-    bool save_meshes = true;
+    bool save_meshes = false;
     std::string mesh_output_dir = "/media/behrooz/FarazHard/Last_Project/Smoothing_benchmark/smoothing_meshes";
 
     CLIArgs(int argc, char* argv[])

@@ -15,15 +15,17 @@
 #include "remove_diagonal.h"
 #include "check_valid_permutation.h"
 #include "save_vector.h"
+#include "utils/create_patch_with_metis.h"
 
 struct CLIArgs
 {
-    std::string input_mesh = "/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/tri-mesh/final/squirrel.obj";
+    std::string input_mesh = "/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/tri-mesh/final/beetle.obj";
     std::string output_folder = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/render_data";
     int binary_level = 7;
     std::string ordering_type = "PATCH_ORDERING";
     std::string patch_type = "rxmesh";
     int patch_size = 512;
+    int patch_number = -1;
     bool use_gpu = false;
     int use_patch_separator = 1;
     std::string patch_ordering_local_permute_method = "amd";
@@ -36,10 +38,7 @@ struct CLIArgs
         app.add_option("-a,--ordering", ordering_type, "ordering type");
         app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
         app.add_option("-z,--patch_size", patch_size, "patch size");
-        app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
-        app.add_option("-g,--use_gpu", use_gpu, "use gpu");
-        app.add_option("-u,--use_patch_separator", use_patch_separator, "use patch separator");
-        app.add_option("-m,--patch_ordering_local_permute_method", patch_ordering_local_permute_method, "patch ordering local permute method");
+        app.add_option("-n,--patch_number", patch_number, "patch number");
         try {
             app.parse(argc, argv);
         } catch (const CLI::ParseError& e) {
@@ -55,7 +54,6 @@ int main(int argc, char* argv[])
     CLIArgs args(argc, argv);
 
     std::cout << "Loading mesh from: " << args.input_mesh << std::endl;
-
     // Load the mesh
     Eigen::MatrixXd OV;
     Eigen::MatrixXi OF;
@@ -64,9 +62,18 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+
     // Create SPD cotangent matrix (already positive definite with regularization)
     Eigen::SparseMatrix<double> OL;
     RXMESH_SOLVER::computeSPD_cot_matrix(OV, OF, OL);
+
+    if (args.patch_number != -1) {
+        spdlog::info("Using patch number: {}", args.patch_number);
+        args.patch_size = OL.rows() / args.patch_number;
+        spdlog::info("Using patch size: {}", args.patch_size);
+    } else {
+        spdlog::info("Using patch size: {}", args.patch_size);
+    }
 
     // Print matrix info
     spdlog::info("Number of rows: {}", OL.rows());
@@ -115,8 +122,18 @@ int main(int argc, char* argv[])
     }
     ordering->setGraph(Gp.data(), Gi.data(), OL.rows(), Gi.size());
 
-    spdlog::info("Initializing ordering...");
-    ordering->init();
+    // Create patches with METIS for PATCH_ORDERING, otherwise use init()
+    std::vector<int> node_to_patch;
+    if (args.ordering_type == "PATCH_ORDERING") {
+        spdlog::info("Creating patches with METIS...");
+        RXMESH_SOLVER::create_patch_with_metis(OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(),
+            1, args.patch_size, node_to_patch);
+        ordering->setPatch(node_to_patch);
+        spdlog::info("Patches created with {} nodes", node_to_patch.size());
+    } else {
+        spdlog::info("Initializing ordering...");
+        ordering->init();
+    }
 
     spdlog::info("Computing permutation...");
     ordering->compute_permutation(perm, etree, true); // Get level-based etree
@@ -145,6 +162,14 @@ int main(int argc, char* argv[])
     RXMESH_SOLVER::save_vector_to_file(etree_nodes, args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + ".txt");
     spdlog::info("Node to etree mapping saved to: {}", args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + ".txt");
     spdlog::info("Etree nodes saved to: {}", args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + ".txt");
+
+    // Save vertex to patch ID mapping
+    if (args.ordering_type == "PATCH_ORDERING" && !node_to_patch.empty()) {
+        std::string patch_mapping_file = args.output_folder + "/" + mesh_name + "_vertex_to_patch.txt";
+        RXMESH_SOLVER::save_vector_to_file(node_to_patch, patch_mapping_file);
+        spdlog::info("Vertex to patch mapping saved to: {}", patch_mapping_file);
+    }
+
     delete ordering;
     return 0;
 }

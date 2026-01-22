@@ -30,7 +30,7 @@
 struct CLIArgs
 {
     std::string input_mesh;
-    int binary_level = 7; // It is zero-based so 9 is 10 levels
+    int binary_level = 8; // It is zero-based so 9 is 10 levels
     std::string output_csv_address="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/laplace";//Include absolute path with csv file name without .csv extension
     std::string solver_type   = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
@@ -41,7 +41,7 @@ struct CLIArgs
     bool use_gpu = false;
     bool store_check_points = false;
 
-    CLIArgs(int argc, char* argv[])
+    CLIArgs(int argc, char* argv[]) 
     {
         CLI::App app{"Separator analysis"};
         app.add_option("-a,--ordering", ordering_type, "ordering type");
@@ -50,7 +50,6 @@ struct CLIArgs
         app.add_option("-o,--output", output_csv_address, "output folder name");
         app.add_option("-i,--input", input_mesh, "input mesh name");
         app.add_option("-g,--use_gpu", use_gpu, "use gpu");
-        app.add_option("-p,--patch_type", patch_type, "how to patch the graph/mesh");
         app.add_option("-z,--patch_size", patch_size, "patch size");
         app.add_option("-b,--binary_level", binary_level, "binary level for binary tree ordering");
         app.add_option("-c,--store_check_points", store_check_points, "store check points");
@@ -362,7 +361,7 @@ int main(int argc, char* argv[])
         ordering->getStatistics(stat);
         runtime_csv.addElementToRecord(args.patch_type, "patch_type");
         runtime_csv.addElementToRecord(stat["patch_size"], "patch_size");
-        runtime_csv.addElementToRecord(stat["patching_time"], "patch_time");
+        runtime_csv.addElementToRecord(patch_time, "patch_time");
     } else {
         runtime_csv.addElementToRecord("", "patch_type");
         runtime_csv.addElementToRecord(0, "patch_size");
