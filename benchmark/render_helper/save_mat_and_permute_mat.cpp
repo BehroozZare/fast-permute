@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
     ordering->init();
 
     spdlog::info("Computing permutation...");
-    ordering->compute_permutation(perm, etree, false);
+    ordering->compute_permutation(perm, etree, true);
     if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), static_cast<int>(perm.size()))) {
         spdlog::error("Permutation is not valid!");
         delete ordering;

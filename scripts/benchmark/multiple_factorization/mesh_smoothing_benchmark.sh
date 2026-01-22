@@ -18,19 +18,19 @@ ITERATIONS=(6)
 mapfile -t MESHES < <(find "$INPUT_ROOT" -type f -name "*.obj")
 echo "Found ${#MESHES[@]} meshes"
 
-# -----------------------------------------------------------------------------
-# Section A: DEFAULT ordering
-# -----------------------------------------------------------------------------
-echo "=== Running DEFAULT ordering ==="
-for mesh in "${MESHES[@]}"; do
-    echo "Processing: $mesh"
-    "$BENCHMARK_BIN" \
-        -i "$mesh" \
-        -s "$SOLVER" \
-        -a DEFAULT \
-        -g 0 \
-        -o "$OUTPUT_CSV"
-done
+## -----------------------------------------------------------------------------
+## Section A: DEFAULT ordering
+## -----------------------------------------------------------------------------
+#echo "=== Running DEFAULT ordering ==="
+#for mesh in "${MESHES[@]}"; do
+#    echo "Processing: $mesh"
+#    "$BENCHMARK_BIN" \
+#        -i "$mesh" \
+#        -s "$SOLVER" \
+#        -a DEFAULT \
+#        -g 0 \
+#        -o "$OUTPUT_CSV"
+#done
 
 # # -----------------------------------------------------------------------------
 # # Section B: PARTH ordering (binary_level: ()8, 10)
@@ -62,11 +62,11 @@ done
          for patch_size in "${PATCH_SIZES[@]}"; do
              for binary_level in "${BINARY_LEVELS[@]}"; do
                  echo "Processing: $mesh | patch_type=$patch_type | patch_size=$patch_size | binary_level=$binary_level"
-                 "$BENCHMARK_BIN" \
-                     -i "$mesh" \
-                     -s "$SOLVER" \
-                     -n "$iterations" \
-                     -a PATCH_ORDERING \
+                "$BENCHMARK_BIN" \
+                    -i "$mesh" \
+                    -s "$SOLVER" \
+                    -n "${ITERATIONS[0]}" \
+                    -a PATCH_ORDERING \
                      -g 0 \
                      -p "$patch_type" \
                      -z "$patch_size" \
