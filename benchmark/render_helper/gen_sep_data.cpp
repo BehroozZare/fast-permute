@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <filesystem>
+#include <algorithm>
 
 #include "SPD_cot_matrix.h"
 #include "ordering.h"
@@ -19,7 +20,7 @@
 
 struct CLIArgs
 {
-    std::string input_mesh = "/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/tri-mesh/final/beetle.obj";
+    std::string input_mesh = "/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/tri-mesh/final/dragon.obj";
     std::string output_folder = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/render_data";
     int binary_level = 7;
     std::string ordering_type = "PATCH_ORDERING";
@@ -158,14 +159,22 @@ int main(int argc, char* argv[])
         assigned_nodes.push_back(mapping.first);
         etree_nodes.push_back(mapping.second);
     }
-    RXMESH_SOLVER::save_vector_to_file(assigned_nodes, args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + ".txt");
-    RXMESH_SOLVER::save_vector_to_file(etree_nodes, args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + ".txt");
-    spdlog::info("Node to etree mapping saved to: {}", args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + ".txt");
-    spdlog::info("Etree nodes saved to: {}", args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + ".txt");
+
+    // Calculate number of patches for file naming
+    int num_patches = 0;
+    if (!node_to_patch.empty()) {
+        num_patches = *std::max_element(node_to_patch.begin(), node_to_patch.end()) + 1;
+    }
+    std::string patch_suffix = (num_patches > 0) ? "_patches" + std::to_string(num_patches) : "";
+
+    RXMESH_SOLVER::save_vector_to_file(assigned_nodes, args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + patch_suffix + ".txt");
+    RXMESH_SOLVER::save_vector_to_file(etree_nodes, args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + patch_suffix + ".txt");
+    spdlog::info("Node to etree mapping saved to: {}", args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + patch_suffix + ".txt");
+    spdlog::info("Etree nodes saved to: {}", args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + patch_suffix + ".txt");
 
     // Save vertex to patch ID mapping
     if (args.ordering_type == "PATCH_ORDERING" && !node_to_patch.empty()) {
-        std::string patch_mapping_file = args.output_folder + "/" + mesh_name + "_vertex_to_patch.txt";
+        std::string patch_mapping_file = args.output_folder + "/" + mesh_name + "_vertex_to_patch" + patch_suffix + ".txt";
         RXMESH_SOLVER::save_vector_to_file(node_to_patch, patch_mapping_file);
         spdlog::info("Vertex to patch mapping saved to: {}", patch_mapping_file);
     }
