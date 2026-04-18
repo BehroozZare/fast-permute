@@ -248,7 +248,7 @@ struct CLIArgs
     int num_iterations = 6;
     double delta = 0.001;
     int binary_level = 9;
-    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Smoothing/smoothing";
+    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Apps/mesh_smoothing/mesh_smoothing";
     std::string solver_type = "CHOLMOD";
     std::string ordering_type = "DEFAULT";
     std::string default_ordering_type = "METIS";
@@ -289,6 +289,7 @@ struct CLIArgs
 int main(int argc, char* argv[])
 {
     CLIArgs args(argc, argv);
+    std::filesystem::create_directories(std::filesystem::path(args.output_csv_address).parent_path());
 
     spdlog::info("=== Mesh Smoothing Benchmark ===");
     spdlog::info("Input mesh: {}", args.input_mesh);

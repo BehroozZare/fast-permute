@@ -47,7 +47,7 @@ struct CLIArgs
 {
     int binary_level = 9;
     int DIM = 1;
-    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/SCP/scp";
+    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Apps/scp/scp";
     std::string solver_type   = "CUDSS";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
@@ -77,6 +77,7 @@ struct CLIArgs
 int main(int argc, char* argv[])
 {
     CLIArgs args(argc, argv);
+    std::filesystem::create_directories(std::filesystem::path(args.output_csv_address).parent_path());
 
     spdlog::info("=== SCP Benchmark ===");
     spdlog::info("Loading benchmark data from: {}", args.check_point_address);

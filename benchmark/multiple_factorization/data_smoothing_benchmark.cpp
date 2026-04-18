@@ -156,17 +156,20 @@ struct CLIArgs {
     int patch_size = 512;
     int binary_level = 7;
     bool use_gpu = false;
-    std::string output_csv_address="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/NoiseSmoothing/NoiseSmoothing";//Include absolute path with csv file name without .csv extension
+    bool visualize = false;
+    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Apps/data_smoothing/data_smoothing"; // Include absolute path with csv file name without .csv extension
     
     CLIArgs(int argc, char* argv[]) {
         CLI::App app{"Data smoothing benchmark"};
         app.add_option("-m,--mesh", mesh_path, "Path to input mesh")->required();
         app.add_option("-a,--ordering", ordering_type, "Ordering type: DEFAULT, PARTH, PATCH_ORDERING");
         app.add_option("-s,--solver", solver_type, "Solver type: CUDSS, MKL");
+        app.add_option("-o,--output", output_csv_address, "Output CSV file path (without .csv extension)");
         app.add_option("-p,--patch_type", patch_type, "Patch type: rxmesh or metis");
         app.add_option("-z,--patch_size", patch_size, "Patch size for PATCH_ORDERING");
         app.add_option("-b,--binary_level", binary_level, "Binary level for nested dissection");
         app.add_option("-g,--use_gpu", use_gpu, "Use GPU for ordering");
+        app.add_option("-v,--visualize", visualize, "Enable Polyscope visualization");
         try {
             app.parse(argc, argv);
         } catch (const CLI::ParseError& e) {
@@ -227,8 +230,8 @@ struct SolveResult {
     double factor_nnz_ratio = 0.0;
 };
 
-// Solve a linear system using CUDSS with optional custom ordering
-SolveResult solveCUDSS(
+// Solve a linear system with optional custom ordering
+SolveResult solveLinearSystem(
     const Eigen::SparseMatrix<double>& A,
     const Eigen::VectorXd& rhs,
     const CLIArgs& args,
@@ -236,14 +239,23 @@ SolveResult solveCUDSS(
     const Eigen::MatrixXi& F,
     const std::string& solver_name)
 {
-    spdlog::info("=== {} Solver (CUDSS) ===", solver_name);
+    const bool is_cudss = (args.solver_type == "CUDSS");
+    const bool is_mkl = (args.solver_type == "MKL");
+    if (!is_cudss && !is_mkl) {
+        spdlog::error(
+            "Unknown solver type: {}. Supported: CUDSS, MKL",
+            args.solver_type);
+        exit(EXIT_FAILURE);
+    }
+    spdlog::info("=== {} Solver ({}) ===", solver_name, args.solver_type);
     
     // Drop any existing RXMesh logger to avoid "logger already exists" error
     spdlog::drop("RXMesh");
     
-    // Create CUDSS solver
+    // Create solver
     RXMESH_SOLVER::LinSysSolver* solver = RXMESH_SOLVER::LinSysSolver::create(
-        RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+        is_cudss ? RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS
+                 : RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
     
     // Create ordering
     RXMESH_SOLVER::Ordering* ordering = createOrdering(args);
@@ -295,8 +307,11 @@ SolveResult solveCUDSS(
                 ordering_init_end - ordering_init_start).count();
             spdlog::info("{} - Ordering initialization time: {} ms", solver_name, ordering_init_time);
             auto ordering_compute_permutation_start = std::chrono::high_resolution_clock::now();
-            ordering->compute_permutation(perm, etree, true);  // true for CUDSS etree format
-            CUDA_SYNC_CHECK();
+            // CUDSS expects solver-specific etree format; MKL does not.
+            ordering->compute_permutation(perm, etree, is_cudss);
+            if (is_cudss) {
+                CUDA_SYNC_CHECK();
+            }
             auto ordering_compute_permutation_end = std::chrono::high_resolution_clock::now();
             ordering_compute_permutation_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                 ordering_compute_permutation_end - ordering_compute_permutation_start).count();
@@ -305,18 +320,31 @@ SolveResult solveCUDSS(
         }
     }
     
-    // Set matrix
-    solver->setMatrix(
-        const_cast<int*>(A.outerIndexPtr()),
-        const_cast<int*>(A.innerIndexPtr()),
-        const_cast<double*>(A.valuePtr()),
-        A.rows(),
-        A.nonZeros());
+    // MKL expects lower triangular matrix in this setup.
+    Eigen::SparseMatrix<double> lower_A;
+    if (is_mkl) {
+        lower_A = A.triangularView<Eigen::Lower>();
+        solver->setMatrix(
+            const_cast<int*>(lower_A.outerIndexPtr()),
+            const_cast<int*>(lower_A.innerIndexPtr()),
+            const_cast<double*>(lower_A.valuePtr()),
+            lower_A.rows(),
+            lower_A.nonZeros());
+    } else {
+        solver->setMatrix(
+            const_cast<int*>(A.outerIndexPtr()),
+            const_cast<int*>(A.innerIndexPtr()),
+            const_cast<double*>(A.valuePtr()),
+            A.rows(),
+            A.nonZeros());
+    }
     
     // Ordering integration
     auto ordering_integration_start = std::chrono::high_resolution_clock::now();
     solver->ordering(perm, etree);
-    CUDA_SYNC_CHECK();
+    if (is_cudss) {
+        CUDA_SYNC_CHECK();
+    }
     auto ordering_integration_end = std::chrono::high_resolution_clock::now();
     ordering_integration_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         ordering_integration_end - ordering_integration_start).count();
@@ -324,7 +352,9 @@ SolveResult solveCUDSS(
     // Analyze pattern
     auto start = std::chrono::high_resolution_clock::now();
     solver->analyze_pattern(perm, etree);
-    CUDA_SYNC_CHECK();
+    if (is_cudss) {
+        CUDA_SYNC_CHECK();
+    }
     auto end = std::chrono::high_resolution_clock::now();
     analysis_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     spdlog::info("{} - Analysis time: {} ms", solver_name, analysis_time);
@@ -332,7 +362,9 @@ SolveResult solveCUDSS(
     // Factorize
     start = std::chrono::high_resolution_clock::now();
     solver->factorize();
-    CUDA_SYNC_CHECK();
+    if (is_cudss) {
+        CUDA_SYNC_CHECK();
+    }
     end = std::chrono::high_resolution_clock::now();
     factorization_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     spdlog::info("{} - Factorization time: {} ms", solver_name, factorization_time);
@@ -341,7 +373,9 @@ SolveResult solveCUDSS(
     Eigen::VectorXd result;
     start = std::chrono::high_resolution_clock::now();
     solver->solve(const_cast<Eigen::VectorXd&>(rhs), result);
-    CUDA_SYNC_CHECK();
+    if (is_cudss) {
+        CUDA_SYNC_CHECK();
+    }
     end = std::chrono::high_resolution_clock::now();
     solve_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     spdlog::info("{} - Solve time: {} ms", solver_name, solve_time);
@@ -367,20 +401,20 @@ SolveResult solveCUDSS(
     
     // Compute factor NNZ ratio
     double factor_nnz_ratio = 0.0;
-    // if (!perm.empty()) {
-    //     long int factor_nnz = RXMESH_SOLVER::get_factor_nnz(
-    //         A.outerIndexPtr(),
-    //         A.innerIndexPtr(),
-    //         A.valuePtr(),
-    //         A.rows(),
-    //         A.nonZeros(),
-    //         perm);
-    //     factor_nnz_ratio = factor_nnz * 1.0 / A.nonZeros();
-    //     spdlog::info("{} - Factor NNZ ratio: {:.4f}", solver_name, factor_nnz_ratio);
-    // } else {
-    //     // Use solver's internal factor NNZ if available
-    //     factor_nnz_ratio = solver->getFactorNNZ() * 1.0 / A.nonZeros();
-    // }
+    if (!perm.empty()) {
+        long int factor_nnz = RXMESH_SOLVER::get_factor_nnz(
+            const_cast<int*>(A.outerIndexPtr()),
+            const_cast<int*>(A.innerIndexPtr()),
+            const_cast<double*>(A.valuePtr()),
+            A.rows(),
+            A.nonZeros(),
+            perm);
+        factor_nnz_ratio = factor_nnz * 1.0 / A.nonZeros();
+        spdlog::info("{} - Factor NNZ ratio: {:.4f}", solver_name, factor_nnz_ratio);
+    } else {
+        factor_nnz_ratio = solver->getFactorNNZ() * 1.0 / A.nonZeros();
+        spdlog::info("{} - Factor NNZ ratio: {:.4f}", solver_name, factor_nnz_ratio);
+    }
     
     // Build result struct
     SolveResult solve_result;
@@ -412,6 +446,7 @@ SolveResult solveCUDSS(
 int main(int argc, char * argv[])
 {
   CLIArgs args(argc, argv);
+  std::filesystem::create_directories(std::filesystem::path(args.output_csv_address).parent_path());
   
   typedef Eigen::SparseMatrix<double> SparseMat;
   srand(57);
@@ -481,8 +516,8 @@ int main(int argc, char * argv[])
   
   // Solve using CUDSS with the selected ordering
   // SolveResult lapResult = solveCUDSS(lapMatrix, lapRhs, args, V, F, "Laplacian");
-  SolveResult hessResult = solveCUDSS(hessMatrix, hessRhs, args, V, F, "Hessian");
-  SolveResult curvedHessResult = solveCUDSS(curvedHessMatrix, curvedHessRhs, args, V, F, "CurvedHessian");
+  SolveResult hessResult = solveLinearSystem(hessMatrix, hessRhs, args, V, F, "Hessian");
+  SolveResult curvedHessResult = solveLinearSystem(curvedHessMatrix, curvedHessRhs, args, V, F, "CurvedHessian");
   
   // Extract solutions
   // Eigen::VectorXd zl = lapResult.solution;
@@ -572,56 +607,58 @@ int main(int argc, char * argv[])
   
   spdlog::info("CSV data exported to: {}.csv", args.output_csv_address);
   
-  // Set up global pointers for polyscope callback
-  g_zexact = &zexact;
-  g_znoisy = &znoisy;
-  // g_zl = &zl;
-  g_zh = &zh;
-  g_zch = &zch;
-  
-  // Log value ranges for debugging
-  spdlog::info("Exact value range: [{}, {}]", zexact.minCoeff(), zexact.maxCoeff());
-  spdlog::info("Noisy value range: [{}, {}]", znoisy.minCoeff(), znoisy.maxCoeff());
-  // spdlog::info("Laplacian smoothed range: [{}, {}]", zl.minCoeff(), zl.maxCoeff());
-  spdlog::info("Hessian smoothed range: [{}, {}]", zh.minCoeff(), zh.maxCoeff());
-  spdlog::info("Curved Hessian smoothed range: [{}, {}]", zch.minCoeff(), zch.maxCoeff());
-  
-  // Initialize polyscope
-  polyscope::init();
-  
-  // Register the surface mesh
-  std::vector<std::array<double, 3>> vertices(V.rows());
-  for (int i = 0; i < V.rows(); i++) {
-      vertices[i] = {V(i, 0), V(i, 1), V(i, 2)};
+  if (args.visualize) {
+    // Set up global pointers for polyscope callback
+    g_zexact = &zexact;
+    g_znoisy = &znoisy;
+    // g_zl = &zl;
+    g_zh = &zh;
+    g_zch = &zch;
+    
+    // Log value ranges for debugging
+    spdlog::info("Exact value range: [{}, {}]", zexact.minCoeff(), zexact.maxCoeff());
+    spdlog::info("Noisy value range: [{}, {}]", znoisy.minCoeff(), znoisy.maxCoeff());
+    // spdlog::info("Laplacian smoothed range: [{}, {}]", zl.minCoeff(), zl.maxCoeff());
+    spdlog::info("Hessian smoothed range: [{}, {}]", zh.minCoeff(), zh.maxCoeff());
+    spdlog::info("Curved Hessian smoothed range: [{}, {}]", zch.minCoeff(), zch.maxCoeff());
+    
+    // Initialize polyscope
+    polyscope::init();
+    
+    // Register the surface mesh
+    std::vector<std::array<double, 3>> vertices(V.rows());
+    for (int i = 0; i < V.rows(); i++) {
+        vertices[i] = {V(i, 0), V(i, 1), V(i, 2)};
+    }
+    std::vector<std::array<int, 3>> faces(F.rows());
+    for (int i = 0; i < F.rows(); i++) {
+        faces[i] = {F(i, 0), F(i, 1), F(i, 2)};
+    }
+    g_mesh = polyscope::registerSurfaceMesh("mesh", vertices, faces);
+    g_mesh->setEdgeWidth(0.0);  // Hide mesh edges
+    
+    // Set the user callback for mode selection
+    polyscope::state::userCallback = dataSmoothingCallback;
+    
+    // Initial visualization (show noisy data)
+    g_current_section = 0;
+    g_current_mode = 1;
+    updateVisualization();
+    
+    std::cout << "Use the GUI to switch between different smoothing modes.\n";
+    
+    // Show the polyscope GUI
+    polyscope::show();
+    
+    // Cleanup
+    polyscope::state::userCallback = nullptr;
+    g_zexact = nullptr;
+    g_znoisy = nullptr;
+    g_zl = nullptr;
+    g_zh = nullptr;
+    g_zch = nullptr;
+    g_mesh = nullptr;
   }
-  std::vector<std::array<int, 3>> faces(F.rows());
-  for (int i = 0; i < F.rows(); i++) {
-      faces[i] = {F(i, 0), F(i, 1), F(i, 2)};
-  }
-  g_mesh = polyscope::registerSurfaceMesh("mesh", vertices, faces);
-  g_mesh->setEdgeWidth(0.0);  // Hide mesh edges
-  
-  // Set the user callback for mode selection
-  polyscope::state::userCallback = dataSmoothingCallback;
-  
-  // Initial visualization (show noisy data)
-  g_current_section = 0;
-  g_current_mode = 1;
-  updateVisualization();
-  
-  std::cout << "Use the GUI to switch between different smoothing modes.\n";
-  
-  // Show the polyscope GUI
-  polyscope::show();
-  
-  // Cleanup
-  polyscope::state::userCallback = nullptr;
-  g_zexact = nullptr;
-  g_znoisy = nullptr;
-  g_zl = nullptr;
-  g_zh = nullptr;
-  g_zch = nullptr;
-  g_mesh = nullptr;
 
   return 0;
 }

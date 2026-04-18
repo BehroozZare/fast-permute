@@ -8,29 +8,29 @@ l#!/usr/bin/env bash
 # Configuration
 # -----------------------------------------------------------------------------
 SOLVER="CUDSS"  # Options: CUDSS, MKL
-INPUT_ROOT="/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/tri-mesh/final"
-OUTPUT_CSV="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Smoothing/smoothing"
-BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/multiple_factorization/gpu_ordering_multi_mesh_smoothing_benchmark"
-ITERATIONS=(6)
+INPUT_ROOT="/media/behrooz/FarazHard/Last_Project/BenchmarkMesh/cloth_planer"
+OUTPUT_CSV="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/single_factorization/planer_CUDSS_benchmark"
+BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/single_factorization/gpu_ordering_tri_mesh_laplace_benchmark"
+
 # -----------------------------------------------------------------------------
 # Mesh Discovery
 # -----------------------------------------------------------------------------
 mapfile -t MESHES < <(find "$INPUT_ROOT" -type f -name "*.obj")
 echo "Found ${#MESHES[@]} meshes"
 
-## -----------------------------------------------------------------------------
-## Section A: DEFAULT ordering
-## -----------------------------------------------------------------------------
-#echo "=== Running DEFAULT ordering ==="
-#for mesh in "${MESHES[@]}"; do
-#    echo "Processing: $mesh"
-#    "$BENCHMARK_BIN" \
-#        -i "$mesh" \
-#        -s "$SOLVER" \
-#        -a DEFAULT \
-#        -g 0 \
-#        -o "$OUTPUT_CSV"
-#done
+# -----------------------------------------------------------------------------
+# Section A: DEFAULT ordering
+# -----------------------------------------------------------------------------
+echo "=== Running DEFAULT ordering ==="
+for mesh in "${MESHES[@]}"; do
+    echo "Processing: $mesh"
+    "$BENCHMARK_BIN" \
+        -i "$mesh" \
+        -s "$SOLVER" \
+        -a DEFAULT \
+        -g 0 \
+        -o "$OUTPUT_CSV"
+done
 
 # # -----------------------------------------------------------------------------
 # # Section B: PARTH ordering (binary_level: ()8, 10)
@@ -53,6 +53,7 @@ echo "Found ${#MESHES[@]} meshes"
 # Section C: PATCH_ORDERING (patch_type × patch_size × binary_level)
 # -----------------------------------------------------------------------------
  echo "=== Running PATCH_ORDERING ==="
+#  PATCH_TYPES=("rxmesh" "metis_kway")
  PATCH_TYPES=("rxmesh")
  PATCH_SIZES=(512)
  BINARY_LEVELS=(10)
@@ -62,11 +63,10 @@ echo "Found ${#MESHES[@]} meshes"
          for patch_size in "${PATCH_SIZES[@]}"; do
              for binary_level in "${BINARY_LEVELS[@]}"; do
                  echo "Processing: $mesh | patch_type=$patch_type | patch_size=$patch_size | binary_level=$binary_level"
-                "$BENCHMARK_BIN" \
-                    -i "$mesh" \
-                    -s "$SOLVER" \
-                    -n "${ITERATIONS[0]}" \
-                    -a PATCH_ORDERING \
+                 "$BENCHMARK_BIN" \
+                     -i "$mesh" \
+                     -s "$SOLVER" \
+                     -a PATCH_ORDERING \
                      -g 0 \
                      -p "$patch_type" \
                      -z "$patch_size" \
@@ -77,4 +77,4 @@ echo "Found ${#MESHES[@]} meshes"
      done
  done
 
- echo "=== Benchmark complete ==="
+#  echo "=== Benchmark complete ==="

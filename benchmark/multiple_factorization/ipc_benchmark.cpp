@@ -49,7 +49,7 @@ CUDA_ERROR(cudaDeviceSynchronize());                       \
 struct CLIArgs
 {
     int binary_level = 5; // It is zero-based so 9 is 10 levels
-    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/IPC/ipc";//Include absolute path with csv file name without .csv extension
+    std::string output_csv_address = "/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Apps/ipc/ipc"; // Include absolute path with csv file name without .csv extension
     std::string solver_type   = "CUDSS";
     std::string ordering_type = "DEFAULT";
     std::string patch_type = "rxmesh";
@@ -88,6 +88,7 @@ int main(int argc, char* argv[])
 {
     // Load the mesh
     CLIArgs args(argc, argv);
+    std::filesystem::create_directories(std::filesystem::path(args.output_csv_address).parent_path());
 
     std::cout << "Loading matrix from: " << args.check_point_address << std::endl;
     std::cout << "Output csv address: " << args.output_csv_address << std::endl;
