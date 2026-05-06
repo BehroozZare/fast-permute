@@ -9,6 +9,9 @@
 
 #include <spdlog/spdlog.h>
 #include <cassert>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include "CUDSSSolver.hpp"
 
@@ -30,6 +33,41 @@ inline void HandleError(cudaError_t err, const char* file, int line)
 
 
 namespace RXMESH_SOLVER {
+namespace {
+bool envFlagEnabled(const char* env_name)
+{
+    const char* value = std::getenv(env_name);
+    if (value == nullptr) {
+        return false;
+    }
+    return std::strcmp(value, "1") == 0 || std::strcmp(value, "true") == 0
+           || std::strcmp(value, "TRUE") == 0 || std::strcmp(value, "on") == 0
+           || std::strcmp(value, "ON") == 0;
+}
+
+#ifdef CUDSS_CONFIG_HOST_NTHREADS
+bool parsePositiveIntEnv(const char* env_name, int& out_value)
+{
+    const char* value = std::getenv(env_name);
+    if (value == nullptr || value[0] == '\0') {
+        return false;
+    }
+
+    char* endptr = nullptr;
+    long  parsed = std::strtol(value, &endptr, 10);
+    if (endptr == value || *endptr != '\0' || parsed <= 0 || parsed > INT_MAX) {
+        spdlog::warn(
+            "CUDSSSolver: Ignoring invalid {}='{}' (expected positive integer)",
+            env_name,
+            value);
+        return false;
+    }
+    out_value = static_cast<int>(parsed);
+    return true;
+}
+#endif
+} // namespace
+
 CUDSSSolver::~CUDSSSolver()
 {
     cudssConfigDestroy(config);
@@ -59,12 +97,77 @@ CUDSSSolver::CUDSSSolver()
         spdlog::error("CUDSSSolver::constructor - cudssCreate failed with status: {}", status);
         exit(EXIT_FAILURE);
     }
+
+    const bool  mt_strict          = envFlagEnabled("RX_CUDSS_MT_STRICT");
+    const char* rx_threading_layer = std::getenv("RX_CUDSS_THREADING_LIB");
+    const char* cudss_threading_layer_env = std::getenv("CUDSS_THREADING_LIB");
+    if (rx_threading_layer != nullptr || cudss_threading_layer_env != nullptr) {
+        // If RX_CUDSS_THREADING_LIB is set, use that explicit path; otherwise let cuDSS
+        // read CUDSS_THREADING_LIB internally by passing nullptr.
+        const char* layer_path = rx_threading_layer != nullptr ? rx_threading_layer : nullptr;
+        status                 = cudssSetThreadingLayer(handle, layer_path);
+        if (status == CUDSS_STATUS_SUCCESS) {
+            if (rx_threading_layer != nullptr) {
+                spdlog::info(
+                    "CUDSSSolver: MT mode enabled using RX_CUDSS_THREADING_LIB='{}'",
+                    rx_threading_layer);
+            } else {
+                spdlog::info(
+                    "CUDSSSolver: MT mode enabled using CUDSS_THREADING_LIB='{}'",
+                    cudss_threading_layer_env);
+            }
+        } else if (mt_strict) {
+            spdlog::error(
+                "CUDSSSolver: Failed to enable MT mode (status: {}) with strict mode enabled",
+                status);
+            exit(EXIT_FAILURE);
+        } else {
+            spdlog::warn(
+                "CUDSSSolver: Failed to enable MT mode (status: {}); falling back to "
+                "single-threaded reordering",
+                status);
+        }
+    } else {
+        spdlog::info(
+            "CUDSSSolver: MT mode not configured (set CUDSS_THREADING_LIB or "
+            "RX_CUDSS_THREADING_LIB to enable)");
+    }
     
     status = cudssConfigCreate(&config);
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::constructor - cudssConfigCreate failed with status: {}", status);
         exit(EXIT_FAILURE);
     }
+
+#ifdef CUDSS_CONFIG_HOST_NTHREADS
+    int host_nthreads = 0;
+    if (parsePositiveIntEnv("RX_CUDSS_HOST_NTHREADS", host_nthreads)) {
+        status = cudssConfigSet(
+            config, CUDSS_CONFIG_HOST_NTHREADS, &host_nthreads, sizeof(host_nthreads));
+        if (status == CUDSS_STATUS_SUCCESS) {
+            spdlog::info(
+                "CUDSSSolver: Host MT thread cap set to {} via RX_CUDSS_HOST_NTHREADS",
+                host_nthreads);
+        } else if (mt_strict) {
+            spdlog::error(
+                "CUDSSSolver: Failed to set CUDSS_CONFIG_HOST_NTHREADS (status: {}) with "
+                "strict mode enabled",
+                status);
+            exit(EXIT_FAILURE);
+        } else {
+            spdlog::warn(
+                "CUDSSSolver: Failed to set CUDSS_CONFIG_HOST_NTHREADS (status: {}); "
+                "continuing with cuDSS default thread policy",
+                status);
+        }
+    }
+#else
+    if (std::getenv("RX_CUDSS_HOST_NTHREADS") != nullptr) {
+        spdlog::warn(
+            "CUDSSSolver: RX_CUDSS_HOST_NTHREADS is set but this cuDSS build does not expose "
+            "CUDSS_CONFIG_HOST_NTHREADS");
+    }
+#endif
     
     status = cudssDataCreate(handle, &data);
     if (status != CUDSS_STATUS_SUCCESS) {

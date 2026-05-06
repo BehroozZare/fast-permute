@@ -78,3 +78,13 @@ target_include_directories(${PROJECT_NAME}_data_smoothing_benchmark PRIVATE
 )
 configure_benchmark_target(${PROJECT_NAME}_data_smoothing_benchmark)
 target_link_libraries(${PROJECT_NAME}_data_smoothing_benchmark PRIVATE polyscope)
+
+# -----------------------------------------------------------------------------
+# Inverse Rendering Benchmark (Per-entry factor, fwd/bwd multi-RHS solves)
+# -----------------------------------------------------------------------------
+add_executable(${PROJECT_NAME}_inverse_rendering_benchmark inverse_rendering_benchmark.cpp)
+target_include_directories(${PROJECT_NAME}_inverse_rendering_benchmark PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+)
+configure_benchmark_target(${PROJECT_NAME}_inverse_rendering_benchmark)

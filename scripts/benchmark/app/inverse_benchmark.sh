@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 
-set -uo pipefail
+set -euo pipefail
 
 # =============================================================================
-# SLIM Benchmark Script
+# Inverse Rendering Benchmark Script
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
 APPS_ROOT="/media/behrooz/FarazHard/Last_Project/Apps"
-INPUT_ROOT="${APPS_ROOT}/SLIM"
+INPUT_ROOT="${APPS_ROOT}/inverse_rendering"
 OUTPUT_ROOT="/home/behrooz/Desktop/Last_Project/gpu_ordering/output/Apps"
-OUTPUT_CSV_BASE="${OUTPUT_ROOT}/slim"
-BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/multiple_factorization/gpu_ordering_multi_slim_benchmark"
+OUTPUT_CSV_BASE="${OUTPUT_ROOT}/inverse_rendering"
+BENCHMARK_BIN="/home/behrooz/Desktop/Last_Project/gpu_ordering/cmake-build-release/benchmark/multiple_factorization/gpu_ordering_inverse_rendering_benchmark"
 
-DIM=2
 PATCH_TYPE="rxmesh"
 BINARY_LEVEL=10
-SOLVERS=("MKL" "CUDSS")
+MIN_VERTICES=50000
+SOLVERS=("CUDSS")
 ORDERINGS=("DEFAULT" "PATCH_ORDERING")
 
 mkdir -p "${OUTPUT_ROOT}"
@@ -30,29 +30,23 @@ if [[ ! -x "${BENCHMARK_BIN}" ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Dataset discovery
+# Dataset discovery: any direct subdir of INPUT_ROOT that has counts.csv
 # -----------------------------------------------------------------------------
 mapfile -t DATASETS < <(
     for candidate in "${INPUT_ROOT}"/*; do
         [[ -d "${candidate}" ]] || continue
-        if compgen -G "${candidate}/tinyAD_*_H_*" >/dev/null && \
-           compgen -G "${candidate}/tinyAD_*_g_*" >/dev/null && \
-           compgen -G "${candidate}/*.obj" >/dev/null; then
+        if [[ -f "${candidate}/counts.csv" ]]; then
             printf '%s\n' "${candidate}"
         fi
     done
 )
 
 if [[ ${#DATASETS[@]} -eq 0 ]]; then
-    echo "No SLIM datasets found under ${INPUT_ROOT}"
+    echo "No inverse rendering datasets found under ${INPUT_ROOT}"
     exit 1
 fi
 
-echo "Found ${#DATASETS[@]} SLIM datasets."
-
-TOTAL_CASES=0
-FAILED_CASES=0
-FAILED_LIST=()
+echo "Found ${#DATASETS[@]} inverse rendering datasets."
 
 run_case() {
     local dataset="$1"
@@ -61,10 +55,7 @@ run_case() {
 
     local dataset_name
     dataset_name="$(basename "${dataset}")"
-    local case_id="dataset=${dataset_name} solver=${solver} ordering=${ordering}"
-    echo "Running: ${case_id}"
-
-    local rc=0
+    echo "Running: dataset=${dataset_name} solver=${solver} ordering=${ordering}"
     if [[ "${ordering}" == "PATCH_ORDERING" ]]; then
         "${BENCHMARK_BIN}" \
             -k "${dataset}" \
@@ -72,43 +63,27 @@ run_case() {
             -a "${ordering}" \
             -p "${PATCH_TYPE}" \
             -b "${BINARY_LEVEL}" \
-            -d "${DIM}" \
-            -o "${OUTPUT_CSV_BASE}" || rc=$?
+            -m "${MIN_VERTICES}" \
+            -o "${OUTPUT_CSV_BASE}"
     else
         "${BENCHMARK_BIN}" \
             -k "${dataset}" \
             -s "${solver}" \
             -a "${ordering}" \
-            -d "${DIM}" \
-            -o "${OUTPUT_CSV_BASE}" || rc=$?
-    fi
-
-    if [[ ${rc} -ne 0 ]]; then
-        echo "WARNING: case failed (exit ${rc}): ${case_id}" >&2
-        FAILED_CASES=$((FAILED_CASES + 1))
-        FAILED_LIST+=("${case_id} (exit ${rc})")
+            -m "${MIN_VERTICES}" \
+            -o "${OUTPUT_CSV_BASE}"
     fi
 }
 
 # -----------------------------------------------------------------------------
-# Run matrix: solver x ordering x dataset
+# Run matrix: dataset x solver x ordering
 # -----------------------------------------------------------------------------
 for dataset in "${DATASETS[@]}"; do
     for solver in "${SOLVERS[@]}"; do
         for ordering in "${ORDERINGS[@]}"; do
-            TOTAL_CASES=$((TOTAL_CASES + 1))
             run_case "${dataset}" "${solver}" "${ordering}"
         done
     done
 done
 
-echo "SLIM benchmark complete. CSVs are in ${OUTPUT_ROOT}"
-echo "Summary: $((TOTAL_CASES - FAILED_CASES))/${TOTAL_CASES} cases succeeded, ${FAILED_CASES} failed."
-if [[ ${FAILED_CASES} -gt 0 ]]; then
-    echo "Failed cases:"
-    for entry in "${FAILED_LIST[@]}"; do
-        echo "  - ${entry}"
-    done
-    exit 1
-fi
-
+echo "Inverse rendering benchmark complete. CSVs are in ${OUTPUT_ROOT}"

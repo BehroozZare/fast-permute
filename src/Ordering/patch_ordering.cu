@@ -5,6 +5,8 @@
 #include "patch_ordering.h"
 #include "csv_utils.h"
 #include <rxmesh/rxmesh_static.h>
+#include <metis.h>
+#include <chrono>
 
 namespace RXMESH_SOLVER {
 
@@ -106,26 +108,66 @@ void PatchOrdering::init(){
             NULL,
             false);
     } else if(_patch_ordering_type == PatchOrderingType::METIS_KWAY_PATCH) {
-        rxmesh::rx_init(0);
-        _rxmesh.reset(new rxmesh::RXMeshStatic(_fv, "", this->_patch_size, true));
-        _patching_time = _rxmesh->get_patching_time();
-        spdlog::info(
-            "RXMesh initialized with {} vertices, {} edges, {} faces, {} patches",
-            _rxmesh->get_num_vertices(),
-            _rxmesh->get_num_edges(),
-            _rxmesh->get_num_faces(),
-            _rxmesh->get_num_patches());
+        idx_t nvtxs  = static_cast<idx_t>(G_N);
+        idx_t ncon   = 1;
+        idx_t nparts = static_cast<idx_t>(
+            std::max(1, (G_N + _patch_size - 1) / _patch_size));
 
-        this->_g_node_to_patch.resize(_rxmesh->get_num_vertices());
-        this->_num_patches = _rxmesh->get_num_patches();
-        _rxmesh->for_each_vertex(
-            rxmesh::HOST,
-            [&](const rxmesh::VertexHandle vh) {
-                uint32_t node_id       = _rxmesh->map_to_global(vh);
-                this->_g_node_to_patch[node_id] = static_cast<int>(vh.patch_id());
-            },
-            NULL,
-            false);
+        _g_node_to_patch.assign(G_N, 0);
+
+        if (nparts <= 1) {
+            _num_patches   = 1;
+            _patching_time = 0.0f;
+            spdlog::info(
+                "METIS k-way skipped; single partition for G_N={}", G_N);
+        } else {
+            idx_t options[METIS_NOPTIONS];
+            METIS_SetDefaultOptions(options);
+            options[METIS_OPTION_PTYPE]     = METIS_PTYPE_KWAY;
+            options[METIS_OPTION_OBJTYPE]   = METIS_OBJTYPE_VOL;
+            options[METIS_OPTION_NUMBERING] = 0;
+            options[METIS_OPTION_CONTIG]    = 0;
+            options[METIS_OPTION_COMPRESS]  = 0;
+            options[METIS_OPTION_DBGLVL]    = 0;
+
+            idx_t objval = 0;
+            auto  t0     = std::chrono::high_resolution_clock::now();
+            int   metis_status =
+                METIS_PartGraphKway(&nvtxs,
+                                    &ncon,
+                                    Gp,
+                                    Gi,
+                                    nullptr,
+                                    nullptr,
+                                    nullptr,
+                                    &nparts,
+                                    nullptr,
+                                    nullptr,
+                                    options,
+                                    &objval,
+                                    _g_node_to_patch.data());
+            auto t1 = std::chrono::high_resolution_clock::now();
+            _patching_time =
+                std::chrono::duration<float>(t1 - t0).count();
+
+            if (metis_status == METIS_ERROR_INPUT) {
+                spdlog::error("METIS ERROR INPUT");
+                exit(EXIT_FAILURE);
+            } else if (metis_status == METIS_ERROR_MEMORY) {
+                spdlog::error("\n METIS ERROR MEMORY \n");
+                exit(EXIT_FAILURE);
+            } else if (metis_status == METIS_ERROR) {
+                spdlog::error("\n METIS ERROR\n");
+                exit(EXIT_FAILURE);
+            }
+
+            _num_patches = static_cast<int>(nparts);
+            spdlog::info(
+                "METIS k-way on G: G_N={}, patches={}, objval={}",
+                G_N,
+                _num_patches,
+                static_cast<long long>(objval));
+        }
     } else if(_patch_ordering_type == PatchOrderingType::METIS_SEPARATOR_PATCH) {
         // TODO: Implement METIS separator patch ordering
     } else if(_patch_ordering_type == PatchOrderingType::REUSE_PATCH) {
