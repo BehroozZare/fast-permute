@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 
 
-namespace RXMESH_SOLVER {
+namespace homa {
 
     struct InverseRenderingEntry {
         int idx           = 0;
@@ -107,4 +107,4 @@ namespace RXMESH_SOLVER {
         }
     }
 
-}  // namespace RXMESH_SOLVER
+}  // namespace homa

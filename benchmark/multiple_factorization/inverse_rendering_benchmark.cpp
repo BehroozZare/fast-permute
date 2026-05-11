@@ -104,8 +104,8 @@ int main(int argc, char* argv[])
     spdlog::info("Min n_vertices (strict >): {}", args.min_vertices);
 
     // ========== Load counts.csv entries ==========
-    std::vector<RXMESH_SOLVER::InverseRenderingEntry> entries;
-    RXMESH_SOLVER::prepare_inverse_rendering_benchmark_data(
+    std::vector<homa::InverseRenderingEntry> entries;
+    homa::prepare_inverse_rendering_benchmark_data(
         args.check_point_address, entries);
     if (entries.empty()) {
         spdlog::error("No entries found. Exiting.");
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
     header.emplace_back("solve_time");
     header.emplace_back("residual");
 
-    RXMESH_SOLVER::CSVManager runtime_csv(args.output_csv_address,
+    homa::CSVManager runtime_csv(args.output_csv_address,
                                           "inverse_rendering_benchmark",
                                           header, false);
 
@@ -202,13 +202,13 @@ int main(int argc, char* argv[])
 
         // ----- Diagnostic: compare hessian sparsity pattern vs cotangent Laplacian -----
         Eigen::SparseMatrix<double> cot_L;
-        RXMESH_SOLVER::computeSPD_cot_matrix(OV, OF, cot_L);
+        homa::computeSPD_cot_matrix(OV, OF, cot_L);
         if (cot_L.rows() != hessian.rows()) {
             spdlog::warn("cot_L rows ({}) != hessian rows ({}); skipping "
                          "sparsity comparison.",
                          cot_L.rows(), hessian.rows());
         } else {
-            bool patterns_match = RXMESH_SOLVER::compare_sparsity_no_diagonal(
+            bool patterns_match = homa::compare_sparsity_no_diagonal(
                 static_cast<int>(hessian.rows()),
                 hessian.outerIndexPtr(), hessian.innerIndexPtr(),
                 cot_L.outerIndexPtr(), cot_L.innerIndexPtr(),
@@ -227,13 +227,13 @@ int main(int argc, char* argv[])
         }
 
         // ----- Initialize solver -----
-        RXMESH_SOLVER::LinSysSolver* solver = nullptr;
+        homa::LinSysSolver* solver = nullptr;
         if (args.solver_type == "CUDSS") {
-            solver = RXMESH_SOLVER::LinSysSolver::create(
-                RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+            solver = homa::LinSysSolver::create(
+                homa::LinSysSolverType::GPU_CUDSS);
         } else if (args.solver_type == "MKL") {
-            solver = RXMESH_SOLVER::LinSysSolver::create(
-                RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
+            solver = homa::LinSysSolver::create(
+                homa::LinSysSolverType::CPU_MKL);
         } else {
             spdlog::error("Unknown solver type: {}", args.solver_type);
             return 1;
@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
         std::vector<int> matrix_etree;
         long int ordering_time      = -1;
         long int ordering_init_time = -1;
-        RXMESH_SOLVER::Ordering* ordering = nullptr;
+        homa::Ordering* ordering = nullptr;
         bool entry_failed = false;
 
         if (args.ordering_type == "PATCH_ORDERING") {
@@ -259,8 +259,8 @@ int main(int argc, char* argv[])
             // construction; dropping it first allows repeated creation in
             // the same process without throwing.
             spdlog::drop("RXMesh");
-            ordering = RXMESH_SOLVER::Ordering::create(
-                RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+            ordering = homa::Ordering::create(
+                homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
             ordering->setOptions({
                 {"use_gpu", args.use_gpu ? "1" : "0"},
                 {"patch_type", args.patch_type},
@@ -294,8 +294,8 @@ int main(int argc, char* argv[])
                 spdlog::info("Ordering time: {} ms", ordering_time);
             }
         } else if (args.ordering_type == "PARTH") {
-            ordering = RXMESH_SOLVER::Ordering::create(
-                RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+            ordering = homa::Ordering::create(
+                homa::DEMO_ORDERING_TYPE::PARTH);
             ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
             ordering->setGraph(Gp, Gi, G_N, G_NNZ);
 
@@ -321,7 +321,7 @@ int main(int argc, char* argv[])
         }
 
         if (!entry_failed && !matrix_perm.empty()) {
-            if (!RXMESH_SOLVER::check_valid_permutation(matrix_perm.data(),
+            if (!homa::check_valid_permutation(matrix_perm.data(),
                                                        matrix_perm.size())) {
                 spdlog::error("Permutation invalid; skipping entry.");
                 entry_failed = true;
@@ -339,7 +339,7 @@ int main(int argc, char* argv[])
         // ----- Factor NNZ (symbolic, once) -----
         long int factor_nnz = -1;
         if (!matrix_perm.empty()) {
-            factor_nnz = RXMESH_SOLVER::get_factor_nnz(hessian.outerIndexPtr(),
+            factor_nnz = homa::get_factor_nnz(hessian.outerIndexPtr(),
                                                        hessian.innerIndexPtr(),
                                                        hessian.valuePtr(),
                                                        hessian.rows(),

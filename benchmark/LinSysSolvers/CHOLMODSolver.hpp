@@ -1,0 +1,53 @@
+
+#pragma once
+
+#ifdef USE_SUITESPARSE
+
+#include "LinSysSolver.hpp"
+
+#include <cholmod.h>
+#include <Eigen/Eigen>
+#include <vector>
+
+namespace homa {
+
+class CHOLMODSolver : public LinSysSolver {
+    typedef LinSysSolver Base; // The class
+public:                // Access specifier
+    cholmod_common cm;
+    cholmod_sparse *A;
+    cholmod_factor *L;
+    cholmod_dense *b;
+
+    cholmod_dense *x_solve;
+
+    bool use_gpu = false;         // User-configured: whether to use GPU
+    bool gpu_available = false;  // Runtime check: whether GPU is actually available
+    std::vector<long int> p_long;
+    std::vector<long int> i_long;
+
+    void *Ai, *Ap, *Ax, *bx;
+    ~CHOLMODSolver();
+    CHOLMODSolver();  // Allow runtime choice
+    
+    // GPU initialization methods
+    void initializeGPU();
+    bool probeGPU();  // Returns true if GPU is available
+
+    void setMatrix(int *p, int *i, double *x, int A_N, int NNZ) override;
+    void innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree) override;
+    void innerFactorize(void) override;
+    void innerSolve(Eigen::VectorXd &rhs, Eigen::VectorXd &result) override;
+    void innerSolve(Eigen::MatrixXd &rhs, Eigen::MatrixXd &result) override;
+    void innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data) override;
+    void resetSolver() override;
+    void save_factor(const std::string &filePath);
+    virtual LinSysSolverType type() const override;
+
+    void cholmod_clean_memory();
+
+};
+
+}
+
+#endif

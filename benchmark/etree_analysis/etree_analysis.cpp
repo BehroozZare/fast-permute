@@ -16,7 +16,7 @@
 #include "LinSysSolver.hpp"
 #include "get_factor_nnz.h"
 #include "check_valid_permutation.h"
-#include "ordering.h"
+#include "ordering_factory.h"
 #include "remove_diagonal.h"
 #include "csv_utils.h"
 #include "etree_analysis_utils.h"
@@ -112,60 +112,60 @@ int main(int argc, char* argv[])
     // Init permuter
     std::vector<int>         perm;
     std::vector<int> etree;
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+    homa::Ordering* ordering = nullptr;
     if (args.ordering_type == "DEFAULT") {
         spdlog::info("Using default ordering (default for each solver).");
         ordering = nullptr;
     } else if (args.ordering_type == "METIS") {
         spdlog::info("Using METIS ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::METIS);
         if(args.solver_type == "CUDSS") {
             std::cerr << "METIS ordering is not supported with CUDSS solver." << std::endl;
             return 1;
         }
     } else if (args.ordering_type == "RXMESH_ND") {
         spdlog::info("Using RXMESH ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::RXMESH_ND);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::RXMESH_ND);
     } else if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
         ordering->setOptions(
             {{"use_gpu", args.use_gpu ? "1" : "0"},
                 {"patch_type", args.patch_type},
                 {"patch_size", std::to_string(args.patch_size)},
                 {"binary_level", std::to_string(args.binary_level)}});
     } else if (args.ordering_type == "PARTH") {
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PARTH);
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
     } else if (args.ordering_type == "NEUTRAL"){
         spdlog::info("Using NEUTRAL ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::NEUTRAL);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::NEUTRAL);
     } else {
         spdlog::error("Unknown Ordering type.");
     }
 
     //Init solver
-    RXMESH_SOLVER::LinSysSolver* solver = nullptr;
+    homa::LinSysSolver* solver = nullptr;
     if (args.solver_type == "CHOLMOD") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(
-            RXMESH_SOLVER::LinSysSolverType::CPU_CHOLMOD);
+        solver = homa::LinSysSolver::create(
+            homa::LinSysSolverType::CPU_CHOLMOD);
         spdlog::info("Using CHOLMOD direct solver.");
     } else if (args.solver_type == "CUDSS") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(
-            RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+        solver = homa::LinSysSolver::create(
+            homa::LinSysSolverType::GPU_CUDSS);
         spdlog::info("Using CUDSS direct solver.");
     } else if (args.solver_type == "PARTH_SOLVER") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(
-            RXMESH_SOLVER::LinSysSolverType::PARTH_SOLVER);
+        solver = homa::LinSysSolver::create(
+            homa::LinSysSolverType::PARTH_SOLVER);
         spdlog::info("Using PARTH direct solver.");
     } else if (args.solver_type == "STRUMPACK"){
-        solver = RXMESH_SOLVER::LinSysSolver::create(
-            RXMESH_SOLVER::LinSysSolverType::GPU_STRUMPACK);
+        solver = homa::LinSysSolver::create(
+            homa::LinSysSolverType::GPU_STRUMPACK);
     } else {
         spdlog::error("Unknown solver type.");
     }
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     // Create the graph
     std::vector<int> Gp;
     std::vector<int> Gi;
-    RXMESH_SOLVER::remove_diagonal(
+    homa::remove_diagonal(
         OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), Gp, Gi);
 
 
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
             std::string ordering_name = ordering->typeStr();
             std::string parameters = "patch_type=" + args.patch_type + ",patch_size=" + std::to_string(args.patch_size);
             std::string etree_address = basic_address + "/" + mesh_name + "_" + ordering_name + "_" + parameters + ".txt";
-            RXMESH_SOLVER::save_etree_to_text(etree, etree_address);
+            homa::save_etree_to_text(etree, etree_address);
         } else {
             ordering->compute_permutation(perm, etree, false);
         }
@@ -221,14 +221,14 @@ int main(int argc, char* argv[])
             .count();
             
         //Check for correct perm
-        if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
+        if (!homa::check_valid_permutation(perm.data(), perm.size())) {
             spdlog::error("Permutation is not valid!");
         }
         spdlog::info("Ordering time: {} ms",
                      ordering_time);
         assert(perm.size() == OL.rows());
 
-        factor_nnz = RXMESH_SOLVER::get_factor_nnz(OL.outerIndexPtr(),
+        factor_nnz = homa::get_factor_nnz(OL.outerIndexPtr(),
                                                        OL.innerIndexPtr(),
                                                        OL.valuePtr(),
                                                        OL.rows(),
@@ -303,7 +303,7 @@ int main(int argc, char* argv[])
     header.emplace_back("residual");
 
 
-    RXMESH_SOLVER::CSVManager runtime_csv(csv_name, "some address", header, false);
+    homa::CSVManager runtime_csv(csv_name, "some address", header, false);
     runtime_csv.addElementToRecord(mesh_name, "mesh_name");
     runtime_csv.addElementToRecord(solver->N, "G_N");
     runtime_csv.addElementToRecord(solver->NNZ, "G_NNZ");

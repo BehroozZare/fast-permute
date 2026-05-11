@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 #include <metis.h>
 
-namespace RXMESH_SOLVER {
+namespace homa {
 
     void create_patch_with_metis(int A_n, int* Ap, int* Ai, int DIM, int patch_size, std::vector<int>& node_to_patch){
         // Use Parth to compress the matrix into a graph

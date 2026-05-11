@@ -26,7 +26,7 @@
 #include "check_valid_permutation.h"
 #include "csv_utils.h"
 #include "remove_diagonal.h"
-#include "ordering.h"
+#include "ordering_factory.h"
 
 // Polyscope for visualization
 #include "polyscope/polyscope.h"
@@ -324,15 +324,15 @@ int main(int argc, char* argv[])
     spdlog::info("System matrix S size: {} x {}, NNZ: {}", S.rows(), S.cols(), S.nonZeros());
 
     // ========== Initialize solver ==========
-    RXMESH_SOLVER::LinSysSolver* solver = nullptr;
+    homa::LinSysSolver* solver = nullptr;
     if (args.solver_type == "CHOLMOD") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::CPU_CHOLMOD);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD);
         spdlog::info("Using CHOLMOD direct solver.");
     } else if (args.solver_type == "CUDSS") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS);
         spdlog::info("Using CUDSS direct solver.");
     } else if (args.solver_type == "MKL") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::CPU_MKL);
         spdlog::info("Using Intel MKL PARDISO direct solver.");
         if (args.default_ordering_type == "METIS") {
             solver->ordering_type = "METIS";
@@ -352,21 +352,21 @@ int main(int argc, char* argv[])
 
     // ========== Create graph for ordering ==========
     std::vector<int> Gp, Gi;
-    RXMESH_SOLVER::remove_diagonal(S.rows(), S.outerIndexPtr(), S.innerIndexPtr(), Gp, Gi);
+    homa::remove_diagonal(S.rows(), S.outerIndexPtr(), S.innerIndexPtr(), Gp, Gi);
 
     // ========== Compute ordering (once, outside the loop) ==========
     std::vector<int> perm;
     std::vector<int> etree;
     long int ordering_init_time = -1;
     long int ordering_time = -1;
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+    homa::Ordering* ordering = nullptr;
     std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
 
     if (args.ordering_type == "DEFAULT") {
         spdlog::info("Using DEFAULT ordering (solver's built-in).");
     } else if (args.ordering_type == "METIS") {
         spdlog::info("Using METIS ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
+        ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::METIS);
         if (args.solver_type == "CUDSS") {
             spdlog::error("METIS ordering is not supported with CUDSS solver.");
             delete solver;
@@ -374,7 +374,7 @@ int main(int argc, char* argv[])
         }
     } else if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING.");
-        ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
         ordering->setOptions({
             {"use_gpu", args.use_gpu ? "1" : "0"},
             {"patch_type", args.patch_type},
@@ -383,11 +383,11 @@ int main(int argc, char* argv[])
         });
     } else if (args.ordering_type == "PARTH") {
         spdlog::info("Using PARTH ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+        ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PARTH);
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
     } else if (args.ordering_type == "NEUTRAL") {
         spdlog::info("Using NEUTRAL ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::NEUTRAL);
+        ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::NEUTRAL);
     } else {
         spdlog::error("Unknown ordering type: {}", args.ordering_type);
         delete solver;
@@ -421,7 +421,7 @@ int main(int argc, char* argv[])
         spdlog::info("Ordering time: {} ms", ordering_time);
 
         // Validate permutation
-        if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
+        if (!homa::check_valid_permutation(perm.data(), perm.size())) {
             spdlog::error("Permutation is not valid!");
             delete solver;
             delete ordering;
@@ -435,7 +435,7 @@ int main(int argc, char* argv[])
     // ========== Compute factor NNZ for custom ordering ==========
     long int factor_nnz = -1;
     if (!perm.empty()) {
-        factor_nnz = RXMESH_SOLVER::get_factor_nnz(S.outerIndexPtr(),
+        factor_nnz = homa::get_factor_nnz(S.outerIndexPtr(),
                                                    S.innerIndexPtr(),
                                                    S.valuePtr(),
                                                    S.rows(),
@@ -501,7 +501,7 @@ int main(int argc, char* argv[])
     header.emplace_back("solve_time");
     header.emplace_back("residual");
 
-    RXMESH_SOLVER::CSVManager runtime_csv(args.output_csv_address, "mesh_smoothing_benchmark", header, false);
+    homa::CSVManager runtime_csv(args.output_csv_address, "mesh_smoothing_benchmark", header, false);
 
     // ========== Store vertex positions for visualization ==========
     std::vector<Eigen::MatrixXd> vertex_history;

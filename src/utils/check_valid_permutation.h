@@ -5,10 +5,9 @@
 
 #pragma once
 
-#include <cholmod.h>
 #include <vector>
 //Return the factor's nnz using CHOLMOD analysis
-namespace RXMESH_SOLVER {
+namespace homa {
     bool check_valid_permutation(int* perm, int n);
 }
 

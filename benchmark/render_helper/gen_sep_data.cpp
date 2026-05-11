@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include "SPD_cot_matrix.h"
-#include "ordering.h"
+#include "ordering_factory.h"
 #include "remove_diagonal.h"
 #include "check_valid_permutation.h"
 #include "save_vector.h"
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 
     // Create SPD cotangent matrix (already positive definite with regularization)
     Eigen::SparseMatrix<double> OL;
-    RXMESH_SOLVER::computeSPD_cot_matrix(OV, OF, OL);
+    homa::computeSPD_cot_matrix(OV, OF, OL);
 
     if (args.patch_number != -1) {
         spdlog::info("Using patch number: {}", args.patch_number);
@@ -86,30 +86,38 @@ int main(int argc, char* argv[])
     // Create the graph (remove diagonal for ordering)
     std::vector<int> Gp;
     std::vector<int> Gi;
-    RXMESH_SOLVER::remove_diagonal(
+    homa::remove_diagonal(
         OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), Gp, Gi);
 
     // Init permuter
     std::vector<int> perm;
     std::vector<int> etree;
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+    homa::Ordering* ordering = nullptr;
     std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
 
     if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
-        ordering->setOptions(
-            {{"use_gpu", args.use_gpu ? "1" : "0"},
-             {"patch_type", args.patch_type},
-             {"patch_size", std::to_string(args.patch_size)},
-             {"use_patch_separator", std::to_string(args.use_patch_separator)},
-             {"patch_ordering_local_permute_method", args.patch_ordering_local_permute_method},
-             {"binary_level", std::to_string(args.binary_level)}});
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        {
+            homa::Options opts;
+            opts.use_gpu             = args.use_gpu;
+            opts.patch_size          = args.patch_size;
+            opts.use_patch_separator = args.use_patch_separator != 0;
+            opts.nd_levels           = args.binary_level;
+            if (args.patch_ordering_local_permute_method == "metis")
+                opts.local_method = homa::Options::LocalMethod::METIS;
+            else if (args.patch_ordering_local_permute_method == "unity")
+                opts.local_method = homa::Options::LocalMethod::NONE;
+            else
+                opts.local_method = homa::Options::LocalMethod::AMD;
+            ordering->applyOptions(opts);
+            ordering->setOptions({{"patch_type", args.patch_type}});
+        }
     } else if (args.ordering_type == "PARTH") {
         spdlog::info("Using PARTH ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PARTH);
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
     } else {
         spdlog::error("Unknown ordering type: {}", args.ordering_type);
@@ -127,7 +135,7 @@ int main(int argc, char* argv[])
     std::vector<int> node_to_patch;
     if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Creating patches with METIS...");
-        RXMESH_SOLVER::create_patch_with_metis(OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(),
+        homa::create_patch_with_metis(OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(),
             1, args.patch_size, node_to_patch);
         ordering->setPatch(node_to_patch);
         spdlog::info("Patches created with {} nodes", node_to_patch.size());
@@ -140,7 +148,7 @@ int main(int argc, char* argv[])
     ordering->compute_permutation(perm, etree, true); // Get level-based etree
 
     // Validate permutation
-    if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
+    if (!homa::check_valid_permutation(perm.data(), perm.size())) {
         spdlog::error("Permutation is not valid!");
         delete ordering;
         return 1;
@@ -167,15 +175,15 @@ int main(int argc, char* argv[])
     }
     std::string patch_suffix = (num_patches > 0) ? "_patches" + std::to_string(num_patches) : "";
 
-    RXMESH_SOLVER::save_vector_to_file(assigned_nodes, args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + patch_suffix + ".txt");
-    RXMESH_SOLVER::save_vector_to_file(etree_nodes, args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + patch_suffix + ".txt");
+    homa::save_vector_to_file(assigned_nodes, args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + patch_suffix + ".txt");
+    homa::save_vector_to_file(etree_nodes, args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + patch_suffix + ".txt");
     spdlog::info("Node to etree mapping saved to: {}", args.output_folder + "/" + args.ordering_type + "_assigned_nodes_" + mesh_name + patch_suffix + ".txt");
     spdlog::info("Etree nodes saved to: {}", args.output_folder + "/" + args.ordering_type + "_etree_nodes_" + mesh_name + patch_suffix + ".txt");
 
     // Save vertex to patch ID mapping
     if (args.ordering_type == "PATCH_ORDERING" && !node_to_patch.empty()) {
         std::string patch_mapping_file = args.output_folder + "/" + mesh_name + "_vertex_to_patch" + patch_suffix + ".txt";
-        RXMESH_SOLVER::save_vector_to_file(node_to_patch, patch_mapping_file);
+        homa::save_vector_to_file(node_to_patch, patch_mapping_file);
         spdlog::info("Vertex to patch mapping saved to: {}", patch_mapping_file);
     }
 

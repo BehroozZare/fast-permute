@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
     std::cout << "Loading matrix from: " << args.check_point_address << std::endl;
     std::cout << "Output csv address: " << args.output_csv_address << std::endl;
 
-    std::vector<std::string> matrix_addresses = RXMESH_SOLVER::prepare_benchmark_data(args.check_point_address);
+    std::vector<std::string> matrix_addresses = homa::prepare_benchmark_data(args.check_point_address);
     spdlog::info("Number of matrices: {}", matrix_addresses.size());
     Eigen::SparseMatrix<double> base; // Or Eigen::MatrixXd for dense matrices
     std::string filename = matrix_addresses[0];
@@ -107,14 +107,14 @@ int main(int argc, char* argv[])
     Eigen::VectorXd result;
 
     //Init solver
-    RXMESH_SOLVER::LinSysSolver* solver = nullptr;
+    homa::LinSysSolver* solver = nullptr;
     if (args.solver_type == "CHOLMOD") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(
-            RXMESH_SOLVER::LinSysSolverType::CPU_CHOLMOD);
+        solver = homa::LinSysSolver::create(
+            homa::LinSysSolverType::CPU_CHOLMOD);
         spdlog::info("Using CHOLMOD direct solver.");
     } else if (args.solver_type == "CUDSS") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(
-            RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+        solver = homa::LinSysSolver::create(
+            homa::LinSysSolverType::GPU_CUDSS);
         spdlog::info("Using CUDSS direct solver.");
     } else {
         spdlog::error("Unknown solver type.");
@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
             std::copy(Gi, Gi + Gp[G_N], Gi_prev.begin());
             is_graph_equal = false;
         } else {
-            if (RXMESH_SOLVER::is_graph_equal(Gp_prev.data(), Gi_prev.data(), Gp, Gi, G_N, G_N)){
+            if (homa::is_graph_equal(Gp_prev.data(), Gi_prev.data(), Gp, Gi, G_N, G_N)){
                 spdlog::info("Graph is the same as the previous one. Skipping symbolic analysis.");
                 is_graph_equal = true;
             }
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
                                          (last_patch_update_nnz < 0 || 
                                           nnz_change_ratio >= args.patch_update_nnz_threshold);
             if (should_update_patches) {
-                RXMESH_SOLVER::create_patch_with_metis(mat.rows(), mat.outerIndexPtr(), mat.innerIndexPtr(), 
+                homa::create_patch_with_metis(mat.rows(), mat.outerIndexPtr(), mat.innerIndexPtr(), 
                                                        DIM, args.patch_size, node_to_patch);
                 spdlog::info("Updated node_to_patch at frame {} (NNZ changed by {:.2f}%, from {} to {})", 
                             frame, nnz_change_ratio * 100.0, last_patch_update_nnz, current_nnz);
@@ -197,13 +197,13 @@ int main(int argc, char* argv[])
         }
 
         // Create ordering based on ordering_type
-        RXMESH_SOLVER::Ordering* ordering = nullptr;
+        homa::Ordering* ordering = nullptr;
         if (args.ordering_type == "PATCH_ORDERING") {
-            ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+            ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
             ordering->setGraph(Gp, Gi, G_N, Gp[G_N]);
             ordering->setPatch(node_to_patch);
         } else if (args.ordering_type == "PARTH") {
-            ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+            ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PARTH);
             ordering->setGraph(Gp, Gi, G_N, Gp[G_N]);
             ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
         }
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
             .count();
                 
         //Check for correct perm
-        if (!RXMESH_SOLVER::check_valid_permutation(matrix_perm.data(), matrix_perm.size())) {
+        if (!homa::check_valid_permutation(matrix_perm.data(), matrix_perm.size())) {
             spdlog::error("Permutation is not valid!");
         }
         spdlog::info("Ordering time: {} ms",
@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
 
         double patch_factor_nnz, metis_factor_nnz, lag_factor_nnz;
         if (args.ordering_type != "DEFAULT" && !is_graph_equal) {
-            patch_factor_nnz = RXMESH_SOLVER::get_factor_nnz(mat.outerIndexPtr(),
+            patch_factor_nnz = homa::get_factor_nnz(mat.outerIndexPtr(),
                                 mat.innerIndexPtr(),
                                 mat.valuePtr(),
                                 mat.rows(),
@@ -257,14 +257,14 @@ int main(int argc, char* argv[])
                                 matrix_perm);
 
             if (!matrix_perm .empty()) {
-                RXMESH_SOLVER::save_vector_to_file(matrix_perm, args.check_point_address + "/perm_" + std::to_string(frame) + "_" + std::to_string(iteration) + "_Ordering_time_" + std::to_string(ordering_time) + ".txt");
+                homa::save_vector_to_file(matrix_perm, args.check_point_address + "/perm_" + std::to_string(frame) + "_" + std::to_string(iteration) + "_Ordering_time_" + std::to_string(ordering_time) + ".txt");
             }
             if (!matrix_etree.empty()) {
-                RXMESH_SOLVER::save_vector_to_file(matrix_etree, args.check_point_address + "/etree_" + std::to_string(frame) + "_" + std::to_string(iteration) + "_Ordering_time_" + std::to_string(ordering_time) + ".txt");
+                homa::save_vector_to_file(matrix_etree, args.check_point_address + "/etree_" + std::to_string(frame) + "_" + std::to_string(iteration) + "_Ordering_time_" + std::to_string(ordering_time) + ".txt");
             }
 
-            RXMESH_SOLVER::Ordering* metis_ordering = RXMESH_SOLVER::Ordering::create(
-                RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
+            homa::Ordering* metis_ordering = homa::Ordering::create(
+                homa::DEMO_ORDERING_TYPE::METIS);
             std::vector<int> metis_etree, metis_perm;
             metis_ordering->setGraph(Gp, Gi, G_N, Gp[G_N]);
             metis_ordering->compute_permutation(metis_perm, metis_etree, false);
@@ -278,14 +278,14 @@ int main(int argc, char* argv[])
                 lag_perm = matrix_metis_perm;
             }
 
-            metis_factor_nnz = RXMESH_SOLVER::get_factor_nnz(mat.outerIndexPtr(),
+            metis_factor_nnz = homa::get_factor_nnz(mat.outerIndexPtr(),
                                                         mat.innerIndexPtr(),
                                                         mat.valuePtr(),
                                                         mat.rows(),
                                                         mat.nonZeros(),
                                                         matrix_metis_perm);
 
-            lag_factor_nnz = RXMESH_SOLVER::get_factor_nnz(mat.outerIndexPtr(),
+            lag_factor_nnz = homa::get_factor_nnz(mat.outerIndexPtr(),
                                                         mat.innerIndexPtr(),
                                                         mat.valuePtr(),
                                                         mat.rows(),
@@ -382,7 +382,7 @@ int main(int argc, char* argv[])
         header.emplace_back("residual");
 
 
-        RXMESH_SOLVER::CSVManager runtime_csv(csv_name, "some address", header, false);
+        homa::CSVManager runtime_csv(csv_name, "some address", header, false);
         runtime_csv.addElementToRecord(frame, "frame");
         runtime_csv.addElementToRecord(iteration, "iteration");
         runtime_csv.addElementToRecord(args.ordering_type, "ordering_type");

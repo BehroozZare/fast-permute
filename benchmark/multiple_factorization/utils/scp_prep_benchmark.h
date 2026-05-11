@@ -9,7 +9,7 @@
 #include <spdlog/spdlog.h>
 
 
-namespace RXMESH_SOLVER {
+namespace homa {
 
     /**
      * @brief Prepare SCP benchmark data by extracting obj, hessian, and rhs file paths

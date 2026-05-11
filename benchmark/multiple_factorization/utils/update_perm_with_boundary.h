@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 
 
-namespace RXMESH_SOLVER {
+namespace homa {
 
     void update_perm_with_boundary(std::vector<int>& perm, std::vector<int>& boundary){
         //First find old_to_new_label 

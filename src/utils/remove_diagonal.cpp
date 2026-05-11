@@ -10,13 +10,13 @@
 #include <tuple>
 #include <vector>
 
-namespace RXMESH_SOLVER {
+namespace homa {
 
 namespace {
 
 // Build a sorted, deduped vector of (col, row) off-diagonal symmetric pairs
 // from a CSC matrix (Ap, Ai) of size N x N.
-std::vector<std::tuple<int, int>> build_offdiag_pairs(int N, int* Ap, int* Ai)
+std::vector<std::tuple<int, int>> build_offdiag_pairs(int N, const int* Ap, const int* Ai)
 {
     const int dim = 1;
     std::vector<std::tuple<int, int>> coefficients;
@@ -43,7 +43,7 @@ std::vector<std::tuple<int, int>> build_offdiag_pairs(int N, int* Ap, int* Ai)
 }  // namespace
 
 void remove_diagonal(int N,
-                     int* Ap, int* Ai,
+                     const int* Ap, const int* Ai,
                      std::vector<int>& Gp, std::vector<int>& Gi)
 {
     std::vector<std::tuple<int, int>> coefficients =
@@ -76,8 +76,8 @@ void remove_diagonal(int N,
 }
 
 bool compare_sparsity_no_diagonal(int N,
-                                  int* Ap, int* Ai,
-                                  int* Bp, int* Bi,
+                                  const int* Ap, const int* Ai,
+                                  const int* Bp, const int* Bi,
                                   const std::string& label_a,
                                   const std::string& label_b,
                                   int max_diffs)
@@ -152,4 +152,4 @@ bool compare_sparsity_no_diagonal(int N,
     return true;
 }
 
-}  // namespace RXMESH_SOLVER
+}  // namespace homa

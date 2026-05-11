@@ -9,7 +9,7 @@
 #include <spdlog/spdlog.h>
 
 
-namespace RXMESH_SOLVER {
+namespace homa {
 
     /**
      * @brief Prepare SLIM benchmark data by extracting obj, hessian, and gradient file paths

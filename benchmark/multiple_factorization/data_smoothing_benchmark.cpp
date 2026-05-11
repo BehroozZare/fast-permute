@@ -19,7 +19,7 @@
 #include <spdlog/spdlog.h>
 
 #include "LinSysSolver.hpp"
-#include "ordering.h"
+#include "ordering_factory.h"
 #include "remove_diagonal.h"
 #include "csv_utils.h"
 #include "get_factor_nnz.h"
@@ -179,27 +179,30 @@ struct CLIArgs {
 };
 
 // Create ordering based on CLI arguments
-RXMESH_SOLVER::Ordering* createOrdering(const CLIArgs& args) {
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+homa::Ordering* createOrdering(const CLIArgs& args) {
+    homa::Ordering* ordering = nullptr;
     
     if (args.ordering_type == "DEFAULT") {
         spdlog::info("Using DEFAULT ordering (solver's internal ordering).");
         ordering = nullptr;
     } else if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
-        ordering->setOptions(
-            {{"use_gpu", args.use_gpu ? "1" : "0"},
-             {"patch_type", args.patch_type},
-             {"patch_size", std::to_string(args.patch_size)},
-             {"use_patch_separator", "1"},
-             {"patch_ordering_local_permute_method", "amd"},
-             {"binary_level", std::to_string(args.binary_level)}});
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        {
+            homa::Options opts;
+            opts.use_gpu             = args.use_gpu;
+            opts.patch_size          = args.patch_size;
+            opts.use_patch_separator = true;
+            opts.nd_levels           = args.binary_level;
+            opts.local_method        = homa::Options::LocalMethod::AMD;
+            ordering->applyOptions(opts);
+            ordering->setOptions({{"patch_type", args.patch_type}});
+        }
     } else if (args.ordering_type == "PARTH") {
         spdlog::info("Using PARTH ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PARTH);
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
     } else {
         spdlog::error("Unknown ordering type: {}. Using DEFAULT.", args.ordering_type);
@@ -253,12 +256,12 @@ SolveResult solveLinearSystem(
     spdlog::drop("RXMesh");
     
     // Create solver
-    RXMESH_SOLVER::LinSysSolver* solver = RXMESH_SOLVER::LinSysSolver::create(
-        is_cudss ? RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS
-                 : RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
+    homa::LinSysSolver* solver = homa::LinSysSolver::create(
+        is_cudss ? homa::LinSysSolverType::GPU_CUDSS
+                 : homa::LinSysSolverType::CPU_MKL);
     
     // Create ordering
-    RXMESH_SOLVER::Ordering* ordering = createOrdering(args);
+    homa::Ordering* ordering = createOrdering(args);
     
     // Prepare permutation and etree vectors
     std::vector<int> perm;
@@ -278,7 +281,7 @@ SolveResult solveLinearSystem(
         // Remove diagonal to get graph for ordering
         std::vector<int> Gp;
         std::vector<int> Gi;
-        RXMESH_SOLVER::remove_diagonal(
+        homa::remove_diagonal(
             A.rows(), 
             const_cast<int*>(A.outerIndexPtr()), 
             const_cast<int*>(A.innerIndexPtr()), 
@@ -402,7 +405,7 @@ SolveResult solveLinearSystem(
     // Compute factor NNZ ratio
     double factor_nnz_ratio = 0.0;
     if (!perm.empty()) {
-        long int factor_nnz = RXMESH_SOLVER::get_factor_nnz(
+        long int factor_nnz = homa::get_factor_nnz(
             const_cast<int*>(A.outerIndexPtr()),
             const_cast<int*>(A.innerIndexPtr()),
             const_cast<double*>(A.valuePtr()),
@@ -546,7 +549,7 @@ int main(int argc, char * argv[])
   header.emplace_back("solve_time");
   header.emplace_back("residual");
   
-  RXMESH_SOLVER::CSVManager runtime_csv(args.output_csv_address, "output", header, false);
+  homa::CSVManager runtime_csv(args.output_csv_address, "output", header, false);
   
   // Record for Laplacian solver
   // runtime_csv.addElementToRecord(mesh_name, "mesh_name");

@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> rhs_addresses;
     std::string hessian_address;
     std::string obj_address;
-    RXMESH_SOLVER::prepare_scp_benchmark_data(args.check_point_address, rhs_addresses, hessian_address, obj_address);
+    homa::prepare_scp_benchmark_data(args.check_point_address, rhs_addresses, hessian_address, obj_address);
     
     spdlog::info("Number of RHS files: {}", rhs_addresses.size());
     spdlog::info("Hessian file: {}", hessian_address);
@@ -120,12 +120,12 @@ int main(int argc, char* argv[])
     spdlog::info("Hessian size: {} x {}, NNZ: {}", hessian.rows(), hessian.cols(), hessian.nonZeros());
 
     // ========== Initialize solver ==========
-    RXMESH_SOLVER::LinSysSolver* solver = nullptr;
+    homa::LinSysSolver* solver = nullptr;
     if (args.solver_type == "CUDSS") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS);
         spdlog::info("Using CUDSS direct solver.");
     } else if (args.solver_type == "MKL") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::CPU_MKL);
         spdlog::info("Using Intel MKL PARDISO direct solver.");
     } else {
         spdlog::error("Unknown solver type: {}. Supported: CUDSS, MKL", args.solver_type);
@@ -148,13 +148,13 @@ int main(int argc, char* argv[])
     std::vector<int> matrix_etree;
     long int ordering_time = -1;
     long int ordering_init_time = -1;
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+    homa::Ordering* ordering = nullptr;
 
     if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING.");
         
         // Create ordering following laplace_benchmark approach
-        ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
         ordering->setOptions({
             {"use_gpu", args.use_gpu ? "1" : "0"},
             {"patch_type", args.patch_type},
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
     } else if (args.ordering_type == "PARTH") {
         spdlog::info("Using PARTH ordering.");
         
-        ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+        ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PARTH);
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
         ordering->setGraph(Gp, Gi, G_N, G_NNZ);
 
@@ -259,7 +259,7 @@ int main(int argc, char* argv[])
 
     // Validate permutation if using custom ordering
     if (!matrix_perm.empty()) {
-        if (!RXMESH_SOLVER::check_valid_permutation(matrix_perm.data(), matrix_perm.size())) {
+        if (!homa::check_valid_permutation(matrix_perm.data(), matrix_perm.size())) {
             spdlog::error("Permutation is not valid!");
             delete solver;
             delete ordering;
@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
     // ========== Compute factor NNZ for custom ordering ==========
     long int factor_nnz = -1;
     if (!matrix_perm.empty()) {
-        factor_nnz = RXMESH_SOLVER::get_factor_nnz(hessian.outerIndexPtr(),
+        factor_nnz = homa::get_factor_nnz(hessian.outerIndexPtr(),
                                                    hessian.innerIndexPtr(),
                                                    hessian.valuePtr(),
                                                    hessian.rows(),
@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
     header.emplace_back("solve_time");
     header.emplace_back("residual");
 
-    RXMESH_SOLVER::CSVManager runtime_csv(args.output_csv_address, "SCP_benchmark", header, false);
+    homa::CSVManager runtime_csv(args.output_csv_address, "SCP_benchmark", header, false);
 
     // ========== Solve loop: iterate through all RHS vectors ==========
     spdlog::info("Starting solve loop with {} iterations...", rhs_addresses.size());

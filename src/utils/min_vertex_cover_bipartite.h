@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <limits>
 //Return the factor's nnz using CHOLMOD analysis
-namespace RXMESH_SOLVER {
+namespace homa {
     class MinVertexCoverBipartite {
     public:
         int M_n;

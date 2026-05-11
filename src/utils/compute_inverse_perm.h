@@ -7,7 +7,7 @@
 
 #include <vector>
 //Return the factor's nnz using CHOLMOD analysis
-namespace RXMESH_SOLVER {
+namespace homa {
     void compute_inverse_perm(std::vector<int>& perm, std::vector<int>& inv_perm);
 }
 

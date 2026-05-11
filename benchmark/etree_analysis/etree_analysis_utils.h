@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-namespace RXMESH_SOLVER {
+namespace homa {
     void save_etree_to_text(const std::vector<int>& etree, const std::string& filename){
         std::ofstream file(filename);
         for(size_t i = 0; i < etree.size(); i++){

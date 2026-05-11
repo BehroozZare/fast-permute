@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "SPD_cot_matrix.h"
-#include "ordering.h"
+#include "ordering_factory.h"
 #include "remove_diagonal.h"
 #include "check_valid_permutation.h"
 #include "save_vector.h"
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 
     // Compute SPD cotangent matrix A
     Eigen::SparseMatrix<double> A;
-    RXMESH_SOLVER::computeSPD_cot_matrix(OV, OF, A);
+    homa::computeSPD_cot_matrix(OV, OF, A);
 
     spdlog::info("A rows: {}", A.rows());
     spdlog::info("A nnz: {}", A.nonZeros());
@@ -104,28 +104,36 @@ int main(int argc, char* argv[])
     // Create the graph (remove diagonal for ordering)
     std::vector<int> Gp;
     std::vector<int> Gi;
-    RXMESH_SOLVER::remove_diagonal(A.rows(), A.outerIndexPtr(), A.innerIndexPtr(), Gp, Gi);
+    homa::remove_diagonal(A.rows(), A.outerIndexPtr(), A.innerIndexPtr(), Gp, Gi);
 
     // Create ordering
     std::vector<int> perm;
     std::vector<int> etree;
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+    homa::Ordering* ordering = nullptr;
 
     if (args.ordering_type == "PATCH_ORDERING") {
         spdlog::info("Using PATCH_ORDERING ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
-        ordering->setOptions(
-            {{"use_gpu", args.use_gpu ? "1" : "0"},
-             {"patch_type", args.patch_type},
-             {"patch_size", std::to_string(args.patch_size)},
-             {"use_patch_separator", std::to_string(args.use_patch_separator)},
-             {"patch_ordering_local_permute_method", args.patch_ordering_local_permute_method},
-             {"binary_level", std::to_string(args.binary_level)}});
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        {
+            homa::Options opts;
+            opts.use_gpu             = args.use_gpu;
+            opts.patch_size          = args.patch_size;
+            opts.use_patch_separator = args.use_patch_separator != 0;
+            opts.nd_levels           = args.binary_level;
+            if (args.patch_ordering_local_permute_method == "metis")
+                opts.local_method = homa::Options::LocalMethod::METIS;
+            else if (args.patch_ordering_local_permute_method == "unity")
+                opts.local_method = homa::Options::LocalMethod::NONE;
+            else
+                opts.local_method = homa::Options::LocalMethod::AMD;
+            ordering->applyOptions(opts);
+            ordering->setOptions({{"patch_type", args.patch_type}});
+        }
     } else if (args.ordering_type == "PARTH") {
         spdlog::info("Using PARTH ordering.");
         ordering =
-            RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+            homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PARTH);
         ordering->setOptions({{"binary_level", std::to_string(args.binary_level)}});
     } else {
         spdlog::error("Unknown ordering type: {}", args.ordering_type);
@@ -148,7 +156,7 @@ int main(int argc, char* argv[])
 
     spdlog::info("Computing permutation...");
     ordering->compute_permutation(perm, etree, true);
-    if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), static_cast<int>(perm.size()))) {
+    if (!homa::check_valid_permutation(perm.data(), static_cast<int>(perm.size()))) {
         spdlog::error("Permutation is not valid!");
         delete ordering;
         return 1;
@@ -194,7 +202,7 @@ int main(int argc, char* argv[])
     }
 
     spdlog::info("Saving perm to: {}", perm_path);
-    RXMESH_SOLVER::save_vector_to_file(perm, perm_path);
+    homa::save_vector_to_file(perm, perm_path);
 
     delete ordering;
     spdlog::info("Done.");

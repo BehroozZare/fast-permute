@@ -11,7 +11,7 @@
 
 //#include <boost/mpl/assert.hpp>
 
-namespace RXMESH_SOLVER {
+namespace homa {
     MinVertexCoverBipartite::MinVertexCoverBipartite(int M_n, int* M_p, int* M_i, std::vector<int>& node_to_partition) {
         this->M_n = M_n;
         this->M_p = M_p;

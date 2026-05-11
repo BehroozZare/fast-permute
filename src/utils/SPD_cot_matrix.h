@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace RXMESH_SOLVER
+namespace homa
 {
     /**
      * @brief Projects a symmetric matrix to be positive semi-definite.

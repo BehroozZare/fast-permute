@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-namespace RXMESH_SOLVER {
+namespace homa {
 class CSVManager {
 public:
   /*
@@ -170,6 +170,6 @@ private:
   std::vector<std::string> record;
   std::vector<bool> defined_record_status;
 };
-} // namespace RXMESH_SOLVER
+} // namespace homa
 
 #endif // LBC_LIB_CSV_UTILS_H

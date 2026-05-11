@@ -8,7 +8,7 @@
 #include <tuple>
 
 
-namespace RXMESH_SOLVER {
+namespace homa {
     std::vector<std::string> prepare_benchmark_data(std::string folder_address){
         std::vector<std::tuple<int, int, std::string>> entries;
         std::regex pattern(R"(hessian_(\d+)_(\d+)_last_IPC\.mtx)");

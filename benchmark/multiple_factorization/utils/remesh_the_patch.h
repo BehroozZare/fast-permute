@@ -12,7 +12,7 @@
 #include "igl/avg_edge_length.h"
 #include "remesh_botsch.h"
 
-namespace RXMESH_SOLVER {
+namespace homa {
 
     Eigen::VectorXi remesh(Eigen::VectorXi &I, Eigen::MatrixXi &F,
                            Eigen::MatrixXd &V, Eigen::MatrixXi &F_dec,

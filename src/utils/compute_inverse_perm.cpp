@@ -8,7 +8,7 @@
 
 
 
-namespace RXMESH_SOLVER {
+namespace homa {
 //Return the factor's nnz using CHOLMOD analysis. The input matrix should be CSC with only lower part represented.
 void compute_inverse_perm(std::vector<int>& perm, std::vector<int>& inv_perm)
 {

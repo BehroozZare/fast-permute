@@ -9,7 +9,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace RXMESH_SOLVER {
+namespace homa {
 //Return the factor's nnz using CHOLMOD analysis. The input matrix should be CSC with only lower part represented.
 bool check_valid_permutation(int* perm, int n){
     std::vector<bool> marker(n, false);

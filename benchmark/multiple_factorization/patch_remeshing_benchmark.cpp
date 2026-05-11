@@ -29,7 +29,7 @@
 #include "check_valid_permutation.h"
 #include "csv_utils.h"
 #include "remove_diagonal.h"
-#include "ordering.h"
+#include "ordering_factory.h"
 #include "create_patch_with_metis.h"
 #include "createPatch.h"
 #include "update_perm_with_boundary.h"
@@ -281,15 +281,15 @@ int main(int argc, char* argv[])
     spdlog::info("Loaded mesh: {} vertices, {} faces", V.rows(), F.rows());
 
     // ========== Initialize solver ==========
-    RXMESH_SOLVER::LinSysSolver* solver = nullptr;
+    homa::LinSysSolver* solver = nullptr;
     if (args.solver_type == "CHOLMOD") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::CPU_CHOLMOD);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD);
         spdlog::info("Using CHOLMOD direct solver.");
     } else if (args.solver_type == "CUDSS") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::GPU_CUDSS);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS);
         spdlog::info("Using CUDSS direct solver.");
     } else if (args.solver_type == "MKL") {
-        solver = RXMESH_SOLVER::LinSysSolver::create(RXMESH_SOLVER::LinSysSolverType::CPU_MKL);
+        solver = homa::LinSysSolver::create(homa::LinSysSolverType::CPU_MKL);
         spdlog::info("Using Intel MKL PARDISO direct solver.");
         solver->ordering_type = args.default_ordering_type;
     } else {
@@ -321,10 +321,10 @@ int main(int argc, char* argv[])
     header.emplace_back("residual");
 
     std::string mesh_name = std::filesystem::path(args.input_mesh).stem().string();
-    RXMESH_SOLVER::CSVManager runtime_csv(args.output_csv_address, "patch_remeshing_benchmark", header, false);
+    homa::CSVManager runtime_csv(args.output_csv_address, "patch_remeshing_benchmark", header, false);
 
     // ========== Main loop ==========
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+    homa::Ordering* ordering = nullptr;
     std::vector<int> perm;
     std::vector<int> etree;
     std::vector<int> interior_node_to_patch;
@@ -375,7 +375,7 @@ int main(int argc, char* argv[])
         // ========== Build interior Laplacian L_in_in ==========
         // Use SPD cotangent matrix (guaranteed positive definite via element-wise projection)
         Eigen::SparseMatrix<double> L;
-        RXMESH_SOLVER::computeSPD_cot_matrix(V, F, L);
+        homa::computeSPD_cot_matrix(V, F, L);
         igl::slice(L, in, in, L_in_in);
         igl::slice(L, in, b, L_in_b);
         
@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
         // if(args.ordering_type == "PATCH_ORDERING") {
         //     if (iter == 0) {
         //         // Initial computation using METIS
-        //         RXMESH_SOLVER::create_patch_with_metis(
+        //         homa::create_patch_with_metis(
         //             L.rows(),
         //             const_cast<int*>(L.outerIndexPtr()),
         //             const_cast<int*>(L.innerIndexPtr()),
@@ -406,7 +406,7 @@ int main(int argc, char* argv[])
         //         for(int i = 0; i < b.rows(); i++){
         //             b_vec[i] = b(i);
         //         }
-        //         RXMESH_SOLVER::update_perm_with_boundary(node_to_patch, b_vec);
+        //         homa::update_perm_with_boundary(node_to_patch, b_vec);
         //         assert(node_to_patch.size() == in.rows());
         //         // Count unique patches
         //         std::unordered_set<int> unique_patches(node_to_patch.begin(), node_to_patch.end());
@@ -456,7 +456,7 @@ int main(int argc, char* argv[])
                 delete ordering;
             }
             
-            ordering = RXMESH_SOLVER::Ordering::create(RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+            ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
             ordering->setOptions({
                 {"use_gpu", args.use_gpu ? "1" : "0"},
                 {"patch_type", "reuse_patch"},  // We're providing our own patches
@@ -466,7 +466,7 @@ int main(int argc, char* argv[])
             
             // Create graph for ordering (remove diagonal)
             std::vector<int> Gp, Gi;
-            RXMESH_SOLVER::remove_diagonal(A_in_in.rows(), A_in_in.outerIndexPtr(), A_in_in.innerIndexPtr(), Gp, Gi);
+            homa::remove_diagonal(A_in_in.rows(), A_in_in.outerIndexPtr(), A_in_in.innerIndexPtr(), Gp, Gi);
             ordering->setGraph(Gp.data(), Gi.data(), A_in_in.rows(), Gi.size());
             
             // Set our computed node_to_patch
@@ -481,7 +481,7 @@ int main(int argc, char* argv[])
                 ordering_end - ordering_start).count();
             
             // Validate permutation
-            if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
+            if (!homa::check_valid_permutation(perm.data(), perm.size())) {
                 spdlog::error("Permutation is not valid!");
                 delete solver;
                 delete ordering;
@@ -594,11 +594,11 @@ int main(int argc, char* argv[])
             std::default_random_engine generator (iter);
             std::uniform_real_distribution<double> distribution (0, F.rows());
             int fid = distribution(generator);
-            RXMESH_SOLVER::createPatch(fid, 0.01, selected_remesh_patch, F, V);
+            homa::createPatch(fid, 0.01, selected_remesh_patch, F, V);
             Eigen::MatrixXi F_up;
             Eigen::MatrixXd V_up;
     
-            selected_remesh_patch = RXMESH_SOLVER::remesh(selected_remesh_patch, F, V,
+            selected_remesh_patch = homa::remesh(selected_remesh_patch, F, V,
                 F_up, V_up, args.remesh_target_scale, new_to_old_map);
 
             V = V_up;

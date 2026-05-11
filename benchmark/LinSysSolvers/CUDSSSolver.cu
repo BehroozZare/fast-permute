@@ -1,0 +1,542 @@
+//
+//  CHOLMODSolver.cpp
+//  IPC
+//
+//  Created by Minchen Li on 6/22/18.
+//
+
+#ifdef USE_CUDSS
+
+#include <spdlog/spdlog.h>
+#include <cassert>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include "CUDSSSolver.hpp"
+
+#include <spdlog/spdlog.h>
+#include "omp.h"
+
+#ifndef CUDA_ERROR
+inline void HandleError(cudaError_t err, const char* file, int line)
+{
+    // Error handling micro, wrap it around function whenever possible
+    if (err != cudaSuccess) {
+        spdlog::error("Line {} File {}", line, file);
+        spdlog::error("CUDA ERROR: {}", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+}
+#define CUDA_ERROR(err) (HandleError(err, __FILE__, __LINE__))
+#endif
+
+
+namespace homa {
+namespace {
+bool envFlagEnabled(const char* env_name)
+{
+    const char* value = std::getenv(env_name);
+    if (value == nullptr) {
+        return false;
+    }
+    return std::strcmp(value, "1") == 0 || std::strcmp(value, "true") == 0
+           || std::strcmp(value, "TRUE") == 0 || std::strcmp(value, "on") == 0
+           || std::strcmp(value, "ON") == 0;
+}
+
+#ifdef CUDSS_CONFIG_HOST_NTHREADS
+bool parsePositiveIntEnv(const char* env_name, int& out_value)
+{
+    const char* value = std::getenv(env_name);
+    if (value == nullptr || value[0] == '\0') {
+        return false;
+    }
+
+    char* endptr = nullptr;
+    long  parsed = std::strtol(value, &endptr, 10);
+    if (endptr == value || *endptr != '\0' || parsed <= 0 || parsed > INT_MAX) {
+        spdlog::warn(
+            "CUDSSSolver: Ignoring invalid {}='{}' (expected positive integer)",
+            env_name,
+            value);
+        return false;
+    }
+    out_value = static_cast<int>(parsed);
+    return true;
+}
+#endif
+} // namespace
+
+CUDSSSolver::~CUDSSSolver()
+{
+    cudssConfigDestroy(config);
+    cudssDataDestroy(handle, data);
+    clean_sparse_matrix_mem();
+    clean_rhs_sol_mem();
+    cudssDestroy(handle);
+}
+
+CUDSSSolver::CUDSSSolver()
+{
+    rowOffsets_dev = nullptr;
+    colIndices_dev = nullptr;
+    values_dev     = nullptr;
+    bvalues_dev    = nullptr;
+    xvalues_dev    = nullptr;
+    x_mat          = nullptr;
+    b_mat          = nullptr;
+    data           = nullptr;
+    handle         = nullptr;
+    config         = nullptr;
+    A              = nullptr;
+    N              = 0;
+    NNZ            = 0;
+    auto status = cudssCreate(&handle);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::constructor - cudssCreate failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    const bool  mt_strict          = envFlagEnabled("RX_CUDSS_MT_STRICT");
+    const char* rx_threading_layer = std::getenv("RX_CUDSS_THREADING_LIB");
+    const char* cudss_threading_layer_env = std::getenv("CUDSS_THREADING_LIB");
+    if (rx_threading_layer != nullptr || cudss_threading_layer_env != nullptr) {
+        // If RX_CUDSS_THREADING_LIB is set, use that explicit path; otherwise let cuDSS
+        // read CUDSS_THREADING_LIB internally by passing nullptr.
+        const char* layer_path = rx_threading_layer != nullptr ? rx_threading_layer : nullptr;
+        status                 = cudssSetThreadingLayer(handle, layer_path);
+        if (status == CUDSS_STATUS_SUCCESS) {
+            if (rx_threading_layer != nullptr) {
+                spdlog::info(
+                    "CUDSSSolver: MT mode enabled using RX_CUDSS_THREADING_LIB='{}'",
+                    rx_threading_layer);
+            } else {
+                spdlog::info(
+                    "CUDSSSolver: MT mode enabled using CUDSS_THREADING_LIB='{}'",
+                    cudss_threading_layer_env);
+            }
+        } else if (mt_strict) {
+            spdlog::error(
+                "CUDSSSolver: Failed to enable MT mode (status: {}) with strict mode enabled",
+                status);
+            exit(EXIT_FAILURE);
+        } else {
+            spdlog::warn(
+                "CUDSSSolver: Failed to enable MT mode (status: {}); falling back to "
+                "single-threaded reordering",
+                status);
+        }
+    } else {
+        spdlog::info(
+            "CUDSSSolver: MT mode not configured (set CUDSS_THREADING_LIB or "
+            "RX_CUDSS_THREADING_LIB to enable)");
+    }
+    
+    status = cudssConfigCreate(&config);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::constructor - cudssConfigCreate failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+#ifdef CUDSS_CONFIG_HOST_NTHREADS
+    int host_nthreads = 0;
+    if (parsePositiveIntEnv("RX_CUDSS_HOST_NTHREADS", host_nthreads)) {
+        status = cudssConfigSet(
+            config, CUDSS_CONFIG_HOST_NTHREADS, &host_nthreads, sizeof(host_nthreads));
+        if (status == CUDSS_STATUS_SUCCESS) {
+            spdlog::info(
+                "CUDSSSolver: Host MT thread cap set to {} via RX_CUDSS_HOST_NTHREADS",
+                host_nthreads);
+        } else if (mt_strict) {
+            spdlog::error(
+                "CUDSSSolver: Failed to set CUDSS_CONFIG_HOST_NTHREADS (status: {}) with "
+                "strict mode enabled",
+                status);
+            exit(EXIT_FAILURE);
+        } else {
+            spdlog::warn(
+                "CUDSSSolver: Failed to set CUDSS_CONFIG_HOST_NTHREADS (status: {}); "
+                "continuing with cuDSS default thread policy",
+                status);
+        }
+    }
+#else
+    if (std::getenv("RX_CUDSS_HOST_NTHREADS") != nullptr) {
+        spdlog::warn(
+            "CUDSSSolver: RX_CUDSS_HOST_NTHREADS is set but this cuDSS build does not expose "
+            "CUDSS_CONFIG_HOST_NTHREADS");
+    }
+#endif
+    
+    status = cudssDataCreate(handle, &data);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::constructor - cudssDataCreate failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+    
+    is_allocated = false;
+}
+
+void CUDSSSolver::clean_sparse_matrix_mem()
+{
+    if (rowOffsets_dev != nullptr)
+        CUDA_ERROR(cudaFree(rowOffsets_dev));
+    if (colIndices_dev != nullptr)
+        CUDA_ERROR(cudaFree(colIndices_dev));
+    if (values_dev != nullptr)
+        CUDA_ERROR(cudaFree(values_dev));
+    if (A != nullptr)
+        cudssMatrixDestroy(A);
+    rowOffsets_dev = nullptr;
+    colIndices_dev = nullptr;
+    values_dev     = nullptr;
+    A              = nullptr;
+    is_allocated   = false;
+}
+
+void CUDSSSolver::clean_rhs_sol_mem()
+{
+    if (x_mat != nullptr)
+        cudssMatrixDestroy(x_mat);
+    if (b_mat != nullptr)
+        cudssMatrixDestroy(b_mat);
+    if (xvalues_dev != nullptr)
+        CUDA_ERROR(cudaFree(xvalues_dev));
+    if (bvalues_dev != nullptr)
+        CUDA_ERROR(cudaFree(bvalues_dev));
+    xvalues_dev = nullptr;
+    bvalues_dev = nullptr;
+    x_mat       = nullptr;
+    b_mat       = nullptr;
+}
+
+
+void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
+{
+    // Validate input parameters
+    if (A_N <= 0 || NNZ <= 0) {
+        spdlog::error("CUDSSSolver::setMatrix - Invalid dimensions: N={}, NNZ={}", A_N, NNZ);
+        exit(EXIT_FAILURE);
+    }
+    if (p == nullptr || i == nullptr || x == nullptr) {
+        spdlog::error("CUDSSSolver::setMatrix - Null pointer passed");
+        exit(EXIT_FAILURE);
+    }
+    
+    // Log matrix properties for debugging
+    spdlog::info("CUDSSSolver::setMatrix - N={}, NNZ={}", A_N, NNZ);
+    
+    // Check if reallocation is needed BEFORE updating member variables
+    bool needs_realloc = !is_allocated || this->NNZ != NNZ || this->N != A_N;
+    
+    this->N   = A_N;
+    this->NNZ = NNZ;
+
+    // Allocating memory
+    if (needs_realloc) {
+        clean_sparse_matrix_mem();
+        CUDA_ERROR(
+            cudaMalloc((void**)&rowOffsets_dev, (A_N + 1) * sizeof(int)));
+        CUDA_ERROR(cudaMalloc((void**)&colIndices_dev, NNZ * sizeof(int)));
+        CUDA_ERROR(cudaMalloc((void**)&values_dev, NNZ * sizeof(double)));
+        is_allocated = true;
+    }
+
+
+    // Copying data to device
+    CUDA_ERROR(cudaMemcpy(
+        rowOffsets_dev, p, (A_N + 1) * sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_ERROR(cudaMemcpy(
+        colIndices_dev, i, NNZ * sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_ERROR(cudaMemcpy(
+        values_dev, x, NNZ * sizeof(double), cudaMemcpyHostToDevice));
+
+    // Creating matrix
+    // Note: Eigen::SparseMatrix is CSC (column-major) by default
+    // The caller should expand symmetric matrices to full format using selfadjointView
+    auto status = cudssMatrixCreateCsr(&A,
+                         N,                    // nrows
+                         N,                    // ncols  
+                         NNZ,                  // nnz
+                         rowOffsets_dev,       // csrRowOffsets
+                         nullptr,              // csrRowOffsetsEnd (optional)
+                         colIndices_dev,       // csrColInd
+                         values_dev,           // csrValues
+                         CUDA_R_32I,           // csrRowOffsetsType
+                         CUDA_R_64F,           // csrValuesType (double precision)
+                         CUDSS_MTYPE_SPD,      // matrixType (Symmetric Positive Definite)
+                         CUDSS_MVIEW_FULL,     // viewType (full matrix expected)
+                         CUDSS_BASE_ZERO);     // indexBase
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+{
+    assert(is_allocated);
+    cudssStatus_t status;
+
+    if (user_defined_perm.size() == N && etree.size() > 0) {
+#ifndef NDEBUG
+        int sum = 0;
+        for (auto& e: etree) {
+            sum+=e;
+        }
+        assert(sum == N);
+#endif
+        // REUSE MODE: Both perm and etree provided
+        spdlog::info("CUDSS: Reusing user-defined permutation (size={}) and etree (size={})",
+                     N, etree.size());
+
+
+        // Set user permutation (device pointer)
+        status = cudssDataSet(handle,
+                              data,
+                              CUDSS_DATA_USER_PERM,
+                              user_defined_perm.data(),
+                              N * sizeof(int));
+        if (status != CUDSS_STATUS_SUCCESS) {
+            spdlog::error("CUDSSSolver::cudssDataSet for user permutation failed with status: {}", status);
+            exit(EXIT_FAILURE);
+        }
+
+        // Set user elimination tree (HOST pointer per CUDSS docs)
+        status = cudssDataSet(handle,
+                              data,
+                              CUDSS_DATA_USER_ELIMINATION_TREE,
+                              etree.data(),
+                              etree.size() * sizeof(int));
+        if (status != CUDSS_STATUS_SUCCESS) {
+            spdlog::error("CUDSSSolver::cudssDataSet for user elimination tree failed with status: {}", status);
+            exit(EXIT_FAILURE);
+        }
+
+
+        // Compute the number of levels in the etree
+        int level = std::log2(etree.size() + 1);
+        spdlog::info("CUDSS: Number of levels in the etree: {}", level);
+        // Set the number of levels in the etree
+        status = cudssConfigSet(config, CUDSS_CONFIG_ND_NLEVELS, &level, sizeof(int));
+        if (status != CUDSS_STATUS_SUCCESS) {
+            spdlog::error("CUDSSSolver::cudssConfigSet for ND_NLEVELS failed with status: {}", status);
+            exit(EXIT_FAILURE);
+        }
+
+        // Execute reordering phase (cuDSS still needs this to process user perm/etree)
+        status = cudssExecute(
+            handle,
+            CUDSS_PHASE_REORDERING,
+            config,
+            data,
+            A,
+            nullptr,
+            nullptr);
+        if (status != CUDSS_STATUS_SUCCESS) {
+            spdlog::error("CUDSSSolver::reordering failed with status: {}", status);
+            exit(EXIT_FAILURE);
+        }
+    }  else {
+        // DEFAULT MODE: Let CUDSS handle reordering
+        spdlog::info("CUDSS: Using default reordering");
+
+        // Run both reordering and symbolic factorization
+        status = cudssExecute(
+            handle,
+            CUDSS_PHASE_REORDERING,
+            config,
+            data,
+            A,
+            nullptr,
+            nullptr);
+        if (status != CUDSS_STATUS_SUCCESS) {
+            spdlog::error("CUDSSSolver::reordering failed with status: {}", status);
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+
+void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+{
+    assert(is_allocated);
+    cudssStatus_t status;
+    // Execute symbolic factorization
+    status = cudssExecute(
+        handle,
+        CUDSS_PHASE_SYMBOLIC_FACTORIZATION,
+        config,
+        data,
+        A,
+        nullptr,
+        nullptr);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::symbolic factorization failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void CUDSSSolver::innerFactorize(void)
+{
+    assert(is_allocated);
+    auto status = cudssExecute(
+        handle, CUDSS_PHASE_FACTORIZATION, config, data, A, nullptr, nullptr);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::factorization failed!");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+void CUDSSSolver::innerSolve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result)
+{
+    // Delegate to raw pointer version to avoid ABI issues
+    result.resize(rhs.rows(), rhs.cols());
+    innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
+}
+
+void CUDSSSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data)
+{
+    // Validate input dimensions
+    if (rows != N) {
+        spdlog::error("CUDSSSolver::solve - RHS rows {} doesn't match matrix size {}", rows, N);
+        exit(EXIT_FAILURE);
+    }
+    
+    int nrhs = cols;
+    spdlog::info("CUDSSSolver::solve - Matrix size: {}, nrhs: {}", N, nrhs);
+    
+    // Clean up any existing memory
+    clean_rhs_sol_mem();
+    
+    // Allocate device memory for N × nrhs matrices
+    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(double)));
+    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(double)));
+    
+    // Copy RHS to device (data is column-major)
+    CUDA_ERROR(cudaMemcpy(
+        bvalues_dev, rhs_data, N * nrhs * sizeof(double), cudaMemcpyHostToDevice));
+    
+    // Create RHS dense matrix (N × nrhs, leading dimension = N)
+    auto status = cudssMatrixCreateDn(
+        &b_mat, N, nrhs, N, bvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    // Create solution dense matrix (N × nrhs, leading dimension = N)
+    status = cudssMatrixCreateDn(
+        &x_mat, N, nrhs, N, xvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    // Execute solve phase
+    status = cudssExecute(
+        handle, CUDSS_PHASE_SOLVE, config, data, A, x_mat, b_mat);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solve failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+    
+    // Copy result back to host
+    CUDA_ERROR(cudaMemcpy(result_data,
+                          xvalues_dev,
+                          N * nrhs * sizeof(double),
+                          cudaMemcpyDeviceToHost));
+    
+    clean_rhs_sol_mem();
+}
+
+void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
+{
+    // Validate input dimensions
+    if (rhs.size() != N) {
+        spdlog::error("CUDSSSolver::solve - RHS size {} doesn't match matrix size {}", rhs.size(), N);
+        exit(EXIT_FAILURE);
+    }
+    
+    spdlog::info("CUDSSSolver::solve - Matrix size: {}, RHS size: {}", N, rhs.size());
+    
+    // Clean up any existing memory first
+    clean_rhs_sol_mem();
+    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * sizeof(double)));
+    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * sizeof(double)));
+    // Copying the memory
+    CUDA_ERROR(cudaMemcpy(
+        bvalues_dev, rhs.data(), N * sizeof(double), cudaMemcpyHostToDevice));
+    // Creating the rhs matrix (N×1 column vector)
+    spdlog::info("Creating RHS dense matrix: N={}, ncols=1, ld={}", N, N);
+    auto status = cudssMatrixCreateDn(
+        &b_mat, N, 1, N, bvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    // Creating solution matrix (N×1 column vector)
+    spdlog::info("Creating solution dense matrix: N={}, ncols=1, ld={}", N, N);
+    status = cudssMatrixCreateDn(
+        &x_mat, N, 1, N, xvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    // Execute solve phase
+    spdlog::info("Executing CUDSS solve phase...");
+    status = cudssExecute(
+        handle, CUDSS_PHASE_SOLVE, config, data, A, x_mat, b_mat);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solve failed with status: {} ", status);
+        exit(EXIT_FAILURE);
+    }
+    spdlog::info("CUDSS solve completed successfully");
+    // Copy the result back
+    result.conservativeResize(rhs.size());
+    CUDA_ERROR(cudaMemcpy(result.data(),
+                          xvalues_dev,
+                          result.rows() * sizeof(double),
+                          cudaMemcpyDeviceToHost));
+    clean_rhs_sol_mem();
+}
+
+void CUDSSSolver::resetSolver()
+{
+    // Destroy old data object (contains stale symbolic factorization)
+    if (data != nullptr) {
+        cudssDataDestroy(handle, data);
+        data = nullptr;
+    }
+    
+    // Clean matrix and RHS/solution memory
+    clean_sparse_matrix_mem();
+    clean_rhs_sol_mem();
+    
+    // Recreate data object for new matrix structure
+    auto status = cudssDataCreate(handle, &data);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::resetSolver - cudssDataCreate failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+    
+    spdlog::info("CUDSSSolver::resetSolver - Solver state reset successfully");
+}
+
+LinSysSolverType CUDSSSolver::type() const
+{
+    return LinSysSolverType::GPU_CUDSS;
+};
+
+int CUDSSSolver::getFactorNNZ()
+{
+    return 0;
+}
+
+}  // namespace homa
+
+#endif

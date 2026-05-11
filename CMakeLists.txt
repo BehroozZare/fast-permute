@@ -1,9 +1,48 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
-project(gpu_ordering
+project(Homa
         VERSION 0.1.0
-        LANGUAGES C CXX CUDA)
+        LANGUAGES C CXX)
+
+################################################################################
+# HOMA OPTIONS
+################################################################################
+option(HOMA_BUILD_BENCHMARKS   "Build benchmark executables"      OFF)
+option(HOMA_BUILD_TESTS        "Build unit tests"                 OFF)
+option(HOMA_BUILD_PYTHON       "Build Python bindings"            OFF)
+option(HOMA_WITH_CUDA          "Enable CUDA / GPU backend"        OFF)
+option(HOMA_WITH_RXMESH        "Enable RxMesh patcher"            OFF)
+option(HOMA_WITH_FAST_PATCHER  "Enable fast-patcher backend"      OFF)
+option(HOMA_WITH_SUITESPARSE   "SuiteSparse for benchmarks"       OFF)
+option(HOMA_WITH_MKL           "Intel MKL PARDISO for benchmarks" OFF)
+option(HOMA_WITH_STRUMPACK     "STRUMPACK for benchmarks"         OFF)
+option(HOMA_WITH_PARTH         "Parth ordering for benchmarks"    OFF)
+
+# CUDA is enabled either explicitly or when legacy options require it
+if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH)
+    enable_language(CUDA)
+endif()
+
+# Legacy options used by the old build system (kept for transition period)
+option(${PROJECT_NAME}_WITH_PARTH      "Use Parth for fill-reducing orderings" OFF)
+option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark"        OFF)
+option(${PROJECT_NAME}_WITH_MKL        "Use Intel MKL PARDISO for benchmark"   OFF)
+option(${PROJECT_NAME}_WITH_STRUMPACK  "Use Strumpack for benchmark"           OFF)
+option(${PROJECT_NAME}_WITH_PROFILE    "Use Profile for benchmark"             OFF)
+
+# Sync legacy options from HOMA_ prefix
+if(HOMA_WITH_PARTH)
+    set(${PROJECT_NAME}_WITH_PARTH ON CACHE BOOL "" FORCE)
+endif()
+if(HOMA_WITH_SUITESPARSE)
+    set(${PROJECT_NAME}_WITH_SUITESPARSE ON CACHE BOOL "" FORCE)
+endif()
+if(HOMA_WITH_MKL)
+    set(${PROJECT_NAME}_WITH_MKL ON CACHE BOOL "" FORCE)
+endif()
+if(HOMA_WITH_STRUMPACK)
+    set(${PROJECT_NAME}_WITH_STRUMPACK ON CACHE BOOL "" FORCE)
+endif()
 
 # Enable GLM experimental features globally
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
@@ -14,11 +53,14 @@ set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-set(CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-set(CUDA_SEPARABLE_COMPILATION ON)
-
-# Auto-detect CUDA Architecture
-include(${CMAKE_SOURCE_DIR}/cmake/AutoDetectCudaArch.cmake)
+if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH OR HOMA_BUILD_BENCHMARKS)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+    set(CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+    set(CUDA_SEPARABLE_COMPILATION ON)
+    include(${CMAKE_SOURCE_DIR}/cmake/AutoDetectCudaArch.cmake)
+endif()
 
 ################################################################################
 # SECTION 1: Include Required Dependencies
@@ -80,64 +122,64 @@ if (OpenMP_CXX_FOUND)
     target_link_libraries(gpu_ordering_flags INTERFACE OpenMP::OpenMP_CXX)
 endif()
 
-# CUDA Toolkit (cuSPARSE, cuSOLVER)
-find_package(CUDAToolkit REQUIRED)
-target_link_libraries(gpu_ordering_flags INTERFACE CUDA::cusparse CUDA::cusolver)
+if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH OR HOMA_BUILD_BENCHMARKS)
+    # CUDA Toolkit (cuSPARSE, cuSOLVER)
+    find_package(CUDAToolkit REQUIRED)
+    target_link_libraries(gpu_ordering_flags INTERFACE CUDA::cusparse CUDA::cusolver)
 
-#cudss - Auto-detect correct version based on CUDA toolkit
-# Extract major version from CUDA compiler (e.g., 12.8.61 -> 12)
-string(REGEX MATCH "^[0-9]+" CUDA_VERSION_MAJOR "${CMAKE_CUDA_COMPILER_VERSION}")
-message(STATUS "Detected CUDA toolkit version: ${CMAKE_CUDA_COMPILER_VERSION} (major: ${CUDA_VERSION_MAJOR})")
+    # cuDSS - Auto-detect correct version based on CUDA toolkit
+    string(REGEX MATCH "^[0-9]+" CUDA_VERSION_MAJOR "${CMAKE_CUDA_COMPILER_VERSION}")
+    message(STATUS "Detected CUDA toolkit version: ${CMAKE_CUDA_COMPILER_VERSION} (major: ${CUDA_VERSION_MAJOR})")
 
-# Try to find cuDSS in version-specific path (Linux)
-if(NOT WIN32 AND NOT cudss_DIR)
-    # Standard Linux installation paths for cuDSS
-    set(_cudss_search_paths
-            "/usr/lib/x86_64-linux-gnu/libcudss/${CUDA_VERSION_MAJOR}/cmake/cudss"
-            "/usr/lib/aarch64-linux-gnu/libcudss/${CUDA_VERSION_MAJOR}/cmake/cudss"
-            "/usr/local/cuda-${CUDA_VERSION_MAJOR}/lib64/cmake/cudss"
-    )
-    foreach(_path ${_cudss_search_paths})
-        if(EXISTS "${_path}/cudss-config.cmake")
-            set(cudss_DIR "${_path}" CACHE PATH "Path to cuDSS CMake config" FORCE)
-            message(STATUS "Auto-detected cuDSS for CUDA ${CUDA_VERSION_MAJOR} at: ${cudss_DIR}")
-            break()
-        endif()
-    endforeach()
-    unset(_cudss_search_paths)
+    if(NOT WIN32 AND NOT cudss_DIR)
+        set(_cudss_search_paths
+                "/usr/lib/x86_64-linux-gnu/libcudss/${CUDA_VERSION_MAJOR}/cmake/cudss"
+                "/usr/lib/aarch64-linux-gnu/libcudss/${CUDA_VERSION_MAJOR}/cmake/cudss"
+                "/usr/local/cuda-${CUDA_VERSION_MAJOR}/lib64/cmake/cudss"
+        )
+        foreach(_path ${_cudss_search_paths})
+            if(EXISTS "${_path}/cudss-config.cmake")
+                set(cudss_DIR "${_path}" CACHE PATH "Path to cuDSS CMake config" FORCE)
+                message(STATUS "Auto-detected cuDSS for CUDA ${CUDA_VERSION_MAJOR} at: ${cudss_DIR}")
+                break()
+            endif()
+        endforeach()
+        unset(_cudss_search_paths)
+    endif()
+
+    find_package(cudss REQUIRED)
+    message(STATUS "Found cuDSS version ${cudss_VERSION} (Library: ${cudss_LIBRARY_DIR})")
+    target_link_directories(gpu_ordering_flags INTERFACE ${cudss_LIBRARY_DIR})
+    target_link_libraries(gpu_ordering_flags INTERFACE cudss)
+    target_compile_definitions(gpu_ordering_flags INTERFACE USE_CUDSS)
 endif()
-
-find_package(cudss REQUIRED)
-message(STATUS "Found cuDSS version ${cudss_VERSION} (Library: ${cudss_LIBRARY_DIR})")
-target_link_directories(gpu_ordering_flags INTERFACE ${cudss_LIBRARY_DIR})
-target_link_libraries(gpu_ordering_flags INTERFACE cudss)
-target_compile_definitions(gpu_ordering_flags INTERFACE USE_CUDSS)
 
 # Disable Cereal (and other deps) warnings as errors and unnecessary targets
 set(WITH_WERROR OFF CACHE BOOL "Compile with '-Werror' C++ compiler flag" FORCE)
 set(BUILD_SANDBOX OFF CACHE BOOL "Build sandbox examples" FORCE)
 set(BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
 
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/rxmesh.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/cli11.cmake)
+# Core deps — always needed for the homa library
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/eigen.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/libigl.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/metis.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/recipes/spdlog.cmake)
+# SuiteSparse/AMD is always needed: cpu_ordering_with_patch uses amd.h for local ordering
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/polyscope.cmake)
+
+# Benchmark / GPU deps — only when explicitly requested
+if(HOMA_WITH_RXMESH OR HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
+    include(${CMAKE_SOURCE_DIR}/cmake/recipes/rxmesh.cmake)
+endif()
+
+if(HOMA_BUILD_BENCHMARKS)
+    include(${CMAKE_SOURCE_DIR}/cmake/recipes/cli11.cmake)
+    include(${CMAKE_SOURCE_DIR}/cmake/recipes/libigl.cmake)
+    include(${CMAKE_SOURCE_DIR}/cmake/recipes/polyscope.cmake)
+endif()
 
 # Create a dependency interface target to hold configuration
 add_library(gpu_ordering_deps INTERFACE)
 target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
-
-################################################################################
-# SECTION 2: Development Build Options
-################################################################################
-option(${PROJECT_NAME}_WITH_PARTH "Use Parth for fill-reducing orderings" ON)
-option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark" ON)
-option(${PROJECT_NAME}_WITH_MKL "Use Intel MKL PARDISO for benchmark" ON)
-option(${PROJECT_NAME}_WITH_STRUMPACK "Use Strumpack for benchmark" OFF)
-option(${PROJECT_NAME}_WITH_PROFILE "Use Profile for benchmark" ON)
 
 ################################################################################
 # SECTION 3: Configure Dependencies (formerly attached to main lib)
@@ -221,6 +263,41 @@ if(TARGET Eigen3::Eigen)
     message(STATUS "===================")
 endif()
 
+################################################################################
+# homa: clean, CPU-only public library (always built)
+################################################################################
+add_library(homa STATIC
+    src/ordering/homa.cpp
+    src/ordering/cpu_ordering_with_patch.cpp
+    src/ordering/neutral_ordering.cpp
+    src/patching/metis_patcher.cpp
+    src/utils/remove_diagonal.cpp
+    src/utils/check_valid_permutation.cpp
+    src/utils/compute_inverse_perm.cpp
+    src/utils/min_vertex_cover_bipartite.cpp
+)
+if(${PROJECT_NAME}_WITH_PARTH)
+    target_sources(homa PRIVATE src/ordering/parth_ordering.cpp)
+endif()
+
+target_include_directories(homa
+    PUBLIC  include
+    PRIVATE src
+)
+target_link_libraries(homa PUBLIC
+    Eigen3::Eigen
+    spdlog::spdlog
+    metis
+    SuiteSparse::AMD
+)
+target_include_directories(homa PRIVATE ${AMD_INCLUDE_DIR} ${SUITESPARSE_CONFIG_INCLUDE_DIR})
+target_compile_definitions(homa PUBLIC
+    $<$<CONFIG:Debug>:DEBUG>
+    $<$<CONFIG:Release>:NDEBUG>
+)
+add_library(Homa::homa ALIAS homa)
+
+if(HOMA_BUILD_BENCHMARKS)
 # Create a header-only INTERFACE library for libigl-dependent code
 # Header-only ensures the code is compiled in the caller's translation unit,
 # avoiding ABI issues with Eigen across library boundaries
@@ -231,26 +308,20 @@ target_link_libraries(libigl_utils INTERFACE
 )
 target_include_directories(libigl_utils INTERFACE src/utils)
 
-# Create rxmesh_dev_helpers library
+# Create rxmesh_dev_helpers library (benchmark-only: includes GPU/CUDA sources)
 add_library(rxmesh_dev_helpers
-        src/LinSysSolvers/LinSysSolver.cpp
-        src/LinSysSolvers/CUDSSSolver.cu
-        src/LinSysSolvers/CHOLMODSolver.cpp
-        src/LinSysSolvers/MKLSolver.cpp
-        src/LinSysSolvers/STRUMPACKSolver.cpp
-        src/utils/get_factor_nnz.cpp
         src/utils/remove_diagonal.cpp
         src/utils/check_valid_permutation.cpp
         src/utils/compute_inverse_perm.cpp
         src/utils/min_vertex_cover_bipartite.cpp
-        src/PatchOrdering/cpu_ordering_with_patch.cpp
-        src/PatchOrdering/gpu_ordering_with_patch.cu
-        src/Ordering/ordering.cu
-        src/Ordering/metis_ordering.cpp
-        src/Ordering/rxmesh_ordering.cu
-        src/Ordering/neutral_ordering.cpp
-        src/Ordering/patch_ordering.cu
-        src/Ordering/parth_ordering.cpp
+        src/ordering/cpu_ordering_with_patch.cpp
+        src/ordering/gpu_ordering_with_patch.cu
+        src/ordering/ordering_factory.cu
+        src/ordering/neutral_ordering.cpp
+        src/ordering/patch_ordering.cu
+        src/ordering/parth_ordering.cpp
+        src/patching/metis_patcher.cpp
+        src/patching/rxmesh_patcher.cu
 )
 
 # Remesher library for mesh remeshing operations
@@ -292,10 +363,8 @@ target_link_libraries(rxmesh_dev_helpers PUBLIC gpu_ordering_deps PRIVATE RXMesh
 
 # Add dev code include directories
 target_include_directories(rxmesh_dev_helpers PUBLIC
-        src/LinSysSolvers
-        src/Ordering
-        src/utils
-        src/PatchOrdering
+        src/ordering
+        src/patching
         src/utils
 )
 
@@ -331,5 +400,7 @@ target_compile_options(rxmesh_dev_helpers PUBLIC
 ################################################################################
 # Development targets use both the RXMesh library and the dev helpers library
 
-add_subdirectory(benchmark)
-add_subdirectory(tools)
+    add_subdirectory(benchmark)
+    add_subdirectory(tools)
+
+endif() # HOMA_BUILD_BENCHMARKS

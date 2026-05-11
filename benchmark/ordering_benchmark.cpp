@@ -14,7 +14,7 @@
 #include "LinSysSolver.hpp"
 #include "check_valid_permutation.h"
 #include "get_factor_nnz.h"
-#include "ordering.h"
+#include "ordering_factory.h"
 #include "remove_diagonal.h"
 
 struct CLIArgs
@@ -102,30 +102,39 @@ int main(int argc, char* argv[])
 
     // Init permuter
     std::vector<int>         perm;
-    RXMESH_SOLVER::Ordering* ordering = nullptr;
+    homa::Ordering* ordering = nullptr;
     if (args.ordering_type == "DEFAULT") {
         spdlog::info("Using default ordering (default for each solver).");
         ordering = nullptr;
     } else if (args.ordering_type == "METIS") {
         spdlog::info("Using METIS ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::METIS);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::METIS);
     } else if (args.ordering_type == "RXMESH_ND") {
         spdlog::info("Using RXMESH ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::RXMESH_ND);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::RXMESH_ND);
     } else if (args.ordering_type == "POC_ND") {
         spdlog::info("Using POC_ND ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PATCH_ORDERING);
-        ordering->setOptions({{"local_permute_method", args.local_permute_method}, {"separator_finding_method", args.separator_finding_method}, {"separator_refinement_method", args.separator_refinement_method}});
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+        {
+            homa::Options opts;
+            if (args.local_permute_method == "metis")
+                opts.local_method = homa::Options::LocalMethod::METIS;
+            else if (args.local_permute_method == "unity")
+                opts.local_method = homa::Options::LocalMethod::NONE;
+            else
+                opts.local_method = homa::Options::LocalMethod::AMD;
+            ordering->applyOptions(opts);
+        }
     } else if (args.ordering_type == "PARTH") {
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::PARTH);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::PARTH);
     } else if (args.ordering_type == "NEUTRAL"){
         spdlog::info("Using NEUTRAL ordering.");
-        ordering = RXMESH_SOLVER::Ordering::create(
-            RXMESH_SOLVER::DEMO_ORDERING_TYPE::NEUTRAL);
+        ordering = homa::Ordering::create(
+            homa::DEMO_ORDERING_TYPE::NEUTRAL);
     } else {
         spdlog::error("Unknown Ordering type.");
     }
@@ -133,7 +142,7 @@ int main(int argc, char* argv[])
     // Create the graph
     std::vector<int> Gp;
     std::vector<int> Gi;
-    RXMESH_SOLVER::remove_diagonal(
+    homa::remove_diagonal(
         OL.rows(), OL.outerIndexPtr(), OL.innerIndexPtr(), Gp, Gi);
 
     // Init the permuter
@@ -152,7 +161,7 @@ int main(int argc, char* argv[])
         ordering->compute_permutation(perm, etree);
         auto ordering_end = std::chrono::high_resolution_clock::now();
         //Check for correct perm
-        if (!RXMESH_SOLVER::check_valid_permutation(perm.data(), perm.size())) {
+        if (!homa::check_valid_permutation(perm.data(), perm.size())) {
             spdlog::error("Permutation is not valid!");
         }
         spdlog::info("Ordering time: {} ms",
@@ -161,7 +170,7 @@ int main(int argc, char* argv[])
                          .count());
         assert(perm.size() == OL.rows());
 
-        int factor_nnz = RXMESH_SOLVER::get_factor_nnz(OL.outerIndexPtr(),
+        int factor_nnz = homa::get_factor_nnz(OL.outerIndexPtr(),
                                                        OL.innerIndexPtr(),
                                                        OL.valuePtr(),
                                                        OL.rows(),

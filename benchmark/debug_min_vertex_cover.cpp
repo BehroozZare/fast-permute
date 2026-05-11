@@ -55,7 +55,7 @@ bool test_hopcroft_karp(int test_num, int m, int n, const std::vector<Edge>& edg
     int* M_i = const_cast<int*>(adj_matrix.innerIndexPtr());
     
     // Create the MinVertexCoverBipartite object
-    RXMESH_SOLVER::MinVertexCoverBipartite solver(total_nodes, M_p, M_i, node_to_partition);
+    homa::MinVertexCoverBipartite solver(total_nodes, M_p, M_i, node_to_partition);
     
     // Compute maximum matching using Hopcroft-Karp
     int result = solver.compute_max_matching_hopcroft_karp();
@@ -109,7 +109,7 @@ bool test_min_vertex_cover_helper(int test_num, int m, int n, const std::vector<
     int* M_i = const_cast<int*>(adj_matrix.innerIndexPtr());
     
     // Create the MinVertexCoverBipartite object
-    RXMESH_SOLVER::MinVertexCoverBipartite solver(total_nodes, M_p, M_i, node_to_partition);
+    homa::MinVertexCoverBipartite solver(total_nodes, M_p, M_i, node_to_partition);
     
     // Compute minimum vertex cover
     std::vector<int> vertex_cover = solver.compute_min_vertex_cover();

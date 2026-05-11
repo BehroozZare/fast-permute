@@ -12,7 +12,7 @@
 #include <spdlog/spdlog.h>
 #include <igl/vertex_triangle_adjacency.h>
 
-namespace RXMESH_SOLVER {
+namespace homa {
     void createPatch(int fid, ///<[in] center of the patch
                      double ring_size, ///<[in] how many ring of neighbors in BFS around a face should be included
                      Eigen::VectorXi &SelectedFaces,///<[in] selected faces ids

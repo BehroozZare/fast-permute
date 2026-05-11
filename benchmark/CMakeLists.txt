@@ -3,6 +3,33 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
+# benchmark_solvers: STATIC library wrapping all linear-system solver backends.
+# CHOLMOD, CUDSS, MKL, STRUMPACK live here; they must NOT be linked into homa.
+# -----------------------------------------------------------------------------
+add_library(benchmark_solvers STATIC
+    LinSysSolvers/LinSysSolver.cpp
+    LinSysSolvers/CUDSSSolver.cu
+    LinSysSolvers/CHOLMODSolver.cpp
+    LinSysSolvers/MKLSolver.cpp
+    LinSysSolvers/STRUMPACKSolver.cpp
+    get_factor_nnz.cpp
+)
+
+target_include_directories(benchmark_solvers PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}          # for get_factor_nnz.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/LinSysSolvers
+    ${CMAKE_SOURCE_DIR}/src/utils        # for compute_inverse_perm.h etc.
+)
+
+target_link_libraries(benchmark_solvers PUBLIC
+    rxmesh_dev_helpers
+    gpu_ordering_deps
+)
+
+set_property(TARGET benchmark_solvers PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET benchmark_solvers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
+
+# -----------------------------------------------------------------------------
 # Helper function to configure common benchmark target properties
 # -----------------------------------------------------------------------------
 function(configure_benchmark_target target_name)
@@ -10,8 +37,8 @@ function(configure_benchmark_target target_name)
     set_property(TARGET ${target_name} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
     set_property(TARGET ${target_name} PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
-    # Link rxmesh_dev_helpers (which already includes RXMesh)
-    target_link_libraries(${target_name} PUBLIC rxmesh_dev_helpers)
+    # Link benchmark_solvers (solver backends) and rxmesh_dev_helpers (ordering)
+    target_link_libraries(${target_name} PUBLIC benchmark_solvers rxmesh_dev_helpers)
 
     # Disable interprocedural optimization for debug builds
     set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)

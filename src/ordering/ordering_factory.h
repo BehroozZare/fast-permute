@@ -1,0 +1,71 @@
+#pragma once
+
+#include "homa/types.h"
+#include <Eigen/Core>
+#include <Eigen/Sparse>
+#include <spdlog/spdlog.h>
+#include <map>
+#include <string>
+#include <vector>
+
+namespace homa {
+
+enum class DEMO_ORDERING_TYPE
+{
+    METIS,
+    AMD,
+    NEUTRAL,
+    PARTH,
+    RXMESH_ND,
+    PATCH_ORDERING
+};
+
+class Ordering
+{
+public:
+    std::vector<int> perm;
+    int* Gp = nullptr;
+    int* Gi = nullptr;
+    int  G_N = 0;
+    int  G_NNZ = 0;
+
+public:
+    virtual ~Ordering(void) {};
+
+    static Ordering* create(const DEMO_ORDERING_TYPE type);
+
+    virtual DEMO_ORDERING_TYPE type() const = 0;
+    virtual std::string typeStr() const = 0;
+
+    virtual void setGraph(int*               Gp,
+                           int*              Gi,
+                           int               G_N,
+                           int               NNZ) = 0;
+
+    virtual void setMesh(const double* V_data, int V_rows, int V_cols,
+                        const int* F_data, int F_rows, int F_cols) {}
+
+    virtual bool needsMesh() const { return false; }
+
+    virtual void setOptions(const std::map<std::string, std::string>& options) {}
+    virtual void applyOptions(const Options& opts) {}
+
+    virtual void init() { return; }
+
+    virtual void compute_permutation(std::vector<int>& perm, std::vector<int>& etree, bool compute_etree = false) = 0;
+
+    virtual void add_record(std::string save_address, std::map<std::string, double> extra_info, std::string mesh_name) {};
+
+    virtual void reset() {
+        spdlog::error("Reset is not implemented for this ordering.");
+        return;
+    }
+
+    virtual void getEtree(std::vector<int>& new_labels, std::vector<int>& sep_ptr) {};
+    virtual void getStatistics(std::map<std::string, double>& stat) {};
+    virtual void getPatch(std::vector<int>& patches) {};
+    virtual void setPatch(std::vector<int>& patches) {};
+    virtual void getNodeToEtreeMapping(std::vector<std::pair<int, int>>& node_to_etree_mapping) {};
+};
+
+} // namespace homa
