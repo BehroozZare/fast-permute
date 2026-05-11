@@ -10,8 +10,43 @@
 #include "homa/types.h"
 #include "remove_diagonal.h"
 #include "check_valid_permutation.h"
+#include <cuda_runtime.h>
 #include <igl/read_triangle_mesh.h>
 #include <spdlog/spdlog.h>
+
+namespace {
+// RAII wrapper around a pair of CUDA events. start()/stop() returns the GPU
+// elapsed time in milliseconds (sub-millisecond resolution).
+class GpuTimer {
+public:
+    GpuTimer()
+    {
+        cudaEventCreate(&start_);
+        cudaEventCreate(&stop_);
+    }
+    ~GpuTimer()
+    {
+        cudaEventDestroy(start_);
+        cudaEventDestroy(stop_);
+    }
+    GpuTimer(const GpuTimer&)            = delete;
+    GpuTimer& operator=(const GpuTimer&) = delete;
+
+    void  start() { cudaEventRecord(start_); }
+    float stop_ms()
+    {
+        cudaEventRecord(stop_);
+        cudaEventSynchronize(stop_);
+        float ms = 0.0f;
+        cudaEventElapsedTime(&ms, start_, stop_);
+        return ms;
+    }
+
+private:
+    cudaEvent_t start_{};
+    cudaEvent_t stop_{};
+};
+} // namespace
 
 int main(int argc, char* argv[])
 {
@@ -43,38 +78,61 @@ int main(int argc, char* argv[])
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(n);
 
     using Clock = std::chrono::high_resolution_clock;
-    auto elapsed_ms = [](Clock::time_point a, Clock::time_point b) {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
+    auto cpu_ms = [](Clock::time_point a, Clock::time_point b) {
+        return std::chrono::duration<double, std::milli>(b - a).count();
     };
 
+    GpuTimer gpu_timer;
+
+    // --- Warm-up: pay CUDA/cuDSS one-time init costs before any timed run ---
+    {
+        std::unique_ptr<homa::LinSysSolver> solver(
+            homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
+        solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
+        std::vector<int> empty;
+        solver->ordering(empty, empty);
+        solver->analyze_pattern(empty, empty);
+        solver->factorize();
+        Eigen::VectorXd sol;
+        solver->solve(rhs, sol);
+        cudaDeviceSynchronize();
+    }
+
     // --- Solver-default path (cuDSS internal reordering + symbolic factorization) ---
-    long def_analysis_ms = 0, def_factorize_ms = 0, def_solve_ms = 0;
-    double def_residual = 0.0;
+    float  def_reorder_ms = 0.0f, def_symbolic_ms = 0.0f;
+    float  def_factorize_ms = 0.0f, def_solve_ms = 0.0f;
+    double def_residual     = 0.0;
     {
         std::unique_ptr<homa::LinSysSolver> solver(
             homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
         solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
 
         std::vector<int> empty;
-        auto t0 = Clock::now();
-        solver->ordering(empty, empty);        // cuDSS REORDERING phase (default)
-        solver->analyze_pattern(empty, empty); // cuDSS SYMBOLIC_FACTORIZATION phase
-        def_analysis_ms = elapsed_ms(t0, Clock::now());
 
-        t0 = Clock::now();
+        gpu_timer.start();
+        solver->ordering(empty, empty); // cuDSS REORDERING phase (default)
+        def_reorder_ms = gpu_timer.stop_ms();
+
+        gpu_timer.start();
+        solver->analyze_pattern(empty, empty); // cuDSS SYMBOLIC_FACTORIZATION phase
+        def_symbolic_ms = gpu_timer.stop_ms();
+
+        gpu_timer.start();
         solver->factorize();
-        def_factorize_ms = elapsed_ms(t0, Clock::now());
+        def_factorize_ms = gpu_timer.stop_ms();
 
         Eigen::VectorXd sol;
-        t0 = Clock::now();
+        gpu_timer.start();
         solver->solve(rhs, sol);
-        def_solve_ms = elapsed_ms(t0, Clock::now());
+        def_solve_ms = gpu_timer.stop_ms();
         def_residual = (rhs - L * sol).norm();
     }
 
     // --- HOMA path ---
-    long homa_ordering_ms = 0, homa_analysis_ms = 0, homa_factorize_ms = 0, homa_solve_ms = 0;
-    double homa_residual = 0.0;
+    double homa_ordering_ms = 0.0;
+    float  homa_reorder_ms = 0.0f, homa_symbolic_ms = 0.0f;
+    float  homa_factorize_ms = 0.0f, homa_solve_ms = 0.0f;
+    double homa_residual     = 0.0;
     {
         homa::Options opts;
         opts.use_gpu             = (use_gpu != 0);
@@ -85,7 +143,7 @@ int main(int argc, char* argv[])
 
         auto t0 = Clock::now();
         homa::OrderingResult ord = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
-        homa_ordering_ms = elapsed_ms(t0, Clock::now());
+        homa_ordering_ms = cpu_ms(t0, Clock::now());
 
         if (!homa::check_valid_permutation(ord.perm.data(), ord.perm.size()))
             spdlog::error("HOMA permutation is invalid!");
@@ -95,30 +153,35 @@ int main(int argc, char* argv[])
         solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
 
         std::vector<int> empty;
-        t0 = Clock::now();
-        solver->ordering(ord.perm, ord.etree); // cuDSS REORDERING phase (HOMA perm + etree)
-        solver->analyze_pattern(empty, empty);  // cuDSS SYMBOLIC_FACTORIZATION phase
-        homa_analysis_ms = elapsed_ms(t0, Clock::now());
 
-        t0 = Clock::now();
+        gpu_timer.start();
+        solver->ordering(ord.perm, ord.etree); // cuDSS REORDERING phase (HOMA perm + etree)
+        homa_reorder_ms = gpu_timer.stop_ms();
+
+        gpu_timer.start();
+        solver->analyze_pattern(empty, empty); // cuDSS SYMBOLIC_FACTORIZATION phase
+        homa_symbolic_ms = gpu_timer.stop_ms();
+
+        gpu_timer.start();
         solver->factorize();
-        homa_factorize_ms = elapsed_ms(t0, Clock::now());
+        homa_factorize_ms = gpu_timer.stop_ms();
 
         Eigen::VectorXd sol;
-        t0 = Clock::now();
+        gpu_timer.start();
         solver->solve(rhs, sol);
-        homa_solve_ms = elapsed_ms(t0, Clock::now());
+        homa_solve_ms = gpu_timer.stop_ms();
         homa_residual = (rhs - L * sol).norm();
     }
 
     std::cout << "\n=== cuDSS Results ===\n";
-    std::cout << std::left
+    std::cout << std::left << std::fixed << std::setprecision(3)
               << std::setw(18) << ""                << std::setw(16) << "Solver-default" << "HOMA\n"
-              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"            << homa_ordering_ms  << "\n"
-              << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def_analysis_ms  << homa_analysis_ms  << "\n"
-              << std::setw(18) << "Factorize (ms):" << std::setw(16) << def_factorize_ms << homa_factorize_ms << "\n"
-              << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def_solve_ms     << homa_solve_ms     << "\n"
-              << std::setw(18) << "Residual      :" << std::setw(16) << def_residual     << homa_residual     << "\n";
+              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"             << homa_ordering_ms  << "\n"
+              << std::setw(18) << "Reorder  (ms) :" << std::setw(16) << def_reorder_ms    << homa_reorder_ms   << "\n"
+              << std::setw(18) << "Symbolic (ms) :" << std::setw(16) << def_symbolic_ms   << homa_symbolic_ms  << "\n"
+              << std::setw(18) << "Factorize (ms):" << std::setw(16) << def_factorize_ms  << homa_factorize_ms << "\n"
+              << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def_solve_ms      << homa_solve_ms     << "\n"
+              << std::setw(18) << "Residual      :" << std::setw(16) << def_residual      << homa_residual     << "\n";
 
     return 0;
 }
