@@ -2,8 +2,8 @@
 // Remesher Tool - Control triangle mesh resolution using upsample/decimate
 //
 // Usage:
-//   ./gpu_ordering_remesher -i input.obj -o output.obj -m upsample -n 2
-//   ./gpu_ordering_remesher -i input.obj -o output.obj -m decimate -t 1000
+//   ./homa_remesher -i input.obj -o output.obj -m upsample -n 2
+//   ./homa_remesher -i input.obj -o output.obj -m decimate -t 1000
 //
 
 #include <igl/read_triangle_mesh.h>

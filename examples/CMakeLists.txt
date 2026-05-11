@@ -35,7 +35,7 @@ target_include_directories(homa_example_solvers PUBLIC
 
 target_link_libraries(homa_example_solvers PUBLIC
     rxmesh_dev_helpers
-    gpu_ordering_deps
+    homa_deps
 )
 
 set_property(TARGET homa_example_solvers PROPERTY CUDA_SEPARABLE_COMPILATION ON)

@@ -99,8 +99,8 @@ set(cuda_flags
 
 # Apply flags to global targets (optional, or attached to specific targets later)
 # For this project, we'll attach them to our dependency interface so everyone gets them
-add_library(gpu_ordering_flags INTERFACE)
-target_compile_options(gpu_ordering_flags INTERFACE
+add_library(homa_flags INTERFACE)
+target_compile_options(homa_flags INTERFACE
         $<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>
         $<$<COMPILE_LANGUAGE:CUDA>:${cuda_flags}>
 )
@@ -113,13 +113,13 @@ endif()
 # OpenMP
 find_package(OpenMP)
 if (OpenMP_CXX_FOUND)
-    target_link_libraries(gpu_ordering_flags INTERFACE OpenMP::OpenMP_CXX)
+    target_link_libraries(homa_flags INTERFACE OpenMP::OpenMP_CXX)
 endif()
 
 if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH OR HOMA_BUILD_BENCHMARKS)
     # CUDA Toolkit (cuSPARSE, cuSOLVER)
     find_package(CUDAToolkit REQUIRED)
-    target_link_libraries(gpu_ordering_flags INTERFACE CUDA::cusparse CUDA::cusolver)
+    target_link_libraries(homa_flags INTERFACE CUDA::cusparse CUDA::cusolver)
 
     # cuDSS - Auto-detect correct version based on CUDA toolkit
     string(REGEX MATCH "^[0-9]+" CUDA_VERSION_MAJOR "${CMAKE_CUDA_COMPILER_VERSION}")
@@ -143,9 +143,9 @@ if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH OR HOMA_BUILD_BENCHMARKS)
 
     find_package(cudss REQUIRED)
     message(STATUS "Found cuDSS version ${cudss_VERSION} (Library: ${cudss_LIBRARY_DIR})")
-    target_link_directories(gpu_ordering_flags INTERFACE ${cudss_LIBRARY_DIR})
-    target_link_libraries(gpu_ordering_flags INTERFACE cudss)
-    target_compile_definitions(gpu_ordering_flags INTERFACE USE_CUDSS)
+    target_link_directories(homa_flags INTERFACE ${cudss_LIBRARY_DIR})
+    target_link_libraries(homa_flags INTERFACE cudss)
+    target_compile_definitions(homa_flags INTERFACE USE_CUDSS)
 endif()
 
 # Disable Cereal (and other deps) warnings as errors and unnecessary targets
@@ -172,8 +172,8 @@ if(HOMA_BUILD_BENCHMARKS)
 endif()
 
 # Create a dependency interface target to hold configuration
-add_library(gpu_ordering_deps INTERFACE)
-target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
+add_library(homa_deps INTERFACE)
+target_link_libraries(homa_deps INTERFACE homa_flags)
 
 ################################################################################
 # SECTION 3: Configure Dependencies (formerly attached to main lib)
@@ -189,16 +189,16 @@ if (${PROJECT_NAME}_WITH_SUITESPARSE)
         message(FATAL_ERROR "BLAS_LIBRARIES not set. Pass -DBLAS_LIBRARIES=...")
     endif()
     
-    target_link_libraries(gpu_ordering_deps INTERFACE 
+    target_link_libraries(homa_deps INTERFACE 
         ${SUITESPARSE_LIBRARIES}
         ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
     )
 	if(OPENBLAS_INCLUDE_DIR)
-		target_include_directories(gpu_ordering_deps INTERFACE ${OPENBLAS_INCLUDE_DIR})
+		target_include_directories(homa_deps INTERFACE ${OPENBLAS_INCLUDE_DIR})
     endif()
-    target_include_directories(gpu_ordering_deps INTERFACE ${SUITESPARSE_INCLUDE_DIRS})
-    target_compile_definitions(gpu_ordering_deps INTERFACE USE_SUITESPARSE)
+    target_include_directories(homa_deps INTERFACE ${SUITESPARSE_INCLUDE_DIRS})
+    target_compile_definitions(homa_deps INTERFACE USE_SUITESPARSE)
     message(STATUS "CHOLMOD configured for CPU-only support")
 endif ()
 
@@ -206,9 +206,9 @@ endif ()
 if(${PROJECT_NAME}_WITH_MKL)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/find")
     find_package(MKL REQUIRED)
-    target_link_libraries(gpu_ordering_deps INTERFACE ${MKL_LIBRARIES})
-    target_include_directories(gpu_ordering_deps INTERFACE ${MKL_INCLUDE_DIRS})
-    target_compile_definitions(gpu_ordering_deps INTERFACE USE_MKL)
+    target_link_libraries(homa_deps INTERFACE ${MKL_LIBRARIES})
+    target_include_directories(homa_deps INTERFACE ${MKL_INCLUDE_DIRS})
+    target_compile_definitions(homa_deps INTERFACE USE_MKL)
     message(STATUS "Intel MKL PARDISO configured")
 endif()
 
@@ -216,12 +216,12 @@ endif()
 if(${PROJECT_NAME}_WITH_PARTH)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/parth.cmake)
     # Add Parth to the dependencies target
-    target_link_libraries(gpu_ordering_deps INTERFACE Parth::parth)
-    target_compile_definitions(gpu_ordering_deps INTERFACE USE_PARTH)
+    target_link_libraries(homa_deps INTERFACE Parth::parth)
+    target_compile_definitions(homa_deps INTERFACE USE_PARTH)
 endif()
 
 if(${PROJECT_NAME}_WITH_PROFILE)
-    target_compile_definitions(gpu_ordering_deps INTERFACE USE_PROFILE)
+    target_compile_definitions(homa_deps INTERFACE USE_PROFILE)
 endif()
 
 
@@ -328,7 +328,7 @@ target_link_libraries(rxmesh_dev_helpers PUBLIC
         Eigen3::Eigen
         CLI11::CLI11
 )
-target_link_libraries(rxmesh_dev_helpers PUBLIC gpu_ordering_deps PRIVATE RXMesh)
+target_link_libraries(rxmesh_dev_helpers PUBLIC homa_deps PRIVATE RXMesh)
 
 
 # Add dev code include directories

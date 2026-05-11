@@ -14,7 +14,7 @@ MKL PARDISO, or NVIDIA cuDSS with no solver-side changes.
 ```cmake
 include(FetchContent)
 FetchContent_Declare(homa
-    GIT_REPOSITORY https://github.com/your-org/homa.git
+    GIT_REPOSITORY https://github.com/BehroozZare/fast-permute.git
     GIT_TAG        main
 )
 FetchContent_MakeAvailable(homa)
