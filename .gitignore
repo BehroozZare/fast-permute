@@ -30,3 +30,20 @@ scripts/*.nsys-rep
 scripts/*.sqlite
 scripts/*.obj
 paper/
+
+# Logs anywhere in the tree
+*.log
+
+# CMake scratch dir kept outside of build/
+.tmp_build/
+
+# GUI / runtime state files (ImGui, Polyscope, etc.)
+imgui.ini
+.polyscope.ini
+
+# Agent / assistant working files (kept locally, not in repo)
+CLAUDE.md
+.claude/
+
+# Working-set data dumps generated during runs
+patch_ids_tet_vertex_order.txt

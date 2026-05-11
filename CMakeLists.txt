@@ -15,7 +15,6 @@ option(HOMA_WITH_RXMESH        "Enable RxMesh patcher"            OFF)
 option(HOMA_WITH_FAST_PATCHER  "Enable fast-patcher backend"      OFF)
 option(HOMA_WITH_SUITESPARSE   "SuiteSparse for benchmarks"       OFF)
 option(HOMA_WITH_MKL           "Intel MKL PARDISO for benchmarks" OFF)
-option(HOMA_WITH_STRUMPACK     "STRUMPACK for benchmarks"         OFF)
 option(HOMA_WITH_PARTH         "Parth ordering for benchmarks"    OFF)
 
 # CUDA is enabled either explicitly or when legacy options require it
@@ -27,7 +26,6 @@ endif()
 option(${PROJECT_NAME}_WITH_PARTH      "Use Parth for fill-reducing orderings" OFF)
 option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark"        OFF)
 option(${PROJECT_NAME}_WITH_MKL        "Use Intel MKL PARDISO for benchmark"   OFF)
-option(${PROJECT_NAME}_WITH_STRUMPACK  "Use Strumpack for benchmark"           OFF)
 option(${PROJECT_NAME}_WITH_PROFILE    "Use Profile for benchmark"             OFF)
 
 # Sync legacy options from HOMA_ prefix
@@ -40,10 +38,6 @@ endif()
 if(HOMA_WITH_MKL)
     set(${PROJECT_NAME}_WITH_MKL ON CACHE BOOL "" FORCE)
 endif()
-if(HOMA_WITH_STRUMPACK)
-    set(${PROJECT_NAME}_WITH_STRUMPACK ON CACHE BOOL "" FORCE)
-endif()
-
 # Enable GLM experimental features globally
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 
@@ -185,22 +179,6 @@ target_link_libraries(gpu_ordering_deps INTERFACE gpu_ordering_flags)
 # SECTION 3: Configure Dependencies (formerly attached to main lib)
 ################################################################################
 
-# Find MPI (required for parallel features, especially STRUMPACK)
-if (${PROJECT_NAME}_WITH_STRUMPACK)
-    find_package(MPI REQUIRED COMPONENTS CXX)
-    if(NOT MPI_FOUND)
-        message(FATAL_ERROR "MPI not found - STRUMPACK will not be available")
-    endif()
-    if(MPI_FOUND)
-        message(STATUS "Found MPI:")
-        message(STATUS "  MPI C++ Compiler: ${MPI_CXX_COMPILER}")
-        message(STATUS "  MPI Include Path: ${MPI_CXX_INCLUDE_DIRS}")
-        message(STATUS "  MPI Libraries: ${MPI_CXX_LIBRARIES}")
-    endif()
-else()
-    message(STATUS "MPI not found - STRUMPACK will not be available")
-endif()
-
 # SuiteSparse - Must be configured before Parth since Parth depends on it
 # Note: suitesparse.cmake is included at line 96 which also includes openblas.cmake
 # for cross-platform BLAS/LAPACK detection
@@ -244,14 +222,6 @@ endif()
 
 if(${PROJECT_NAME}_WITH_PROFILE)
     target_compile_definitions(gpu_ordering_deps INTERFACE USE_PROFILE)
-endif()
-
-
-# STRUMPACK - Sparse direct solver with CUDA support
-if(${PROJECT_NAME}_WITH_STRUMPACK)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/strumpack.cmake)
-    target_link_libraries(gpu_ordering_deps INTERFACE STRUMPACK::strumpack_full)
-    target_compile_definitions(gpu_ordering_deps INTERFACE USE_STRUMPACK)
 endif()
 
 
@@ -400,7 +370,7 @@ target_compile_options(rxmesh_dev_helpers PUBLIC
 ################################################################################
 # Development targets use both the RXMesh library and the dev helpers library
 
-    add_subdirectory(benchmark)
+    add_subdirectory(examples)
     add_subdirectory(tools)
 
 endif() # HOMA_BUILD_BENCHMARKS
