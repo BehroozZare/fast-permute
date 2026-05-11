@@ -239,16 +239,12 @@ endif()
 add_library(homa STATIC
     src/ordering/homa.cpp
     src/ordering/cpu_ordering_with_patch.cpp
-    src/ordering/neutral_ordering.cpp
     src/patching/metis_patcher.cpp
     src/utils/remove_diagonal.cpp
     src/utils/check_valid_permutation.cpp
     src/utils/compute_inverse_perm.cpp
     src/utils/min_vertex_cover_bipartite.cpp
 )
-if(${PROJECT_NAME}_WITH_PARTH)
-    target_sources(homa PRIVATE src/ordering/parth_ordering.cpp)
-endif()
 
 target_include_directories(homa
     PUBLIC  include
@@ -266,6 +262,14 @@ target_compile_definitions(homa PUBLIC
     $<$<CONFIG:Release>:NDEBUG>
 )
 add_library(Homa::homa ALIAS homa)
+
+if(HOMA_BUILD_TESTS)
+    # enable_testing() must be invoked from the top-level CMakeLists.txt for
+    # ctest run at the build root to discover tests registered via
+    # gtest_discover_tests in subdirectories.
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 if(HOMA_BUILD_BENCHMARKS)
 # Create a header-only INTERFACE library for libigl-dependent code
@@ -286,39 +290,9 @@ add_library(rxmesh_dev_helpers
         src/utils/min_vertex_cover_bipartite.cpp
         src/ordering/cpu_ordering_with_patch.cpp
         src/ordering/gpu_ordering_with_patch.cu
-        src/ordering/ordering_factory.cu
-        src/ordering/neutral_ordering.cpp
-        src/ordering/patch_ordering.cu
-        src/ordering/parth_ordering.cpp
         src/patching/metis_patcher.cpp
         src/patching/rxmesh_patcher.cu
 )
-
-# Remesher library for mesh remeshing operations
-add_library(remesher
-    src/remesher/collapse_edges.cpp
-    src/remesher/equalize_valences.cpp
-    src/remesher/remesh_botsch.cpp
-    src/remesher/split_edges.cpp
-    src/remesher/split_edges_until_bound.cpp
-    src/remesher/tangential_relaxation.cpp
-)
-target_link_libraries(remesher PUBLIC igl::core Eigen3::Eigen)
-target_include_directories(remesher PUBLIC src/remesher)
-# Force include Eigen compatibility header that:
-# 1. Includes cassert (fixes libigl's missing include)
-# 2. Brings Eigen::placeholders::all into Eigen namespace (fixes Eigen/libigl version mismatch)
-target_compile_options(remesher PUBLIC
-    $<$<COMPILE_LANGUAGE:CXX>:-include$<SEMICOLON>${CMAKE_SOURCE_DIR}/src/remesher/eigen_compat.h>
-)
-
-# Address Sanitizer (ASAN) for remesher only - helps detect memory errors in remeshing code
-#option(ENABLE_REMESHER_ASAN "Enable Address Sanitizer for remesher library" OFF)
-#if(ENABLE_REMESHER_ASAN)
-#    message(STATUS "Address Sanitizer (ASAN) ENABLED for remesher library")
-#    target_compile_options(remesher PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
-#    target_link_options(remesher PUBLIC -fsanitize=address)
-#endif()
 
 # Link additional dependencies required by dev helpers
 target_link_libraries(rxmesh_dev_helpers PUBLIC
@@ -333,6 +307,7 @@ target_link_libraries(rxmesh_dev_helpers PUBLIC homa_deps PRIVATE RXMesh)
 
 # Add dev code include directories
 target_include_directories(rxmesh_dev_helpers PUBLIC
+        include
         src/ordering
         src/patching
         src/utils
@@ -371,6 +346,5 @@ target_compile_options(rxmesh_dev_helpers PUBLIC
 # Development targets use both the RXMesh library and the dev helpers library
 
     add_subdirectory(examples)
-    add_subdirectory(tools)
 
 endif() # HOMA_BUILD_BENCHMARKS

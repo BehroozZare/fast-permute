@@ -1,11 +1,13 @@
 #include <CLI/CLI.hpp>
 #include <Eigen/Core>
 #include <chrono>
+#include <iomanip>
 #include <iostream>
 
 #include "SPD_cot_matrix.h"
 #include "LinSysSolver.hpp"
-#include "ordering_factory.h"
+#include "homa/ordering.h"
+#include "homa/types.h"
 #include "remove_diagonal.h"
 #include "check_valid_permutation.h"
 #include <igl/read_triangle_mesh.h>
@@ -23,7 +25,6 @@ int main(int argc, char* argv[])
     app.add_option("-g,--use_gpu",    use_gpu,    "Use GPU for ordering (0|1, default: 1)");
     CLI11_PARSE(app, argc, argv);
 
-    // Load mesh
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     if (!igl::read_triangle_mesh(input_mesh, V, F)) {
@@ -31,75 +32,93 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // Build SPD cotangent Laplacian
     Eigen::SparseMatrix<double> L;
     homa::computeSPD_cot_matrix(V, F, L);
     spdlog::info("Matrix: {}x{}, {} non-zeros", L.rows(), L.cols(), L.nonZeros());
 
-    // Build graph (CSR without diagonal)
+    int n = static_cast<int>(L.rows());
     std::vector<int> Gp, Gi;
-    homa::remove_diagonal(L.rows(), L.outerIndexPtr(), L.innerIndexPtr(), Gp, Gi);
+    homa::remove_diagonal(n, L.outerIndexPtr(), L.innerIndexPtr(), Gp, Gi);
 
-    // Ordering
-    std::vector<int> perm, etree;
-    homa::Ordering* ordering = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+    Eigen::VectorXd rhs = Eigen::VectorXd::Random(n);
+
+    using Clock = std::chrono::high_resolution_clock;
+    auto elapsed_ms = [](Clock::time_point a, Clock::time_point b) {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
+    };
+
+    // --- Solver-default path (cuDSS internal reordering + symbolic factorization) ---
+    long def_analysis_ms = 0, def_factorize_ms = 0, def_solve_ms = 0;
+    double def_residual = 0.0;
+    {
+        std::unique_ptr<homa::LinSysSolver> solver(
+            homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
+        solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
+
+        std::vector<int> empty;
+        auto t0 = Clock::now();
+        solver->ordering(empty, empty);        // cuDSS REORDERING phase (default)
+        solver->analyze_pattern(empty, empty); // cuDSS SYMBOLIC_FACTORIZATION phase
+        def_analysis_ms = elapsed_ms(t0, Clock::now());
+
+        t0 = Clock::now();
+        solver->factorize();
+        def_factorize_ms = elapsed_ms(t0, Clock::now());
+
+        Eigen::VectorXd sol;
+        t0 = Clock::now();
+        solver->solve(rhs, sol);
+        def_solve_ms = elapsed_ms(t0, Clock::now());
+        def_residual = (rhs - L * sol).norm();
+    }
+
+    // --- HOMA path ---
+    long homa_ordering_ms = 0, homa_analysis_ms = 0, homa_factorize_ms = 0, homa_solve_ms = 0;
+    double homa_residual = 0.0;
     {
         homa::Options opts;
         opts.use_gpu             = (use_gpu != 0);
         opts.patch_size          = patch_size;
         opts.use_patch_separator = true;
+        opts.compute_etree       = true; // cuDSS requires etree alongside permutation
         opts.local_method        = homa::Options::LocalMethod::AMD;
-        ordering->applyOptions(opts);
-        ordering->setOptions({{"patch_type", "metis"}});
+
+        auto t0 = Clock::now();
+        homa::OrderingResult ord = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
+        homa_ordering_ms = elapsed_ms(t0, Clock::now());
+
+        if (!homa::check_valid_permutation(ord.perm.data(), ord.perm.size()))
+            spdlog::error("HOMA permutation is invalid!");
+
+        std::unique_ptr<homa::LinSysSolver> solver(
+            homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
+        solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
+
+        std::vector<int> empty;
+        t0 = Clock::now();
+        solver->ordering(ord.perm, ord.etree); // cuDSS REORDERING phase (HOMA perm + etree)
+        solver->analyze_pattern(empty, empty);  // cuDSS SYMBOLIC_FACTORIZATION phase
+        homa_analysis_ms = elapsed_ms(t0, Clock::now());
+
+        t0 = Clock::now();
+        solver->factorize();
+        homa_factorize_ms = elapsed_ms(t0, Clock::now());
+
+        Eigen::VectorXd sol;
+        t0 = Clock::now();
+        solver->solve(rhs, sol);
+        homa_solve_ms = elapsed_ms(t0, Clock::now());
+        homa_residual = (rhs - L * sol).norm();
     }
-    ordering->setGraph(Gp.data(), Gi.data(), L.rows(), Gi.size());
-    ordering->init();
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    // cuDSS requires the permutation in device-friendly (1-based) format
-    ordering->compute_permutation(perm, etree, /*for_gpu=*/true);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    long ordering_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-
-    if (!homa::check_valid_permutation(perm.data(), perm.size()))
-        spdlog::error("Permutation is invalid!");
-
-    // Solver
-    homa::LinSysSolver* solver = homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS);
-    solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), L.rows(), L.nonZeros());
-
-    t0 = std::chrono::high_resolution_clock::now();
-    solver->ordering(perm, etree);
-    t1 = std::chrono::high_resolution_clock::now();
-    long integration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-
-    t0 = std::chrono::high_resolution_clock::now();
-    solver->analyze_pattern(perm, etree);
-    t1 = std::chrono::high_resolution_clock::now();
-    long analysis_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-
-    t0 = std::chrono::high_resolution_clock::now();
-    solver->factorize();
-    t1 = std::chrono::high_resolution_clock::now();
-    long factorize_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-
-    Eigen::VectorXd rhs = Eigen::VectorXd::Random(L.rows());
-    Eigen::VectorXd result;
-    t0 = std::chrono::high_resolution_clock::now();
-    solver->solve(rhs, result);
-    t1 = std::chrono::high_resolution_clock::now();
-    long solve_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-
-    double residual = (rhs - L * result).norm();
 
     std::cout << "\n=== cuDSS Results ===\n";
-    std::cout << "Ordering  : " << ordering_ms   << " ms\n";
-    std::cout << "Analysis  : " << analysis_ms   << " ms\n";
-    std::cout << "Factorize : " << factorize_ms  << " ms\n";
-    std::cout << "Solve     : " << solve_ms       << " ms\n";
-    std::cout << "Residual  : " << residual       << "\n";
+    std::cout << std::left
+              << std::setw(18) << ""                << std::setw(16) << "Solver-default" << "HOMA\n"
+              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"            << homa_ordering_ms  << "\n"
+              << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def_analysis_ms  << homa_analysis_ms  << "\n"
+              << std::setw(18) << "Factorize (ms):" << std::setw(16) << def_factorize_ms << homa_factorize_ms << "\n"
+              << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def_solve_ms     << homa_solve_ms     << "\n"
+              << std::setw(18) << "Residual      :" << std::setw(16) << def_residual     << homa_residual     << "\n";
 
-    delete solver;
-    delete ordering;
     return 0;
 }
