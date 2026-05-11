@@ -1,12 +1,12 @@
 //
 // Created by behrooz on 2025-10-07.
 //
-#include <amd.h>
 #include <metis.h>
 #include <cassert>
 #include <cmath>
 #include <chrono>
 #include <unordered_set>
+#include "amd_order_helper.h"
 #include "cpu_ordering_with_patch.h"
 
 #include <set>
@@ -72,12 +72,7 @@ void CPUOrdering_PATCH::local_permute_amd(int G_n, int* Gp, int* Gi,
         return;
     }
     std::vector<int> tmp(N);
-    amd_order(N,
-              Gp,
-              Gi,
-              local_permutation.data(),
-              nullptr,
-              nullptr);
+    homa::detail::amd_local_order(N, Gp, Gi, local_permutation.data());
 }
 
 void CPUOrdering_PATCH::local_permute_unity(int G_n, int* Gp, int* Gi,

@@ -42,14 +42,14 @@ endif()
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 
 # Language standards
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH OR HOMA_BUILD_BENCHMARKS)
     enable_language(CUDA)
-    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD 20)
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CUDA_RESOLVE_DEVICE_SYMBOLS ON)
     set(CUDA_SEPARABLE_COMPILATION ON)
@@ -65,13 +65,13 @@ endif()
 # ==============================================================================
 # C++ compiler flags
 set(cxx_flags
-        $<$<CXX_COMPILER_ID:MSVC>:-D_SCL_SECURE_NO_WARNINGS /openmp:experimental /MP /std:c++17 /bigobj>
+        $<$<CXX_COMPILER_ID:MSVC>:-D_SCL_SECURE_NO_WARNINGS /openmp:experimental /MP /std:c++20 /bigobj>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-Wall -m64 -fopenmp -O3 -Wno-unused-function>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-Wall -m64 -fopenmp -O0 -g3 -Wno-unused-function>
 )
 
 # CUDA compiler flags
-set(MSVC_XCOMPILER_FLAGS "/openmp:experimental /MP /std:c++17 /Zi")
+set(MSVC_XCOMPILER_FLAGS "/openmp:experimental /MP /std:c++20 /Zi")
 
 set(cuda_flags
         #Windows stuff
@@ -239,6 +239,7 @@ endif()
 add_library(homa STATIC
     src/ordering/homa.cpp
     src/ordering/cpu_ordering_with_patch.cpp
+    src/ordering/amd_order_helper.cpp
     src/patching/metis_patcher.cpp
     src/utils/remove_diagonal.cpp
     src/utils/check_valid_permutation.cpp
@@ -250,11 +251,13 @@ target_include_directories(homa
     PUBLIC  include
     PRIVATE src
 )
-target_link_libraries(homa PUBLIC
-    Eigen3::Eigen
-    spdlog::spdlog
-    metis
-    SuiteSparse::AMD
+target_link_libraries(homa
+    PUBLIC
+        Eigen3::Eigen
+        spdlog::spdlog
+        metis
+    PRIVATE
+        SuiteSparse::AMD
 )
 target_include_directories(homa PRIVATE ${AMD_INCLUDE_DIR} ${SUITESPARSE_CONFIG_INCLUDE_DIR})
 target_compile_definitions(homa PUBLIC
@@ -282,20 +285,16 @@ target_link_libraries(libigl_utils INTERFACE
 )
 target_include_directories(libigl_utils INTERFACE src/utils)
 
-# Create rxmesh_dev_helpers library (benchmark-only: includes GPU/CUDA sources)
+# Create rxmesh_dev_helpers library (benchmark-only: owns the CUDA TUs that
+# the CPU-only `homa` target cannot compile). Everything else comes in via
+# linkage against `homa`, so SuiteSparse/AMD stays a private dep of `homa`.
 add_library(rxmesh_dev_helpers
-        src/utils/remove_diagonal.cpp
-        src/utils/check_valid_permutation.cpp
-        src/utils/compute_inverse_perm.cpp
-        src/utils/min_vertex_cover_bipartite.cpp
-        src/ordering/cpu_ordering_with_patch.cpp
         src/ordering/gpu_ordering_with_patch.cu
-        src/patching/metis_patcher.cpp
         src/patching/rxmesh_patcher.cu
 )
 
-# Link additional dependencies required by dev helpers
 target_link_libraries(rxmesh_dev_helpers PUBLIC
+        homa
         libigl_utils
         igl::core
         spdlog::spdlog

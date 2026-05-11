@@ -1,6 +1,6 @@
 # Homa
 
-Homa is a C++17 library that computes fast fill-reducing orderings for sparse
+Homa is a C++20 library that computes fast fill-reducing orderings for sparse
 symmetric matrices, targeting sparse Cholesky factorization and related sparse
 direct solvers. It uses a mesh-induced patch decomposition to build a quotient
 graph, applies recursive nested dissection on that graph, and assembles a
