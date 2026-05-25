@@ -15,7 +15,6 @@ option(HOMA_WITH_RXMESH        "Enable RxMesh patcher"            OFF)
 option(HOMA_WITH_LLOYD_PATCHER "Enable Lloyd-clustering patcher"  ON)
 option(HOMA_WITH_SUITESPARSE   "SuiteSparse for benchmarks"       OFF)
 option(HOMA_WITH_MKL           "Intel MKL PARDISO for benchmarks" OFF)
-option(HOMA_WITH_PARTH         "Parth ordering for benchmarks"    OFF)
 
 # CUDA is enabled either explicitly or when legacy options require it
 if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH)
@@ -23,15 +22,11 @@ if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH)
 endif()
 
 # Legacy options used by the old build system (kept for transition period)
-option(${PROJECT_NAME}_WITH_PARTH      "Use Parth for fill-reducing orderings" OFF)
 option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark"        OFF)
 option(${PROJECT_NAME}_WITH_MKL        "Use Intel MKL PARDISO for benchmark"   OFF)
 option(${PROJECT_NAME}_WITH_PROFILE    "Use Profile for benchmark"             OFF)
 
 # Sync legacy options from HOMA_ prefix
-if(HOMA_WITH_PARTH)
-    set(${PROJECT_NAME}_WITH_PARTH ON CACHE BOOL "" FORCE)
-endif()
 if(HOMA_WITH_SUITESPARSE)
     set(${PROJECT_NAME}_WITH_SUITESPARSE ON CACHE BOOL "" FORCE)
 endif()
@@ -172,7 +167,6 @@ endif()
 if(HOMA_BUILD_BENCHMARKS)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/cli11.cmake)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/libigl.cmake)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/polyscope.cmake)
 endif()
 
 # Create a dependency interface target to hold configuration
@@ -183,7 +177,7 @@ target_link_libraries(homa_deps INTERFACE homa_flags)
 # SECTION 3: Configure Dependencies (formerly attached to main lib)
 ################################################################################
 
-# SuiteSparse - Must be configured before Parth since Parth depends on it
+# SuiteSparse
 # Note: suitesparse.cmake is included at line 96 which also includes openblas.cmake
 # for cross-platform BLAS/LAPACK detection
 if (${PROJECT_NAME}_WITH_SUITESPARSE)
@@ -214,14 +208,6 @@ if(${PROJECT_NAME}_WITH_MKL)
     target_include_directories(homa_deps INTERFACE ${MKL_INCLUDE_DIRS})
     target_compile_definitions(homa_deps INTERFACE USE_MKL)
     message(STATUS "Intel MKL PARDISO configured")
-endif()
-
-# Parth for fill-reducing orderings
-if(${PROJECT_NAME}_WITH_PARTH)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/parth.cmake)
-    # Add Parth to the dependencies target
-    target_link_libraries(homa_deps INTERFACE Parth::parth)
-    target_compile_definitions(homa_deps INTERFACE USE_PARTH)
 endif()
 
 if(${PROJECT_NAME}_WITH_PROFILE)
