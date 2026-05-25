@@ -1,0 +1,50 @@
+#include "patching/lloyd_patcher.h"
+#include "clusterAPI.h"
+#include <algorithm>
+#include <spdlog/spdlog.h>
+#include <stdexcept>
+
+namespace homa {
+
+void LloydPatcher::compute(int n, const int *Gp, const int *Gi,
+                           std::vector<int> &node_to_patch) {
+  LloydOptions opt;
+  opt.lloyd_iters_to_add_seed = lloyd_iters;
+  opt.random_seed = random_seed;
+
+  switch (seed_method) {
+  case SeedMethod::MORTON:
+    opt.seed_selection_method = LloydOptions::SeedSelectionMethod::MORTON_CODE;
+    break;
+  case SeedMethod::FPS:
+    opt.seed_selection_method = LloydOptions::SeedSelectionMethod::FPS;
+    break;
+  default:
+    opt.seed_selection_method = LloydOptions::SeedSelectionMethod::RANDOM;
+    break;
+  }
+
+  spdlog::debug("LloydPatcher: n={} patch_size={} lloyd_iters={}", n,
+                patch_size, lloyd_iters);
+  create_clusters(n, Gp, Gi, patch_size, &opt, node_to_patch);
+  if (static_cast<int>(node_to_patch.size()) != n) {
+    throw std::runtime_error("LloydPatcher: invalid cluster assignment size");
+  }
+
+  std::vector<int> labels = node_to_patch;
+  std::sort(labels.begin(), labels.end());
+  labels.erase(std::unique(labels.begin(), labels.end()), labels.end());
+  if (!labels.empty() && labels.front() < 0) {
+    throw std::runtime_error(
+        "LloydPatcher: unassigned vertex in cluster assignment");
+  }
+
+  for (int &patch_id : node_to_patch) {
+    patch_id = static_cast<int>(
+        std::lower_bound(labels.begin(), labels.end(), patch_id) -
+        labels.begin());
+  }
+  spdlog::debug("LloydPatcher: done — {} nodes assigned", n);
+}
+
+} // namespace homa

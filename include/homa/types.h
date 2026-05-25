@@ -5,20 +5,29 @@
 namespace homa {
 
 struct Options {
-    int  nd_levels           = 9;
-    int  patch_size          = 512;
-    bool use_patch_separator = true;
-    bool compute_etree       = false; // set true when using cuDSS
-    bool use_gpu             = false; // GPU backend (future)
-    bool deterministic       = false;
+  int nd_levels = 9;
+  int patch_size = 512;
+  bool use_patch_separator = true;
+  bool compute_etree = false; // set true when using cuDSS
+  bool use_gpu = false;       // GPU backend (future)
+  bool deterministic = false;
 
-    enum class LocalMethod { AMD, METIS, NONE };
-    LocalMethod local_method = LocalMethod::AMD;
+  enum class LocalMethod { AMD, METIS, NONE };
+  LocalMethod local_method = LocalMethod::AMD;
+
+  // Lloyd patcher options — effective when HOMA_WITH_LLOYD_PATCHER is enabled.
+  // lloyd_iters: BFS iterations between seed-addition rounds (default matches
+  // the benchmark script default of 2).
+  int lloyd_iters = 2;
+  int lloyd_seed = 42;
+
+  enum class LloydSeedMethod { RANDOM, MORTON, FPS };
+  LloydSeedMethod lloyd_seed_method = LloydSeedMethod::RANDOM;
 };
 
 struct OrderingResult {
-    std::vector<int> perm;
-    std::vector<int> etree; // non-empty only when options.compute_etree == true
+  std::vector<int> perm;
+  std::vector<int> etree; // non-empty only when options.compute_etree == true
 };
 
 } // namespace homa

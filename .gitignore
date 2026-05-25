@@ -43,6 +43,7 @@ imgui.ini
 
 # Agent / assistant working files (kept locally, not in repo)
 CLAUDE.md
+memory/
 .claude/
 
 # Working-set data dumps generated during runs

@@ -12,7 +12,7 @@ option(HOMA_BUILD_TESTS        "Build unit tests"                 OFF)
 option(HOMA_BUILD_PYTHON       "Build Python bindings"            OFF)
 option(HOMA_WITH_CUDA          "Enable CUDA / GPU backend"        OFF)
 option(HOMA_WITH_RXMESH        "Enable RxMesh patcher"            OFF)
-option(HOMA_WITH_FAST_PATCHER  "Enable fast-patcher backend"      OFF)
+option(HOMA_WITH_LLOYD_PATCHER "Enable Lloyd-clustering patcher"  ON)
 option(HOMA_WITH_SUITESPARSE   "SuiteSparse for benchmarks"       OFF)
 option(HOMA_WITH_MKL           "Intel MKL PARDISO for benchmarks" OFF)
 option(HOMA_WITH_PARTH         "Parth ordering for benchmarks"    OFF)
@@ -160,6 +160,10 @@ include(${CMAKE_SOURCE_DIR}/cmake/recipes/spdlog.cmake)
 # SuiteSparse/AMD is always needed: cpu_ordering_with_patch uses amd.h for local ordering
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
 
+if(HOMA_WITH_LLOYD_PATCHER)
+    include(${CMAKE_SOURCE_DIR}/cmake/recipes/lloyd_clustering.cmake)
+endif()
+
 # Benchmark / GPU deps — only when explicitly requested
 if(HOMA_WITH_RXMESH OR HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/rxmesh.cmake)
@@ -236,7 +240,7 @@ endif()
 ################################################################################
 # homa: clean, CPU-only public library (always built)
 ################################################################################
-add_library(homa STATIC
+set(_homa_sources
     src/ordering/homa.cpp
     src/ordering/cpu_ordering_with_patch.cpp
     src/ordering/amd_order_helper.cpp
@@ -246,6 +250,11 @@ add_library(homa STATIC
     src/utils/compute_inverse_perm.cpp
     src/utils/min_vertex_cover_bipartite.cpp
 )
+if(HOMA_WITH_LLOYD_PATCHER)
+    list(APPEND _homa_sources src/patching/lloyd_patcher.cpp)
+endif()
+
+add_library(homa STATIC ${_homa_sources})
 
 target_include_directories(homa
     PUBLIC  include
@@ -264,6 +273,12 @@ target_compile_definitions(homa PUBLIC
     $<$<CONFIG:Debug>:DEBUG>
     $<$<CONFIG:Release>:NDEBUG>
 )
+
+if(HOMA_WITH_LLOYD_PATCHER)
+    target_link_libraries(homa PRIVATE mesh_clustering_lib)
+    target_compile_definitions(homa PRIVATE HOMA_WITH_LLOYD_PATCHER)
+endif()
+
 add_library(Homa::homa ALIAS homa)
 
 if(HOMA_BUILD_TESTS)
