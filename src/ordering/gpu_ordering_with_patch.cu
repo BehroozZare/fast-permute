@@ -17,7 +17,6 @@
 #endif
 
 #include "../utils/min_vertex_cover_bipartite.h"
-#include "rxmesh/rxmesh_static.h"
 #include "spdlog/spdlog.h"
 
 #include <thrust/copy.h>
@@ -202,13 +201,13 @@ void GPUOrdering_PATCH::compute_bipartition(
                                            Q_partition_map.data());
 
     if (metis_status == METIS_ERROR_INPUT) {
-        RXMESH_ERROR("METIS ERROR INPUT");
+        throw std::runtime_error("METIS ERROR INPUT.");        
         exit(EXIT_FAILURE);
     } else if (metis_status == METIS_ERROR_MEMORY) {
-        RXMESH_ERROR("\n METIS ERROR MEMORY \n");
+        throw std::runtime_error("METIS ERROR MEMORY.");
         exit(EXIT_FAILURE);
     } else if (metis_status == METIS_ERROR) {
-        RXMESH_ERROR("\n METIS ERROR\n");
+        throw std::runtime_error("METIS ERROR.");
         exit(EXIT_FAILURE);
     }
 }

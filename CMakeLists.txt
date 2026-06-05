@@ -7,17 +7,16 @@ project(Homa
 ################################################################################
 # HOMA OPTIONS
 ################################################################################
-option(HOMA_BUILD_BENCHMARKS   "Build benchmark executables"      OFF)
-option(HOMA_BUILD_TESTS        "Build unit tests"                 OFF)
-option(HOMA_BUILD_PYTHON       "Build Python bindings"            OFF)
-option(HOMA_WITH_CUDA          "Enable CUDA / GPU backend"        OFF)
-option(HOMA_WITH_RXMESH        "Enable RxMesh patcher"            OFF)
+option(HOMA_BUILD_BENCHMARKS   "Build benchmark executables"      ON)
+option(HOMA_BUILD_TESTS        "Build unit tests"                 ON)
+option(HOMA_BUILD_PYTHON       "Build Python bindings"            ON)
+option(HOMA_WITH_CUDA          "Enable CUDA / GPU backend"        ON)
 option(HOMA_WITH_LLOYD_PATCHER "Enable Lloyd-clustering patcher"  ON)
-option(HOMA_WITH_SUITESPARSE   "SuiteSparse for benchmarks"       OFF)
-option(HOMA_WITH_MKL           "Intel MKL PARDISO for benchmarks" OFF)
+option(HOMA_WITH_SUITESPARSE   "SuiteSparse for benchmarks"       ON)
+option(HOMA_WITH_MKL           "Intel MKL PARDISO for benchmarks" ON)
 
 # CUDA is enabled either explicitly or when legacy options require it
-if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH)
+if(HOMA_WITH_CUDA)
     enable_language(CUDA)
 endif()
 
@@ -42,7 +41,7 @@ set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH OR HOMA_BUILD_BENCHMARKS)
+if(HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 20)
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
@@ -56,7 +55,7 @@ endif()
 ################################################################################
 
 # ==============================================================================
-# Compiler Configuration (Migrated from original RXMesh config)
+# Compiler Configuration
 # ==============================================================================
 # C++ compiler flags
 set(cxx_flags
@@ -111,7 +110,7 @@ if (OpenMP_CXX_FOUND)
     target_link_libraries(homa_flags INTERFACE OpenMP::OpenMP_CXX)
 endif()
 
-if(HOMA_WITH_CUDA OR HOMA_WITH_RXMESH OR HOMA_BUILD_BENCHMARKS)
+if(HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
     # CUDA Toolkit (cuSPARSE, cuSOLVER)
     find_package(CUDAToolkit REQUIRED)
     target_link_libraries(homa_flags INTERFACE CUDA::cusparse CUDA::cusolver)
@@ -157,11 +156,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
 
 if(HOMA_WITH_LLOYD_PATCHER)
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/lloyd_clustering.cmake)
-endif()
-
-# Benchmark / GPU deps — only when explicitly requested
-if(HOMA_WITH_RXMESH OR HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/rxmesh.cmake)
 endif()
 
 if(HOMA_BUILD_BENCHMARKS)
@@ -286,65 +280,10 @@ target_link_libraries(libigl_utils INTERFACE
 )
 target_include_directories(libigl_utils INTERFACE src/utils)
 
-# Create rxmesh_dev_helpers library (benchmark-only: owns the CUDA TUs that
-# the CPU-only `homa` target cannot compile). Everything else comes in via
-# linkage against `homa`, so SuiteSparse/AMD stays a private dep of `homa`.
-add_library(rxmesh_dev_helpers
-        src/ordering/gpu_ordering_with_patch.cu
-        src/patching/rxmesh_patcher.cu
-)
-
-target_link_libraries(rxmesh_dev_helpers PUBLIC
-        homa
-        libigl_utils
-        igl::core
-        spdlog::spdlog
-        Eigen3::Eigen
-        CLI11::CLI11
-)
-target_link_libraries(rxmesh_dev_helpers PUBLIC homa_deps PRIVATE RXMesh)
-
-
-# Add dev code include directories
-target_include_directories(rxmesh_dev_helpers PUBLIC
-        include
-        src/ordering
-        src/patching
-        src/utils
-)
-
-# Configure CUDA compilation for the dev helper library
-# Enable separable compilation but DON'T resolve device symbols yet
-# Device symbols will be resolved in the final executable
-set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-set_property(TARGET rxmesh_dev_helpers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
-
-# Inherit CUDA architecture from the global settings (from AutoDetectCudaArch)
-# No need to manual copy unless necessary
-
-# Add debug definitions based on build type
-# In Debug builds: DEBUG is defined, NDEBUG is NOT defined
-# In Release builds: NDEBUG is defined, DEBUG is NOT defined
-target_compile_definitions(rxmesh_dev_helpers PUBLIC
-        $<$<CONFIG:Debug>:DEBUG>
-        $<$<CONFIG:Release>:NDEBUG>
-)
-
-# CUDA: real debug: disable device optimizations and keep line info
-target_compile_options(rxmesh_dev_helpers PUBLIC
-  $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-O0;-Xptxas=-O0;-lineinfo;-Xcompiler=-O0,-g>
-)
-
-# Host C++ files in the same target
-target_compile_options(rxmesh_dev_helpers PUBLIC
-  $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CXX>>:-O0;-g;-fno-inline>
-)
 
 ################################################################################
 # SECTION 5: Create Development Targets (Executables)
 ################################################################################
-# Development targets use both the RXMesh library and the dev helpers library
-
     add_subdirectory(examples)
 
 endif() # HOMA_BUILD_BENCHMARKS

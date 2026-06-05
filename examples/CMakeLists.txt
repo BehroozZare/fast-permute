@@ -33,8 +33,7 @@ target_include_directories(homa_example_solvers PUBLIC
     ${CMAKE_SOURCE_DIR}/src/utils
 )
 
-target_link_libraries(homa_example_solvers PUBLIC
-    rxmesh_dev_helpers
+target_link_libraries(homa_example_solvers PUBLIC    
     homa_deps
 )
 
@@ -47,7 +46,7 @@ set_property(TARGET homa_example_solvers PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS OF
 function(configure_example_target target_name)
     set_property(TARGET ${target_name} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
     set_property(TARGET ${target_name} PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-    target_link_libraries(${target_name} PRIVATE homa_example_solvers rxmesh_dev_helpers homa)
+    target_link_libraries(${target_name} PRIVATE homa_example_solvers homa)
     set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
     target_compile_options(${target_name} PRIVATE
         $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-O0;-Xptxas=-O0;-lineinfo;-Xcompiler=-O0,-g3>

@@ -396,8 +396,7 @@ void CHOLMODSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
     }
     
     result.conservativeResize(rhs.size());
-    memcpy(result.data(), x_solve->x, result.rows() * sizeof(result[0]));
-    // save_factor("/home/behrooz/Desktop/Last_Project/RXMesh-dev/output/factor_" + ordering_name + ".mtx");
+    memcpy(result.data(), x_solve->x, result.rows() * sizeof(result[0]));    
 }
 
 

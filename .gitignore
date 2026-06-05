@@ -1,24 +1,5 @@
-output/*
-!output/.gitkeep
-input/*
-!input/car.msh
-!input/dragon.obj
-!input/diamond.obj
-!input/plane.obj
-!input/bumpy-cube.obj
-!input/sphere3_patches
-!input/torus_patches
-!input/torus.obj
-!input/cloth.obj
-!input/plane_5.obj
-!input/sphere1.obj
-!input/bunnyhead.obj
-!input/el_topo_sphere_1280.obj
-!input/giraffe_embedding.obj
-!input/giraffe.obj
 build/
 build_debug/
-include/rxmesh/util/git_sha1.cpp
 cmake-build-release
 cmake-build-debug
 .vscode/
@@ -29,7 +10,6 @@ scripts/*.ini
 scripts/*.nsys-rep
 scripts/*.sqlite
 scripts/*.obj
-paper/
 
 # Logs anywhere in the tree
 *.log
@@ -40,11 +20,3 @@ paper/
 # GUI / runtime state files (ImGui, Polyscope, etc.)
 imgui.ini
 .polyscope.ini
-
-# Agent / assistant working files (kept locally, not in repo)
-CLAUDE.md
-memory/
-.claude/
-
-# Working-set data dumps generated during runs
-patch_ids_tet_vertex_order.txt
