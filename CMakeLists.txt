@@ -4,6 +4,10 @@ project(Homa
         VERSION 0.1.0
         LANGUAGES C CXX)
 
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release)
+endif ()
+
 ################################################################################
 # HOMA OPTIONS
 ################################################################################
@@ -26,6 +30,7 @@ message(STATUS "HOMA_WITH_PROFILE: ${HOMA_WITH_PROFILE}")
 message(STATUS "HOMA_EXAMPLE_WITH_CHOLMOD: ${HOMA_EXAMPLE_WITH_CHOLMOD}")
 message(STATUS "HOMA_EXAMPLE_WITH_MKL: ${HOMA_EXAMPLE_WITH_MKL}")
 message(STATUS "HOMA_EXAMPLE_WITH_CUDSS: ${HOMA_EXAMPLE_WITH_CUDSS}")
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
