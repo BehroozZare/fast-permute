@@ -4,12 +4,12 @@
 #include <iomanip>
 #include <iostream>
 
-#include "SPD_cot_matrix.h"
+#include "homa/utils/SPD_cot_matrix.h"
 #include "LinSysSolver.hpp"
 #include "homa/ordering.h"
 #include "homa/types.h"
-#include "remove_diagonal.h"
-#include "check_valid_permutation.h"
+#include "homa/utils/remove_diagonal.h"
+#include "homa/utils/check_valid_permutation.h"
 #include <igl/read_triangle_mesh.h>
 #include <spdlog/spdlog.h>
 

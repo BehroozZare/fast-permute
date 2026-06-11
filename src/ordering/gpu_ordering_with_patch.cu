@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include "amd_order_helper.h"
 #include "gpu_ordering_with_patch.h"
-#include "../utils/cuda_error_handler.h"
+#include "homa/utils/cuda_error_handler.h"
 #include "cuda_profiler_api.h"
 #include <omp.h>
 

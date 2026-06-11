@@ -4,12 +4,13 @@
 #include <iomanip>
 #include <iostream>
 
-#include "SPD_cot_matrix.h"
+#include "homa/utils/SPD_cot_matrix.h"
 #include "LinSysSolver.hpp"
 #include "homa/ordering.h"
 #include "homa/types.h"
-#include "remove_diagonal.h"
-#include "check_valid_permutation.h"
+#include "homa/utils/remove_diagonal.h"
+#include "homa/utils/check_valid_permutation.h"
+#include "homa/utils/cuda_error_handler.h"
 #include <cuda_runtime.h>
 #include <igl/read_triangle_mesh.h>
 #include <spdlog/spdlog.h>
@@ -51,13 +52,11 @@ private:
 int main(int argc, char* argv[])
 {
     std::string input_mesh;
-    int         patch_size = 512;
-    int         use_gpu    = 1;
+    int         patch_size = 512;    
 
     CLI::App app{"Homa cuDSS example"};
     app.add_option("-i,--input",      input_mesh, "Input mesh (.obj)")->required();
-    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
-    app.add_option("-g,--use_gpu",    use_gpu,    "Use GPU for ordering (0|1, default: 1)");
+    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");    
     CLI11_PARSE(app, argc, argv);
 
     Eigen::MatrixXd V;
@@ -95,7 +94,7 @@ int main(int argc, char* argv[])
         solver->factorize();
         Eigen::VectorXd sol;
         solver->solve(rhs, sol);
-        cudaDeviceSynchronize();
+        CUDA_CHECK(cudaDeviceSynchronize());
     }
 
     // --- Solver-default path (cuDSS internal reordering + symbolic factorization) ---
@@ -135,7 +134,7 @@ int main(int argc, char* argv[])
     double homa_residual     = 0.0;
     {
         homa::Options opts;
-        opts.use_gpu             = (use_gpu != 0);
+        opts.use_gpu             = true;
         opts.patch_size          = patch_size;
         opts.use_patch_separator = true;
         opts.compute_etree       = true; // cuDSS requires etree alongside permutation
