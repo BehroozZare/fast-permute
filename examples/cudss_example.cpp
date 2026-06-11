@@ -22,24 +22,24 @@ class GpuTimer {
 public:
     GpuTimer()
     {
-        cudaEventCreate(&start_);
-        cudaEventCreate(&stop_);
+        CUDA_CHECK(cudaEventCreate(&start_));
+        CUDA_CHECK(cudaEventCreate(&stop_));
     }
     ~GpuTimer()
     {
-        cudaEventDestroy(start_);
-        cudaEventDestroy(stop_);
+        CUDA_CHECK(cudaEventDestroy(start_));
+        CUDA_CHECK(cudaEventDestroy(stop_));
     }
     GpuTimer(const GpuTimer&)            = delete;
     GpuTimer& operator=(const GpuTimer&) = delete;
 
-    void  start() { cudaEventRecord(start_); }
+    void  start() { CUDA_CHECK(cudaEventRecord(start_)); }
     float stop_ms()
     {
-        cudaEventRecord(stop_);
-        cudaEventSynchronize(stop_);
+        CUDA_CHECK(cudaEventRecord(stop_));
+        CUDA_CHECK(cudaEventSynchronize(stop_));
         float ms = 0.0f;
-        cudaEventElapsedTime(&ms, start_, stop_);
+        CUDA_CHECK(cudaEventElapsedTime(&ms, start_, stop_));
         return ms;
     }
 

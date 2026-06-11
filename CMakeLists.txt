@@ -148,8 +148,6 @@ set(_homa_sources
     src/patching/metis_patcher.cpp
     src/utils/remove_diagonal.cpp
     src/utils/check_valid_permutation.cpp
-    src/utils/compute_inverse_perm.cpp
-    src/utils/min_vertex_cover_bipartite.cpp
 )
 if(HOMA_WITH_LLOYD_PATCHER)
     list(APPEND _homa_sources src/patching/lloyd_patcher.cpp)
