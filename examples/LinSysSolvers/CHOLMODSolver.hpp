@@ -1,7 +1,7 @@
 
 #pragma once
 
-#ifdef USE_SUITESPARSE
+#ifdef USE_CHOLMOD
 
 #include "LinSysSolver.hpp"
 

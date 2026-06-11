@@ -1,7 +1,7 @@
 #include "LinSysSolver.hpp"
 #include <iostream>
 
-#ifdef USE_SUITESPARSE
+#ifdef USE_CHOLMOD
 #include "CHOLMODSolver.hpp"
 #endif
 
@@ -21,7 +21,7 @@ namespace homa {
         switch (type) {
 
 
-#ifdef USE_SUITESPARSE
+#ifdef USE_CHOLMOD
             case LinSysSolverType::CPU_CHOLMOD:
                 return new CHOLMODSolver();
 #endif

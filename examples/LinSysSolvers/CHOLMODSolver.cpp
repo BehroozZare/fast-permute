@@ -5,7 +5,7 @@
 //  Created by Minchen Li on 6/22/18.
 //
 
-#ifdef USE_SUITESPARSE
+#ifdef USE_CHOLMOD
 
 #include "CHOLMODSolver.hpp"
 #include <cassert>
