@@ -17,7 +17,7 @@ class MKLSolver : public LinSysSolver {
 public:
     MKL_INT mtype = 2; /* Real SPD matrix */
     MKL_INT nrhs = 1;  /* Number of right hand sides. */
-    long int pt[64];
+    void* pt[64];
     /* Pardiso control parameters. */
     MKL_INT iparm[64];
     MKL_INT maxfct, mnum, phase, error, msglvl;
@@ -31,6 +31,8 @@ public:
     MKL_INT N_MKL;
 
     std::vector<MKL_INT> perm;
+    bool has_pardiso_memory_ = false;
+    bool factorized_         = false;
 
     ~MKLSolver();
     MKLSolver();
@@ -45,6 +47,9 @@ public:
     LinSysSolverType type() const override;
 
 private:
+    void configureMKLRuntime();
+    void resetPardisoHandle();
+    void releasePardisoMemory();
     void setMKLConfigParam();
     void clean_memory();
 };

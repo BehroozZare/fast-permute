@@ -7,7 +7,11 @@
 
 #include "MKLSolver.hpp"
 #include <cassert>
+#include <cstring>
 #include <iostream>
+#include <mutex>
+#include <new>
+#include <stdexcept>
 #include <spdlog/spdlog.h>
 
 namespace homa {
@@ -15,15 +19,23 @@ namespace homa {
 static_assert(sizeof(MKL_INT) == sizeof(int),
               "Homa MKLSolver expects oneMKL LP64 because inputs use int CSR indices.");
 
+#ifndef HOMA_MKL_INTERFACE_LAYER
+#define HOMA_MKL_INTERFACE_LAYER MKL_INTERFACE_LP64
+#endif
+
+#ifndef HOMA_MKL_THREADING_LAYER
+#define HOMA_MKL_THREADING_LAYER MKL_THREADING_INTEL
+#endif
+
 MKLSolver::~MKLSolver()
 {
-    phase = -1; /* Release internal memory. */
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N, Ax, Ap, Ai, NULL, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
+    releasePardisoMemory();
 }
 
 MKLSolver::MKLSolver()
 {
+    configureMKLRuntime();
+    resetPardisoHandle();
     setMKLConfigParam();
 
     Ap = nullptr;
@@ -34,10 +46,48 @@ MKLSolver::MKLSolver()
     Base::initVariables();
 }
 
+void MKLSolver::configureMKLRuntime()
+{
+    static std::once_flag configure_once;
+    std::call_once(configure_once, []() {
+        mkl_set_interface_layer(HOMA_MKL_INTERFACE_LAYER);
+        mkl_set_threading_layer(HOMA_MKL_THREADING_LAYER);
+    });
+}
+
+void MKLSolver::resetPardisoHandle()
+{
+    for (int i = 0; i < 64; i++) {
+        pt[i] = nullptr;
+    }
+    has_pardiso_memory_ = false;
+    factorized_         = false;
+}
+
+void MKLSolver::releasePardisoMemory()
+{
+    if (!has_pardiso_memory_) {
+        return;
+    }
+
+    MKL_INT release_phase = -1;
+    error                 = 0;
+    MKL_INT* perm_ptr     = perm.empty() ? nullptr : perm.data();
+
+    PARDISO(pt, &maxfct, &mnum, &mtype, &release_phase, &N_MKL, nullptr,
+            nullptr, nullptr, perm_ptr, &nrhs, iparm, &msglvl, nullptr,
+            nullptr, &error);
+
+    if (error != 0) {
+        spdlog::warn("MKL PARDISO: ERROR during memory release - code: {}", error);
+    }
+
+    resetPardisoHandle();
+}
+
 void MKLSolver::setMKLConfigParam()
 {
     for (int i = 0; i < 64; i++) {
-        pt[i] = 0;
         iparm[i] = 0;
     }
 
@@ -80,13 +130,13 @@ void MKLSolver::setMKLConfigParam()
 
 void MKLSolver::clean_memory()
 {
-    phase = -1; /* Release internal memory. */
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N, &Ax, Ap, Ai, NULL, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
+    releasePardisoMemory();
 }
 
 void MKLSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
 {
+    releasePardisoMemory();
+
     assert(p[A_N] == NNZ);
     this->N = A_N;
     this->NNZ = NNZ;
@@ -99,37 +149,20 @@ void MKLSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
 
 void MKLSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
-    // Clean memory from previous factorization
+    releasePardisoMemory();
+    resetPardisoHandle();
     setMKLConfigParam();
 
-    // Check if user provided permutation
     bool use_user_perm = (user_defined_perm.size() == static_cast<size_t>(N));
-    
+    perm.assign(static_cast<size_t>(N), 0);
+
     if (use_user_perm) {
         iparm[4] = 1; /* User permutation */
-        perm.resize(N);
-        for (int j = 0; j < N; j++) {
-            perm[j] = user_defined_perm[j];
-        }
+        perm.assign(user_defined_perm.begin(), user_defined_perm.end());
         spdlog::info("MKL PARDISO: Using user-provided permutation");
     } else {
         iparm[4] = 0; /* Use internal METIS ordering */
         spdlog::info("MKL PARDISO: Using DEFAULT ordering");
-    }
-
-    assert(N == N_MKL);
-    assert(Ap[N_MKL] == NNZ);
-
-    // Release any previous internal memory
-    phase = -1;
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N, Ax, Ap, Ai, NULL, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
-
-    // Reinitialization for new analysis
-    setMKLConfigParam();
-    if (use_user_perm) {
-        iparm[4] = 1;
-    } else {
         if (ordering_type == "AMD") {
             iparm[1] = 0;
         } else if (ordering_type == "ParMETIS") {
@@ -139,30 +172,35 @@ void MKLSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::v
         }
     }
 
-    // Symbolic factorization
+    assert(N == N_MKL);
+    assert(Ap[N_MKL] == NNZ);
+
     phase = 11;
-    if (use_user_perm) {
-        PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai, perm.data(),
-                &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
-    } else {
-        PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai, NULL,
-                &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
-    }
+    error = 0;
+    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai,
+            perm.data(), &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
 
     if (error != 0) {
         spdlog::error("MKL PARDISO: ERROR during symbolic factorization - code: {}", error);
         throw std::runtime_error("Symbolic factorization failed with error code: " + std::to_string(error));
     }
 
+    has_pardiso_memory_ = true;
+    factorized_         = false;
+
     spdlog::info("MKL PARDISO: Symbolic analysis complete");
 }
 
 void MKLSolver::innerFactorize(void)
 {
-    // Numerical factorization
+    if (!has_pardiso_memory_) {
+        throw std::runtime_error("MKL PARDISO factorize called before analyze_pattern");
+    }
+
     phase = 22;
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai, NULL, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
+    error = 0;
+    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai,
+            perm.data(), &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
 
     L_NNZ = iparm[17];
 
@@ -171,18 +209,28 @@ void MKLSolver::innerFactorize(void)
         throw std::runtime_error("Numerical factorization failed with error code: " + std::to_string(error));
     }
 
+    factorized_ = true;
+
     spdlog::info("MKL PARDISO: Numerical factorization complete, L_NNZ = {}", L_NNZ);
 }
 
 void MKLSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
 {
+    if (!factorized_) {
+        throw std::runtime_error("MKL PARDISO solve called before factorize");
+    }
+
     double* x = (double*)mkl_calloc(rhs.size() * nrhs, sizeof(double), 64);
+    if (!x) {
+        throw std::bad_alloc();
+    }
     
     phase = 33;
+    error = 0;
     iparm[7] = 0; /* Max numbers of iterative refinement steps. */
 
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai, NULL, &nrhs,
-            iparm, &msglvl, rhs.data(), x, &error);
+    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai,
+            perm.data(), &nrhs, iparm, &msglvl, rhs.data(), x, &error);
 
     if (error != 0) {
         spdlog::error("MKL PARDISO: ERROR during solve - code: {}", error);
@@ -218,10 +266,8 @@ void MKLSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, double
 
 void MKLSolver::resetSolver()
 {
-    phase = -1; /* Release internal memory. */
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N, Ax, Ap, Ai, NULL, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
-
+    releasePardisoMemory();
+    resetPardisoHandle();
     setMKLConfigParam();
     
     Ap = nullptr;

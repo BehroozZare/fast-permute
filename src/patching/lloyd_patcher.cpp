@@ -26,7 +26,15 @@ void LloydPatcher::compute(int n, const int *Gp, const int *Gi,
 
   spdlog::info("LloydPatcher: n={} patch_size={} lloyd_iters={}", n,
                 patch_size, lloyd_iters);
+  
+  using Clock = std::chrono::high_resolution_clock;
+  auto elapsed_ms = [](Clock::time_point a, Clock::time_point b) {
+      return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
+      };
+  auto t0 = Clock::now();
   create_clusters(n, Gp, Gi, patch_size, &opt, node_to_patch);
+  spdlog::info("LloydPatcher: create_clusters took {} (ms)", elapsed_ms(t0, Clock::now()));
+
   if (static_cast<int>(node_to_patch.size()) != n) {
     throw std::runtime_error("LloydPatcher: invalid cluster assignment size");
   }
