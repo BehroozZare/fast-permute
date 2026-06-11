@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <chrono>
+#include <stdexcept>
 #include <unordered_set>
 #include "amd_order_helper.h"
 #include "cpu_ordering_with_patch.h"
@@ -49,13 +50,21 @@ void CPUOrdering_PATCH::local_permute_metis(int G_n, int* Gp, int* Gi,
     }
 
     std::vector<int> tmp(N);
-    METIS_NodeND(&N,
-                 Gp,
-                 Gi,
-                 NULL,
-                 NULL,
-                 local_permutation.data(),
-                 tmp.data());
+    int status = METIS_OK;
+#pragma omp critical(homa_metis)
+    {
+        status = METIS_NodeND(&N,
+                              Gp,
+                              Gi,
+                              NULL,
+                              NULL,
+                              local_permutation.data(),
+                              tmp.data());
+    }
+    if (status != METIS_OK) {
+        spdlog::error("METIS_NodeND failed (status={})", status);
+        throw std::runtime_error("METIS_NodeND failed");
+    }
 }
 
 void CPUOrdering_PATCH::local_permute_amd(int G_n, int* Gp, int* Gi,
@@ -178,7 +187,12 @@ void CPUOrdering_PATCH::compute_bipartition(
 
     Q_partition_map.resize(Q_n, 0);
 
-    int metis_status = METIS_PartGraphKway(&nvtxs,
+    int metis_status = METIS_OK;
+
+#pragma omp critical(homa_metis)
+
+    {
+        metis_status = METIS_PartGraphKway(&nvtxs,
                                            &ncon,
                                            Qp,
                                            Qi,
@@ -191,17 +205,12 @@ void CPUOrdering_PATCH::compute_bipartition(
                                            options,
                                            &objval,
                                            Q_partition_map.data());
-
-    if (metis_status == METIS_ERROR_INPUT) {
-        spdlog::error("METIS ERROR INPUT");
-        exit(EXIT_FAILURE);
-    } else if (metis_status == METIS_ERROR_MEMORY) {
-        spdlog::error("\n METIS ERROR MEMORY \n");
-        exit(EXIT_FAILURE);
-    } else if (metis_status == METIS_ERROR) {
-        spdlog::error("\n METIS ERROR\n");
-        exit(EXIT_FAILURE);
     }
+
+    if (metis_status != METIS_OK) {
+        spdlog::error("MetisPatcher: METIS_PartGraphKway failed (status={})", metis_status);
+        throw std::runtime_error("METIS_PartGraphKway failed");
+    }    
 }
 
 
@@ -467,12 +476,21 @@ void CPUOrdering_PATCH::refine_separator_metis(
 
     // 4. All vertices can move freely during refinement
     std::vector<idx_t> hmarker(local_nvtxs, -1);
+    int status = METIS_OK;
     real_t ubfactor = 1.03;  // 3% imbalance tolerance
 
+#pragma omp critical(homa_metis)
+
+{
     // 5. Call METIS refinement
-    METIS_NodeRefine(local_nvtxs, subgraph._Gp.data(), nullptr,
+    status = METIS_NodeRefine(local_nvtxs, subgraph._Gp.data(), nullptr,
                      subgraph._Gi.data(), where.data(),
                      hmarker.data(), ubfactor);
+}
+    if (status != METIS_OK) {
+        spdlog::error("MetisPatcher: METIS_NodeRefine failed (status={})", status);
+        throw std::runtime_error("METIS_NodeRefine failed");
+    }  
 
 #ifndef NDEBUG
     int total = 0;
@@ -692,10 +710,17 @@ void CPUOrdering_PATCH::decompose()
                     idx_t nVertices = subgraph._num_nodes;
                     idx_t sepsize;
                     where.resize(nVertices);
-                    int ret = METIS_ComputeVertexSeparator(&nVertices, subgraph._Gp.data(), subgraph._Gi.data(),
+                    int ret = METIS_OK;
+#pragma omp critical(homa_metis)
+                    {
+                        ret = METIS_ComputeVertexSeparator(&nVertices, subgraph._Gp.data(), subgraph._Gi.data(),
                                                            nullptr, nullptr, &sepsize,
                                                            where.data());
-                    assert(ret == METIS_OK);
+                    }
+                    if (ret != METIS_OK) {
+                        spdlog::error("MetisPatcher: METIS_ComputeVertexSeparator failed (status={})", ret);
+                        throw std::runtime_error("METIS_ComputeVertexSeparator failed");
+                    }  
                 }
 
 

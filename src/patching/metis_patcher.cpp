@@ -36,10 +36,16 @@ void MetisPatcher::compute(int n, const int* Gp, const int* Gi,
     int* Gp_nc = const_cast<int*>(Gp);
     int* Gi_nc = const_cast<int*>(Gi);
 
-    int status = METIS_PartGraphKway(&nvtxs, &ncon, Gp_nc, Gi_nc,
+    int status = METIS_OK;
+
+#pragma omp critical(homa_metis)
+
+    {
+        status = METIS_PartGraphKway(&nvtxs, &ncon, Gp_nc, Gi_nc,
                                      nullptr, nullptr, nullptr,
                                      &nparts, nullptr, nullptr, options,
                                      &objval, node_to_patch.data());
+    }
     if (status != METIS_OK) {
         spdlog::error("MetisPatcher: METIS_PartGraphKway failed (status={})", status);
         throw std::runtime_error("METIS_PartGraphKway failed");

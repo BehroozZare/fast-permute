@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <chrono>
+#include <stdexcept>
 #include <unordered_set>
 #include "amd_order_helper.h"
 #include "gpu_ordering_with_patch.h"
@@ -63,13 +64,23 @@ void GPUOrdering_PATCH::local_permute_metis(int G_n, int* Gp, int* Gi,
     }
 
     std::vector<int> tmp(N);
-    METIS_NodeND(&N,
-                 Gp,
-                 Gi,
-                 NULL,
-                 NULL,
-                 local_permutation.data(),
-                 tmp.data());
+    int status = METIS_OK;
+
+#pragma omp critical(homa_metis)
+
+    {
+        status = METIS_NodeND(&N,
+                              Gp,
+                              Gi,
+                              NULL,
+                              NULL,
+                              local_permutation.data(),
+                              tmp.data());
+    }
+    if (status != METIS_OK) {
+        spdlog::error("METIS_NodeND failed (status={})", status);
+        throw std::runtime_error("METIS_NodeND failed");
+    }
 }
 
 void GPUOrdering_PATCH::local_permute_amd(int G_n, int* Gp, int* Gi,
@@ -186,7 +197,12 @@ void GPUOrdering_PATCH::compute_bipartition(
 
     Q_partition_map.resize(Q_n, 0);
 
-    int metis_status = METIS_PartGraphKway(&nvtxs,
+    int metis_status = METIS_OK;
+
+#pragma omp critical(homa_metis)
+
+    {
+        metis_status = METIS_PartGraphKway(&nvtxs,
                                            &ncon,
                                            Qp,
                                            Qi,
@@ -199,17 +215,11 @@ void GPUOrdering_PATCH::compute_bipartition(
                                            options,
                                            &objval,
                                            Q_partition_map.data());
-
-    if (metis_status == METIS_ERROR_INPUT) {
-        throw std::runtime_error("METIS ERROR INPUT.");        
-        exit(EXIT_FAILURE);
-    } else if (metis_status == METIS_ERROR_MEMORY) {
-        throw std::runtime_error("METIS ERROR MEMORY.");
-        exit(EXIT_FAILURE);
-    } else if (metis_status == METIS_ERROR) {
-        throw std::runtime_error("METIS ERROR.");
-        exit(EXIT_FAILURE);
     }
+    if (metis_status != METIS_OK) {
+        spdlog::error("MetisPatcher: METIS_PartGraphKway failed (status={})", metis_status);
+        throw std::runtime_error("METIS_PartGraphKway failed");
+    }      
 }
 
 

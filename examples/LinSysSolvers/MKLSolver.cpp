@@ -12,6 +12,9 @@
 
 namespace homa {
 
+static_assert(sizeof(MKL_INT) == sizeof(int),
+              "Homa MKLSolver expects oneMKL LP64 because inputs use int CSR indices.");
+
 MKLSolver::~MKLSolver()
 {
     phase = -1; /* Release internal memory. */
