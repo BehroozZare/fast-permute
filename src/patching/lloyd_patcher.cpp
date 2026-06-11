@@ -24,7 +24,7 @@ void LloydPatcher::compute(int n, const int *Gp, const int *Gi,
     break;
   }
 
-  spdlog::debug("LloydPatcher: n={} patch_size={} lloyd_iters={}", n,
+  spdlog::info("LloydPatcher: n={} patch_size={} lloyd_iters={}", n,
                 patch_size, lloyd_iters);
   create_clusters(n, Gp, Gi, patch_size, &opt, node_to_patch);
   if (static_cast<int>(node_to_patch.size()) != n) {
@@ -39,10 +39,13 @@ void LloydPatcher::compute(int n, const int *Gp, const int *Gi,
         "LloydPatcher: unassigned vertex in cluster assignment");
   }
 
-  for (int &patch_id : node_to_patch) {
-    patch_id = static_cast<int>(
-        std::lower_bound(labels.begin(), labels.end(), patch_id) -
-        labels.begin());
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) if(n > 4096)
+#endif
+  for (int i = 0; i < n; ++i) {
+      node_to_patch[i] = static_cast<int>(
+          std::lower_bound(labels.begin(), labels.end(), node_to_patch[i]) -
+          labels.begin());
   }
   spdlog::debug("LloydPatcher: done — {} nodes assigned", n);
 }

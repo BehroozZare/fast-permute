@@ -9,8 +9,8 @@ struct Options {
   int patch_size = 512;
   bool use_patch_separator = true;
   bool compute_etree = false; // set true when using cuDSS
-  bool use_gpu = false;       // GPU backend (future)
-  bool deterministic = false;
+  bool use_gpu = true;       // GPU backend (future)
+  
 
   enum class LocalMethod { AMD, METIS, NONE };
   LocalMethod local_method = LocalMethod::AMD;
