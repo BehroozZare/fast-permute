@@ -26,21 +26,20 @@ target_link_libraries(my_target PRIVATE Homa::homa)
 
 ## Building the examples
 
-Each solver is opt-in. Enable the ones you have installed.
+When benchmarks are enabled, solver examples are enabled by default. Disable
+the solvers you do not have installed.
 
 ```bash
 # CHOLMOD (requires SuiteSparse)
 cmake --preset release \
   -DHOMA_BUILD_BENCHMARKS=ON \
-  -DHOMA_EXAMPLE_WITH_CHOLMOD=ON \
-  -DHOMA_WITH_SUITESPARSE=ON
+  -DHOMA_EXAMPLE_WITH_CHOLMOD=ON
 cmake --build --preset release
 
-# MKL PARDISO (requires Intel oneAPI MKL)
+# MKL PARDISO (uses installed MKL or the MKL wheel fallback)
 cmake --preset release \
   -DHOMA_BUILD_BENCHMARKS=ON \
-  -DHOMA_EXAMPLE_WITH_MKL=ON \
-  -DHOMA_WITH_MKL=ON
+  -DHOMA_EXAMPLE_WITH_MKL=ON
 cmake --build --preset release
 
 # cuDSS (requires CUDA + cuDSS)

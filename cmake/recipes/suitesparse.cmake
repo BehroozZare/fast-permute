@@ -1,174 +1,97 @@
-# suitesparse.cmake
-# Downloads and builds minimal SuiteSparse components (CHOLMOD, AMD, and dependencies)
-
-if(TARGET SuiteSparse::CHOLMOD)
-    return()
-endif()
+# SuiteSparse core recipe.
+# The homa library only needs AMD for local ordering, so keep CHOLMOD/BLAS out
+# of the default dependency graph. Optional examples can add CHOLMOD separately.
 
 include(FetchContent)
 
-# Include OpenBLAS recipe - this provides BLAS::BLAS and LAPACK::LAPACK targets
-# It will first try to find system-installed BLAS/LAPACK, and if not found,
-# will download and build OpenBLAS from source
-include(${CMAKE_CURRENT_LIST_DIR}/openblas.cmake)
-
-# Download SuiteSparse
 FetchContent_Declare(
     suitesparse
     GIT_REPOSITORY https://github.com/DrTimothyAldenDavis/SuiteSparse.git
-    GIT_TAG v7.11.0  # Using latest stable version with BLAS/LAPACK compatibility header
+    GIT_TAG v7.11.0
     GIT_SHALLOW TRUE
 )
 
-# Check if already populated to avoid re-fetching
 FetchContent_GetProperties(suitesparse)
 if(NOT suitesparse_POPULATED)
     message(STATUS "Fetching SuiteSparse...")
-    
-    # Configure SuiteSparse build options before populating
-    # Build only minimal required packages for CHOLMOD
-    set(SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;amd;camd;colamd;ccolamd;cholmod" CACHE STRING "SuiteSparse projects to build")
-    
-    # Configure CHOLMOD modules
-    # Note: Utility module (containing cholmod_mult_size_t, cholmod_add_size_t, etc.)
-    # must be explicitly enabled
-    set(CHOLMOD_GPL ON CACHE BOOL "Enable GPL modules (required for supernodal)")
-    set(CHOLMOD_SUPERNODAL ON CACHE BOOL "Enable supernodal factorization")
-    set(CHOLMOD_CHOLESKY ON CACHE BOOL "Enable Cholesky module")
-    set(CHOLMOD_CAMD ON CACHE BOOL "Enable CAMD support")
-    set(CHOLMOD_UTILITY ON CACHE BOOL "Enable Utility module")
-    set(CHOLMOD_PARTITION OFF CACHE BOOL "Disable Partition module")
-    set(CHOLMOD_MATRIXOPS OFF CACHE BOOL "Disable MatrixOps module")
-    set(CHOLMOD_MODIFY OFF CACHE BOOL "Disable Modify module")
-    
-    # Disable CUDA/GPU support
-    set(CHOLMOD_CUDA OFF CACHE BOOL "Disable CUDA GPU acceleration for CHOLMOD")
-    
-    # Disable demo/test builds
-    set(SUITESPARSE_DEMOS OFF CACHE BOOL "Disable demos")
-    
-    # Use 64-bit integers (not on Windows where pre-built OpenBLAS is typically 32-bit)
-    if(WIN32)
-        set(SUITESPARSE_USE_64BIT_BLAS OFF CACHE BOOL "Use 64-bit BLAS" FORCE)
-    else()
-        set(SUITESPARSE_USE_64BIT_BLAS ON CACHE BOOL "Use 64-bit BLAS")
+    if(POLICY CMP0169)
+        cmake_policy(PUSH)
+        cmake_policy(SET CMP0169 OLD)
     endif()
-    
-    # Disable Fortran if not needed
-    set(SUITESPARSE_USE_FORTRAN OFF CACHE BOOL "Disable Fortran")
-    
-    # Enable building static libraries (required for targets to be created)
-    set(BUILD_STATIC_LIBS ON CACHE BOOL "Build static libraries")
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Don't build shared libraries")
-    
-    # Configure BLAS/LAPACK settings for SuiteSparse
-    set(SUITESPARSE_USE_SYSTEM_BLAS ON CACHE BOOL "Use system BLAS")
-    set(SUITESPARSE_USE_SYSTEM_LAPACK ON CACHE BOOL "Use system LAPACK")
-    
-    # Populate the content
     FetchContent_Populate(suitesparse)
-    
-    # Add SuiteSparse to the build with EXCLUDE_FROM_ALL
-    add_subdirectory(${suitesparse_SOURCE_DIR} ${suitesparse_BINARY_DIR} EXCLUDE_FROM_ALL)
-    
-    message(STATUS "SuiteSparse configured with CHOLMOD and AMD")
-endif()
-
-# Create interface targets if they don't exist
-# Note: We're building static libs, so targets are named *_static
-if(NOT TARGET SuiteSparse::CHOLMOD)
-    if(TARGET CHOLMOD_static)
-        add_library(SuiteSparse::CHOLMOD ALIAS CHOLMOD_static)
-    elseif(TARGET CHOLMOD)
-        add_library(SuiteSparse::CHOLMOD ALIAS CHOLMOD)
+    if(POLICY CMP0169)
+        cmake_policy(POP)
     endif()
 endif()
 
-if(NOT TARGET SuiteSparse::AMD)
-    if(TARGET AMD_static)
-        add_library(SuiteSparse::AMD ALIAS AMD_static)
-    elseif(TARGET AMD)
-        add_library(SuiteSparse::AMD ALIAS AMD)
+set(HOMA_SUITESPARSE_SOURCE_DIR "${suitesparse_SOURCE_DIR}" CACHE INTERNAL "SuiteSparse source directory")
+set(HOMA_SUITESPARSE_BINARY_DIR "${suitesparse_BINARY_DIR}" CACHE INTERNAL "SuiteSparse binary directory")
+
+function(_homa_suitesparse_alias namespaced_target static_target shared_target)
+    if(TARGET ${namespaced_target})
+        return()
     endif()
+
+    if(TARGET ${static_target})
+        add_library(${namespaced_target} ALIAS ${static_target})
+    elseif(TARGET ${shared_target})
+        add_library(${namespaced_target} ALIAS ${shared_target})
+    endif()
+endfunction()
+
+list(APPEND CMAKE_MODULE_PATH "${HOMA_SUITESPARSE_SOURCE_DIR}/SuiteSparse_config/cmake_modules")
+
+set(SUITESPARSE_ROOT_CMAKELISTS ON)
+set(SUITESPARSE_USE_CUDA OFF CACHE BOOL "Disable CUDA in SuiteSparse" FORCE)
+set(SUITESPARSE_USE_OPENMP OFF CACHE BOOL "Disable OpenMP in SuiteSparse" FORCE)
+set(SUITESPARSE_USE_FORTRAN OFF CACHE BOOL "Disable Fortran in SuiteSparse" FORCE)
+set(SUITESPARSE_REQUIRE_BLAS OFF CACHE BOOL "AMD-only SuiteSparse does not require BLAS" FORCE)
+set(SUITESPARSE_DEMOS OFF CACHE BOOL "Disable SuiteSparse demos" FORCE)
+set(BUILD_STATIC_LIBS ON CACHE BOOL "Build SuiteSparse static libraries" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable SuiteSparse shared libraries" FORCE)
+
+if(NOT TARGET SuiteSparseConfig_static AND NOT TARGET SuiteSparseConfig)
+    add_subdirectory(
+        "${HOMA_SUITESPARSE_SOURCE_DIR}/SuiteSparse_config"
+        "${HOMA_SUITESPARSE_BINARY_DIR}/SuiteSparse_config"
+        EXCLUDE_FROM_ALL
+    )
 endif()
 
-if(NOT TARGET SuiteSparse::COLAMD)
-    if(TARGET COLAMD_static)
-        add_library(SuiteSparse::COLAMD ALIAS COLAMD_static)
-    elseif(TARGET COLAMD)
-        add_library(SuiteSparse::COLAMD ALIAS COLAMD)
-    endif()
+_homa_suitesparse_alias(SuiteSparse::SuiteSparseConfig SuiteSparseConfig_static SuiteSparseConfig)
+_homa_suitesparse_alias(SuiteSparse::SuiteSparseConfig_static SuiteSparseConfig_static SuiteSparseConfig)
+
+if(NOT TARGET AMD_static AND NOT TARGET AMD)
+    add_subdirectory(
+        "${HOMA_SUITESPARSE_SOURCE_DIR}/AMD"
+        "${HOMA_SUITESPARSE_BINARY_DIR}/AMD"
+        EXCLUDE_FROM_ALL
+    )
 endif()
 
-if(NOT TARGET SuiteSparse::CAMD)
-    if(TARGET CAMD_static)
-        add_library(SuiteSparse::CAMD ALIAS CAMD_static)
-    elseif(TARGET CAMD)
-        add_library(SuiteSparse::CAMD ALIAS CAMD)
-    endif()
-endif()
+_homa_suitesparse_alias(SuiteSparse::AMD AMD_static AMD)
+_homa_suitesparse_alias(SuiteSparse::AMD_static AMD_static AMD)
 
-if(NOT TARGET SuiteSparse::CCOLAMD)
-    if(TARGET CCOLAMD_static)
-        add_library(SuiteSparse::CCOLAMD ALIAS CCOLAMD_static)
-    elseif(TARGET CCOLAMD)
-        add_library(SuiteSparse::CCOLAMD ALIAS CCOLAMD)
-    endif()
-endif()
-
-if(NOT TARGET SuiteSparse::SuiteSparseConfig)
-    if(TARGET SuiteSparseConfig_static)
-        add_library(SuiteSparse::SuiteSparseConfig ALIAS SuiteSparseConfig_static)
-    elseif(TARGET SuiteSparseConfig)
-        add_library(SuiteSparse::SuiteSparseConfig ALIAS SuiteSparseConfig)
-    endif()
-endif()
-
-# Export include directories for easier use
-set(SUITESPARSE_INCLUDE_DIRS 
-    ${suitesparse_SOURCE_DIR}/CHOLMOD/Include
-    ${suitesparse_SOURCE_DIR}/AMD/Include
-    ${suitesparse_SOURCE_DIR}/COLAMD/Include
-    ${suitesparse_SOURCE_DIR}/CAMD/Include
-    ${suitesparse_SOURCE_DIR}/CCOLAMD/Include
-    ${suitesparse_SOURCE_DIR}/SuiteSparse_config
+set(AMD_INCLUDE_DIR "${HOMA_SUITESPARSE_SOURCE_DIR}/AMD/Include" CACHE PATH "AMD include directory" FORCE)
+set(SUITESPARSE_CONFIG_INCLUDE_DIR "${HOMA_SUITESPARSE_SOURCE_DIR}/SuiteSparse_config" CACHE PATH "SuiteSparse_config include directory" FORCE)
+set(SUITESPARSE_INCLUDE_DIRS
+    "${AMD_INCLUDE_DIR}"
+    "${SUITESPARSE_CONFIG_INCLUDE_DIR}"
     CACHE PATH "SuiteSparse include directories"
+    FORCE
 )
 
-# Set library list based on what was built (static or shared)
-if(TARGET CHOLMOD_static)
-    set(SUITESPARSE_LIBRARIES CHOLMOD_static AMD_static COLAMD_static CAMD_static CCOLAMD_static SuiteSparseConfig_static CACHE STRING "SuiteSparse libraries")
+if(TARGET AMD_static)
+    set(AMD_LIBRARY AMD_static CACHE STRING "AMD library" FORCE)
+    set(SUITESPARSE_CONFIG_LIBRARY SuiteSparseConfig_static CACHE STRING "SuiteSparse_config library" FORCE)
+    set(SUITESPARSE_LIBRARIES AMD_static SuiteSparseConfig_static CACHE STRING "SuiteSparse libraries" FORCE)
 else()
-    set(SUITESPARSE_LIBRARIES CHOLMOD AMD COLAMD CAMD CCOLAMD SuiteSparseConfig CACHE STRING "SuiteSparse libraries")
+    set(AMD_LIBRARY AMD CACHE STRING "AMD library" FORCE)
+    set(SUITESPARSE_CONFIG_LIBRARY SuiteSparseConfig CACHE STRING "SuiteSparse_config library" FORCE)
+    set(SUITESPARSE_LIBRARIES AMD SuiteSparseConfig CACHE STRING "SuiteSparse libraries" FORCE)
 endif()
 
-# Set variables that FindSuiteSparse.cmake expects
-set(SuiteSparse_FOUND TRUE CACHE BOOL "SuiteSparse found")
-set(SUITESPARSE_FOUND TRUE CACHE BOOL "SuiteSparse found")
+set(SuiteSparse_FOUND TRUE CACHE BOOL "SuiteSparse found" FORCE)
+set(SUITESPARSE_FOUND TRUE CACHE BOOL "SuiteSparse found" FORCE)
 
-# Set individual component variables that FindSuiteSparse.cmake looks for
-set(AMD_INCLUDE_DIR ${suitesparse_SOURCE_DIR}/AMD/Include CACHE PATH "AMD include directory")
-set(CAMD_INCLUDE_DIR ${suitesparse_SOURCE_DIR}/CAMD/Include CACHE PATH "CAMD include directory")
-set(COLAMD_INCLUDE_DIR ${suitesparse_SOURCE_DIR}/COLAMD/Include CACHE PATH "COLAMD include directory")
-set(CCOLAMD_INCLUDE_DIR ${suitesparse_SOURCE_DIR}/CCOLAMD/Include CACHE PATH "CCOLAMD include directory")
-set(CHOLMOD_INCLUDE_DIR ${suitesparse_SOURCE_DIR}/CHOLMOD/Include CACHE PATH "CHOLMOD include directory")
-set(SUITESPARSE_CONFIG_INCLUDE_DIR ${suitesparse_SOURCE_DIR}/SuiteSparse_config CACHE PATH "SuiteSparse_config include directory")
-
-# Set library variables based on what was built
-if(TARGET CHOLMOD_static)
-    set(AMD_LIBRARY AMD_static CACHE STRING "AMD library")
-    set(CAMD_LIBRARY CAMD_static CACHE STRING "CAMD library")
-    set(COLAMD_LIBRARY COLAMD_static CACHE STRING "COLAMD library")
-    set(CCOLAMD_LIBRARY CCOLAMD_static CACHE STRING "CCOLAMD library")
-    set(CHOLMOD_LIBRARY CHOLMOD_static CACHE STRING "CHOLMOD library")
-    set(SUITESPARSE_CONFIG_LIBRARY SuiteSparseConfig_static CACHE STRING "SuiteSparse_config library")
-else()
-    set(AMD_LIBRARY AMD CACHE STRING "AMD library")
-    set(CAMD_LIBRARY CAMD CACHE STRING "CAMD library")
-    set(COLAMD_LIBRARY COLAMD CACHE STRING "COLAMD library")
-    set(CCOLAMD_LIBRARY CCOLAMD CACHE STRING "CCOLAMD library")
-    set(CHOLMOD_LIBRARY CHOLMOD CACHE STRING "CHOLMOD library")
-    set(SUITESPARSE_CONFIG_LIBRARY SuiteSparseConfig CACHE STRING "SuiteSparse_config library")
-endif()
-
-message(STATUS "SuiteSparse CHOLMOD configured (CPU-only)")
+message(STATUS "SuiteSparse configured with AMD only")

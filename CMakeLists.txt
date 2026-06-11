@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project(Homa
         VERSION 0.1.0
@@ -7,64 +7,62 @@ project(Homa
 ################################################################################
 # HOMA OPTIONS
 ################################################################################
-option(HOMA_BUILD_BENCHMARKS   "Build benchmark executables"      ON)
-option(HOMA_BUILD_TESTS        "Build unit tests"                 ON)
-option(HOMA_BUILD_PYTHON       "Build Python bindings"            ON)
+option(HOMA_BUILD_BENCHMARKS   "Build benchmark executables"      OFF)
+option(HOMA_BUILD_TESTS        "Build unit tests"                 OFF)
+option(HOMA_BUILD_PYTHON       "Build Python bindings"            OFF)
 option(HOMA_WITH_CUDA          "Enable CUDA / GPU backend"        ON)
 option(HOMA_WITH_LLOYD_PATCHER "Enable Lloyd-clustering patcher"  ON)
-option(HOMA_WITH_SUITESPARSE   "SuiteSparse for benchmarks"       ON)
-option(HOMA_WITH_MKL           "Intel MKL PARDISO for benchmarks" ON)
+option(HOMA_WITH_PROFILE       "Use Profile for benchmark"        OFF)
+option(HOMA_EXAMPLE_WITH_CHOLMOD "Build CHOLMOD example"          ON)
+option(HOMA_EXAMPLE_WITH_MKL     "Build MKL example"              ON)
+option(HOMA_EXAMPLE_WITH_CUDSS   "Build cuDSS example"            ON)
 
-# CUDA is enabled either explicitly or when legacy options require it
-if(HOMA_WITH_CUDA)
+message(STATUS "HOMA_BUILD_BENCHMARKS: ${HOMA_BUILD_BENCHMARKS}")
+message(STATUS "HOMA_BUILD_TESTS: ${HOMA_BUILD_TESTS}")
+message(STATUS "HOMA_BUILD_PYTHON: ${HOMA_BUILD_PYTHON}")
+message(STATUS "HOMA_WITH_CUDA: ${HOMA_WITH_CUDA}")
+message(STATUS "HOMA_WITH_LLOYD_PATCHER: ${HOMA_WITH_LLOYD_PATCHER}")
+message(STATUS "HOMA_WITH_PROFILE: ${HOMA_WITH_PROFILE}")
+message(STATUS "HOMA_EXAMPLE_WITH_CHOLMOD: ${HOMA_EXAMPLE_WITH_CHOLMOD}")
+message(STATUS "HOMA_EXAMPLE_WITH_MKL: ${HOMA_EXAMPLE_WITH_MKL}")
+message(STATUS "HOMA_EXAMPLE_WITH_CUDSS: ${HOMA_EXAMPLE_WITH_CUDSS}")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+
+if((HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS) AND
+   NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND
+   "$ENV{CUDAARCHS}" STREQUAL "")
+    set(CMAKE_CUDA_ARCHITECTURES native CACHE STRING "CUDA architectures")
+endif()
+
+if(HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
     enable_language(CUDA)
+    message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 endif()
 
-# Legacy options used by the old build system (kept for transition period)
-option(${PROJECT_NAME}_WITH_SUITESPARSE "Use SuiteSparse for benchmark"        OFF)
-option(${PROJECT_NAME}_WITH_MKL        "Use Intel MKL PARDISO for benchmark"   OFF)
-option(${PROJECT_NAME}_WITH_PROFILE    "Use Profile for benchmark"             OFF)
-
-# Sync legacy options from HOMA_ prefix
-if(HOMA_WITH_SUITESPARSE)
-    set(${PROJECT_NAME}_WITH_SUITESPARSE ON CACHE BOOL "" FORCE)
-endif()
-if(HOMA_WITH_MKL)
-    set(${PROJECT_NAME}_WITH_MKL ON CACHE BOOL "" FORCE)
-endif()
-# Enable GLM experimental features globally
-add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
-
-# Language standards
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 if(HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
-    enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 20)
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CUDA_RESOLVE_DEVICE_SYMBOLS ON)
     set(CUDA_SEPARABLE_COMPILATION ON)
-    include(${CMAKE_SOURCE_DIR}/cmake/AutoDetectCudaArch.cmake)
 endif()
 
 ################################################################################
 # SECTION 1: Include Required Dependencies
 ################################################################################
 
-# ==============================================================================
-# Compiler Configuration
-# ==============================================================================
-# C++ compiler flags
 set(cxx_flags
         $<$<CXX_COMPILER_ID:MSVC>:-D_SCL_SECURE_NO_WARNINGS /openmp:experimental /MP /std:c++20 /bigobj>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-Wall -m64 -fopenmp -O3 -Wno-unused-function>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-Wall -m64 -fopenmp -O0 -g3 -Wno-unused-function>
 )
 
-# CUDA compiler flags
 set(MSVC_XCOMPILER_FLAGS "/openmp:experimental /MP /std:c++20 /Zi")
 
 set(cuda_flags
@@ -91,18 +89,11 @@ set(cuda_flags
         --ptxas-options=-v
 )
 
-# Apply flags to global targets (optional, or attached to specific targets later)
-# For this project, we'll attach them to our dependency interface so everyone gets them
 add_library(homa_flags INTERFACE)
 target_compile_options(homa_flags INTERFACE
         $<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>
         $<$<COMPILE_LANGUAGE:CUDA>:${cuda_flags}>
 )
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3")
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3")
-endif()
 
 # OpenMP
 find_package(OpenMP)
@@ -111,41 +102,9 @@ if (OpenMP_CXX_FOUND)
 endif()
 
 if(HOMA_WITH_CUDA OR HOMA_BUILD_BENCHMARKS)
-    # CUDA Toolkit (cuSPARSE, cuSOLVER)
     find_package(CUDAToolkit REQUIRED)
     target_link_libraries(homa_flags INTERFACE CUDA::cusparse CUDA::cusolver)
-
-    # cuDSS - Auto-detect correct version based on CUDA toolkit
-    string(REGEX MATCH "^[0-9]+" CUDA_VERSION_MAJOR "${CMAKE_CUDA_COMPILER_VERSION}")
-    message(STATUS "Detected CUDA toolkit version: ${CMAKE_CUDA_COMPILER_VERSION} (major: ${CUDA_VERSION_MAJOR})")
-
-    if(NOT WIN32 AND NOT cudss_DIR)
-        set(_cudss_search_paths
-                "/usr/lib/x86_64-linux-gnu/libcudss/${CUDA_VERSION_MAJOR}/cmake/cudss"
-                "/usr/lib/aarch64-linux-gnu/libcudss/${CUDA_VERSION_MAJOR}/cmake/cudss"
-                "/usr/local/cuda-${CUDA_VERSION_MAJOR}/lib64/cmake/cudss"
-        )
-        foreach(_path ${_cudss_search_paths})
-            if(EXISTS "${_path}/cudss-config.cmake")
-                set(cudss_DIR "${_path}" CACHE PATH "Path to cuDSS CMake config" FORCE)
-                message(STATUS "Auto-detected cuDSS for CUDA ${CUDA_VERSION_MAJOR} at: ${cudss_DIR}")
-                break()
-            endif()
-        endforeach()
-        unset(_cudss_search_paths)
-    endif()
-
-    find_package(cudss REQUIRED)
-    message(STATUS "Found cuDSS version ${cudss_VERSION} (Library: ${cudss_LIBRARY_DIR})")
-    target_link_directories(homa_flags INTERFACE ${cudss_LIBRARY_DIR})
-    target_link_libraries(homa_flags INTERFACE cudss)
-    target_compile_definitions(homa_flags INTERFACE USE_CUDSS)
 endif()
-
-# Disable Cereal (and other deps) warnings as errors and unnecessary targets
-set(WITH_WERROR OFF CACHE BOOL "Compile with '-Werror' C++ compiler flag" FORCE)
-set(BUILD_SANDBOX OFF CACHE BOOL "Build sandbox examples" FORCE)
-set(BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
 
 # Core deps — always needed for the homa library
 include(${CMAKE_SOURCE_DIR}/cmake/recipes/eigen.cmake)
@@ -168,48 +127,13 @@ add_library(homa_deps INTERFACE)
 target_link_libraries(homa_deps INTERFACE homa_flags)
 
 ################################################################################
-# SECTION 3: Configure Dependencies (formerly attached to main lib)
+# SECTION 3: Configure Dependencies
 ################################################################################
 
-# SuiteSparse
-# Note: suitesparse.cmake is included at line 96 which also includes openblas.cmake
-# for cross-platform BLAS/LAPACK detection
-if (${PROJECT_NAME}_WITH_SUITESPARSE)
-    # Add SuiteSparse to the dependencies target
-    # The suitesparse.cmake recipe sets SUITESPARSE_LIBRARIES and SUITESPARSE_INCLUDE_DIRS
-    if(NOT BLAS_LIBRARIES)
-        message(FATAL_ERROR "BLAS_LIBRARIES not set. Pass -DBLAS_LIBRARIES=...")
-    endif()
-    
-    target_link_libraries(homa_deps INTERFACE 
-        ${SUITESPARSE_LIBRARIES}
-        ${BLAS_LIBRARIES}
-        ${LAPACK_LIBRARIES}
-    )
-	if(OPENBLAS_INCLUDE_DIR)
-		target_include_directories(homa_deps INTERFACE ${OPENBLAS_INCLUDE_DIR})
-    endif()
-    target_include_directories(homa_deps INTERFACE ${SUITESPARSE_INCLUDE_DIRS})
-    target_compile_definitions(homa_deps INTERFACE USE_SUITESPARSE)
-    message(STATUS "CHOLMOD configured for CPU-only support")
-endif ()
-
-# Intel MKL PARDISO
-if(${PROJECT_NAME}_WITH_MKL)
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/find")
-    find_package(MKL REQUIRED)
-    target_link_libraries(homa_deps INTERFACE ${MKL_LIBRARIES})
-    target_include_directories(homa_deps INTERFACE ${MKL_INCLUDE_DIRS})
-    target_compile_definitions(homa_deps INTERFACE USE_MKL)
-    message(STATUS "Intel MKL PARDISO configured")
-endif()
-
-if(${PROJECT_NAME}_WITH_PROFILE)
+if(HOMA_WITH_PROFILE)
     target_compile_definitions(homa_deps INTERFACE USE_PROFILE)
 endif()
 
-
-# Print Eigen info for debugging
 if(TARGET Eigen3::Eigen)
     get_target_property(EIGEN_INCLUDES Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
     message(STATUS "=== EIGEN DEBUG ===")
@@ -217,9 +141,6 @@ if(TARGET Eigen3::Eigen)
     message(STATUS "===================")
 endif()
 
-################################################################################
-# homa: clean, CPU-only public library (always built)
-################################################################################
 set(_homa_sources
     src/ordering/homa.cpp
     src/ordering/cpu_ordering_with_patch.cpp
@@ -262,28 +183,14 @@ endif()
 add_library(Homa::homa ALIAS homa)
 
 if(HOMA_BUILD_TESTS)
-    # enable_testing() must be invoked from the top-level CMakeLists.txt for
-    # ctest run at the build root to discover tests registered via
-    # gtest_discover_tests in subdirectories.
     enable_testing()
     add_subdirectory(tests)
 endif()
 
 if(HOMA_BUILD_BENCHMARKS)
-# Create a header-only INTERFACE library for libigl-dependent code
-# Header-only ensures the code is compiled in the caller's translation unit,
-# avoiding ABI issues with Eigen across library boundaries
-add_library(libigl_utils INTERFACE)
-target_link_libraries(libigl_utils INTERFACE
-        igl::core
-        Eigen3::Eigen
-)
-target_include_directories(libigl_utils INTERFACE src/utils)
-
-
-################################################################################
-# SECTION 5: Create Development Targets (Executables)
-################################################################################
+    add_library(libigl_utils INTERFACE)
+    target_link_libraries(libigl_utils INTERFACE igl::core Eigen3::Eigen)
+    target_include_directories(libigl_utils INTERFACE src/utils)
     add_subdirectory(examples)
 
-endif() # HOMA_BUILD_BENCHMARKS
+endif()
