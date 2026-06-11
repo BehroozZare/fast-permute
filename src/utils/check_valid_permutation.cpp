@@ -2,7 +2,7 @@
 // Created by Behrooz on 2025-09-10.
 //
 
-#include "check_valid_permutation.h"
+#include "homa/utils/check_valid_permutation.h"
 #include <cassert>
 #include <iostream>
 #include <tuple>

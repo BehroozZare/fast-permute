@@ -2,7 +2,7 @@
 // Created by Behrooz on 2025-09-10.
 //
 
-#include "compute_inverse_perm.h"
+#include "homa/utils/compute_inverse_perm.h"
 #include <cassert>
 #include <iostream>
 

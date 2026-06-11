@@ -105,12 +105,15 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "\n=== CHOLMOD Results ===\n";
+    float def_total_ms = def_analysis_ms + +def_factorize_ms + def_solve_ms;
+    float homa_total_ms = homa_ordering_ms + homa_analysis_ms + homa_factorize_ms + homa_solve_ms;
     std::cout << std::left
               << std::setw(18) << ""                << std::setw(16) << "Solver-default" << "HOMA\n"
               << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"            << homa_ordering_ms  << "\n"
               << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def_analysis_ms  << homa_analysis_ms  << "\n"
               << std::setw(18) << "Factorize (ms):" << std::setw(16) << def_factorize_ms << homa_factorize_ms << "\n"
               << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def_solve_ms     << homa_solve_ms     << "\n"
+              << std::setw(18) << "Total (ms)    :" << std::setw(16) << def_total_ms << homa_total_ms << " (speedup =" << def_total_ms / homa_total_ms << ")\n"
               << std::setw(18) << "Residual      :" << std::setw(16) << def_residual     << homa_residual     << "\n";
 
     return 0;

@@ -2,7 +2,7 @@
 // Created by Behrooz on 2025-09-10.
 //
 
-#include "remove_diagonal.h"
+#include "homa/utils/remove_diagonal.h"
 #include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cassert>

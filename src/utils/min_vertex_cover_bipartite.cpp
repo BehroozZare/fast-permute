@@ -2,7 +2,7 @@
 // Created by Behrooz on 2025-09-10.
 //
 
-#include "min_vertex_cover_bipartite.h"
+#include "homa/utils/min_vertex_cover_bipartite.h"
 #include <queue>
 #include <unordered_map>
 #include <algorithm>

@@ -12,7 +12,7 @@
 
 #include <set>
 
-#include "../utils/min_vertex_cover_bipartite.h"
+#include "homa/utils/min_vertex_cover_bipartite.h"
 #include "spdlog/spdlog.h"
 
 namespace homa {
