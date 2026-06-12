@@ -136,12 +136,12 @@ function(_homa_mkl_download_wheel package_name platform_tag md5 blake2)
 
     set(wheel_name "${wheel_package_name}-${HOMA_MKL_VERSION}-py2.py3-none-${platform_tag}.whl")
     set(url "https://files.pythonhosted.org/packages/${digest_a}/${digest_b}/${digest_c}/${wheel_name}")
-    set(archive "${CMAKE_BINARY_DIR}/_deps/homa_mkl/${wheel_name}")
-    set(extract_dir "${CMAKE_BINARY_DIR}/_deps/homa_mkl/${wheel_package_name}")
+    set(archive "${HOMA_BINARY_DIR}/_deps/homa_mkl/${wheel_name}")
+    set(extract_dir "${HOMA_BINARY_DIR}/_deps/homa_mkl/${wheel_package_name}")
     set(marker "${extract_dir}/.homa_extracted")
 
     if(NOT EXISTS "${marker}")
-        file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/_deps/homa_mkl")
+        file(MAKE_DIRECTORY "${HOMA_BINARY_DIR}/_deps/homa_mkl")
         message(STATUS "Downloading Intel MKL wheel: ${wheel_name}")
         file(DOWNLOAD "${url}" "${archive}"
             EXPECTED_MD5 "${md5}"

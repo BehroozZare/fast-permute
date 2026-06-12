@@ -4,7 +4,10 @@ project(Homa
         VERSION 0.1.0
         LANGUAGES C CXX)
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
+set(HOMA_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(HOMA_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+
+if(PROJECT_IS_TOP_LEVEL AND NOT CMAKE_CONFIGURATION_TYPES AND "${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif ()
 
@@ -37,7 +40,9 @@ message(STATUS "HOMA_WITH_LLOYD_PATCHER: ${HOMA_WITH_LLOYD_PATCHER}")
 message(STATUS "HOMA_WITH_PROFILE: ${HOMA_WITH_PROFILE}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+if(PROJECT_IS_TOP_LEVEL)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+endif()
 
 
 if(_homa_needs_cuda AND
@@ -117,14 +122,14 @@ if(_homa_needs_cuda)
 endif()
 
 # Core deps — always needed for the homa library
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/eigen.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/metis.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/spdlog.cmake)
+include(${HOMA_SOURCE_DIR}/cmake/recipes/eigen.cmake)
+include(${HOMA_SOURCE_DIR}/cmake/recipes/metis.cmake)
+include(${HOMA_SOURCE_DIR}/cmake/recipes/spdlog.cmake)
 # SuiteSparse/AMD is always needed: cpu_ordering_with_patch uses amd.h for local ordering
-include(${CMAKE_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
+include(${HOMA_SOURCE_DIR}/cmake/recipes/suitesparse.cmake)
 
 if(HOMA_WITH_LLOYD_PATCHER)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/lloyd_clustering.cmake)
+    include(${HOMA_SOURCE_DIR}/cmake/recipes/lloyd_clustering.cmake)
 endif()
 
 if(HOMA_WITH_MKL)
@@ -136,27 +141,26 @@ if(HOMA_WITH_MKL)
     set_property(CACHE HOMA_MKL_INTERFACE PROPERTY STRINGS lp64)
     set_property(CACHE HOMA_MKL_THREADING PROPERTY STRINGS intel sequential)
     set_property(CACHE HOMA_MKL_LINKING PROPERTY STRINGS sdl)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/mkl.cmake)
+    include(${HOMA_SOURCE_DIR}/cmake/recipes/mkl.cmake)
 endif()
 
 if(HOMA_WITH_CHOLMOD)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/cholmod.cmake)
+    include(${HOMA_SOURCE_DIR}/cmake/recipes/cholmod.cmake)
 endif()
 
 if(HOMA_WITH_CUDSS)
     set(HOMA_CUDSS_ALLOW_DOWNLOAD ON CACHE BOOL "Download NVIDIA cuDSS wheels when an installed cuDSS is not found")
     set(HOMA_CUDSS_VERSION "0.7.1.6" CACHE STRING "NVIDIA cuDSS wheel fallback version")
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/cudss.cmake)
+    include(${HOMA_SOURCE_DIR}/cmake/recipes/cudss.cmake)
 endif()
 
 if(HOMA_BUILD_EXAMPLE)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/cli11.cmake)
-    include(${CMAKE_SOURCE_DIR}/cmake/recipes/libigl.cmake)
+    include(${HOMA_SOURCE_DIR}/cmake/recipes/cli11.cmake)
+    include(${HOMA_SOURCE_DIR}/cmake/recipes/libigl.cmake)
 endif()
 
 # Create a dependency interface target to hold configuration
 add_library(homa_deps INTERFACE)
-target_link_libraries(homa_deps INTERFACE homa_flags)
 
 ################################################################################
 # SECTION 3: Configure Dependencies
@@ -208,6 +212,7 @@ target_link_libraries(homa
         spdlog::spdlog
         metis
     PRIVATE
+        homa_flags
         SuiteSparse::AMD
 )
 target_include_directories(homa PRIVATE ${AMD_INCLUDE_DIR} ${SUITESPARSE_CONFIG_INCLUDE_DIR})
@@ -215,6 +220,10 @@ target_compile_definitions(homa PUBLIC
     $<$<CONFIG:Debug>:DEBUG>
     $<$<CONFIG:Release>:NDEBUG>
 )
+
+if(_homa_needs_cuda)
+    target_link_libraries(homa PUBLIC CUDA::cudart)
+endif()
 
 if(HOMA_WITH_LLOYD_PATCHER)
     target_link_libraries(homa PRIVATE mesh_clustering_lib)

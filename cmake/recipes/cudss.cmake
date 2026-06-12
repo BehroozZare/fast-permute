@@ -109,12 +109,12 @@ function(_homa_cudss_download_wheel)
     endif()
 
     set(_wheel_name "nvidia_cudss_cu12-${HOMA_CUDSS_VERSION}-py3-none-${_platform_tag}.whl")
-    set(_archive "${CMAKE_BINARY_DIR}/_deps/homa_cudss/${_wheel_name}")
-    set(_extract_dir "${CMAKE_BINARY_DIR}/_deps/homa_cudss/nvidia_cudss_cu12")
+    set(_archive "${HOMA_BINARY_DIR}/_deps/homa_cudss/${_wheel_name}")
+    set(_extract_dir "${HOMA_BINARY_DIR}/_deps/homa_cudss/nvidia_cudss_cu12")
     set(_marker "${_extract_dir}/.homa_extracted_${HOMA_CUDSS_VERSION}_${_platform_tag}")
 
     if(NOT EXISTS "${_marker}")
-        file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/_deps/homa_cudss")
+        file(MAKE_DIRECTORY "${HOMA_BINARY_DIR}/_deps/homa_cudss")
         message(STATUS "Downloading NVIDIA cuDSS wheel: ${_wheel_name}")
         file(DOWNLOAD "${_wheel_url}" "${_archive}"
             EXPECTED_HASH SHA256=${_wheel_hash}
