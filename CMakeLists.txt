@@ -144,6 +144,8 @@ if(HOMA_WITH_CHOLMOD)
 endif()
 
 if(HOMA_WITH_CUDSS)
+    set(HOMA_CUDSS_ALLOW_DOWNLOAD ON CACHE BOOL "Download NVIDIA cuDSS wheels when an installed cuDSS is not found")
+    set(HOMA_CUDSS_VERSION "0.7.1.6" CACHE STRING "NVIDIA cuDSS wheel fallback version")
     include(${CMAKE_SOURCE_DIR}/cmake/recipes/cudss.cmake)
 endif()
 

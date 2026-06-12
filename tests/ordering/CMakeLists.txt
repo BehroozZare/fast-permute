@@ -4,5 +4,11 @@ if(HOMA_BUILD_TESTS)
     target_include_directories(test_patch_ordering_etree PRIVATE
         ${CMAKE_SOURCE_DIR}/include
     )
+    if(COMMAND homa_configure_mkl_runtime)
+        homa_configure_mkl_runtime(test_patch_ordering_etree)
+    endif()
+    if(COMMAND homa_configure_cudss_runtime)
+        homa_configure_cudss_runtime(test_patch_ordering_etree)
+    endif()
     gtest_discover_tests(test_patch_ordering_etree)
 endif()

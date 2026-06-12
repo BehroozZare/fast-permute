@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    name: ${{ matrix.os }} Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022]
+
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+      CTEST_OUTPUT_ON_FAILURE: 1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.35
+        with:
+          cuda: "12.6.3"
+          method: network
+          log-file-suffix: ${{ matrix.os }}.txt
+
+      - name: Show tool versions
+        run: cmake --version && nvcc --version
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DHOMA_BUILD_EXAMPLE=ON -DHOMA_BUILD_TESTS=ON -DHOMA_WITH_CHOLMOD=ON -DHOMA_WITH_MKL=ON -DHOMA_WITH_CUDSS=ON -DHOMA_WITH_CUDA=ON "-DCMAKE_CUDA_ARCHITECTURES=75;80;89;90"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
