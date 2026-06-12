@@ -20,3 +20,4 @@ scripts/*.obj
 # GUI / runtime state files (ImGui, Polyscope, etc.)
 imgui.ini
 .polyscope.ini
+*.mtx
