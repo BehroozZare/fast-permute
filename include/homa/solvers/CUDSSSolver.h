@@ -3,7 +3,7 @@
 
 #ifdef USE_CUDSS
 
-#include "LinSysSolver.hpp"
+#include <homa/solvers/LinSysSolver.h>
 #include <cuda.h>
 #include <cudss.h>
 #include <Eigen/Eigen>

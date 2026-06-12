@@ -7,7 +7,7 @@
 
 #ifdef USE_CHOLMOD
 
-#include "CHOLMODSolver.hpp"
+#include <homa/solvers/CHOLMODSolver.h>
 #include <cassert>
 #include <iostream>
 #include "omp.h"

@@ -5,7 +5,7 @@
 
 #ifdef USE_MKL
 
-#include "MKLSolver.hpp"
+#include <homa/solvers/MKLSolver.h>
 #include <cassert>
 #include <cstring>
 #include <iostream>

@@ -3,7 +3,7 @@
 
 #ifdef USE_MKL
 
-#include "LinSysSolver.hpp"
+#include <homa/solvers/LinSysSolver.h>
 
 #include <mkl.h>
 #include <Eigen/Eigen>

@@ -1,17 +1,17 @@
-#include "LinSysSolver.hpp"
+#include <homa/solvers/LinSysSolver.h>
 #include <iostream>
 
 #ifdef USE_CHOLMOD
-#include "CHOLMODSolver.hpp"
+#include <homa/solvers/CHOLMODSolver.h>
 #endif
 
 #ifdef USE_CUDSS
-#include "CUDSSSolver.hpp"
+#include <homa/solvers/CUDSSSolver.h>
 #endif
 
 
 #ifdef USE_MKL
-#include "MKLSolver.hpp"
+#include <homa/solvers/MKLSolver.h>
 #endif
 
 

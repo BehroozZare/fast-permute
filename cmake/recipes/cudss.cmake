@@ -31,7 +31,7 @@ elseif(CUDAToolkit_VERSION)
     string(REGEX MATCH "^[0-9]+" HOMA_CUDSS_CUDA_VERSION_MAJOR "${CUDAToolkit_VERSION}")
 endif()
 
-message(STATUS "Configuring cuDSS for Homa examples")
+message(STATUS "Configuring cuDSS for Homa")
 if(HOMA_CUDSS_CUDA_VERSION_MAJOR)
     message(STATUS "Detected CUDA toolkit version: ${CMAKE_CUDA_COMPILER_VERSION} (major: ${HOMA_CUDSS_CUDA_VERSION_MAJOR})")
 endif()

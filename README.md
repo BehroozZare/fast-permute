@@ -26,27 +26,26 @@ target_link_libraries(my_target PRIVATE Homa::homa)
 
 ## Building the examples
 
-When benchmarks are enabled, solver examples are enabled by default. Disable
-the solvers you do not have installed.
+When examples are enabled, solver examples are built for the enabled solver
+backends. Disable the backends you do not have installed.
 
 ```bash
 # CHOLMOD (requires SuiteSparse)
 cmake --preset release \
-  -DHOMA_BUILD_BENCHMARKS=ON \
-  -DHOMA_EXAMPLE_WITH_CHOLMOD=ON
+  -DHOMA_BUILD_EXAMPLE=ON \
+  -DHOMA_WITH_CHOLMOD=ON
 cmake --build --preset release
 
 # MKL PARDISO (uses installed MKL or the MKL wheel fallback)
 cmake --preset release \
-  -DHOMA_BUILD_BENCHMARKS=ON \
-  -DHOMA_EXAMPLE_WITH_MKL=ON
+  -DHOMA_BUILD_EXAMPLE=ON \
+  -DHOMA_WITH_MKL=ON
 cmake --build --preset release
 
 # cuDSS (requires CUDA + cuDSS)
 cmake --preset release \
-  -DHOMA_BUILD_BENCHMARKS=ON \
-  -DHOMA_EXAMPLE_WITH_CUDSS=ON \
-  -DHOMA_WITH_CUDA=ON
+  -DHOMA_BUILD_EXAMPLE=ON \
+  -DHOMA_WITH_CUDSS=ON
 cmake --build --preset release
 ```
 
@@ -99,8 +98,8 @@ if the binary has not been built yet.
 ## Solver integration — 4-step API
 
 ```cpp
-#include <homa/ordering.h>          // homa::Ordering, homa::Options
-#include "LinSysSolver.hpp"         // homa::LinSysSolver (examples only)
+#include <homa/ordering.h>                  // homa::Ordering, homa::Options
+#include <homa/solvers/LinSysSolver.hpp>    // homa::LinSysSolver
 
 // 1. Build ordering
 homa::Ordering* ord = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);

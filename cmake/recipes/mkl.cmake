@@ -417,7 +417,7 @@ function(_homa_mkl_find_threading_runtime out_found out_runtime_dirs out_roots)
     endif()
 endfunction()
 
-message(STATUS "Configuring Intel MKL for Homa examples")
+message(STATUS "Configuring Intel MKL for Homa")
 
 set(_homa_mkl_roots)
 if(MKL_ROOT)

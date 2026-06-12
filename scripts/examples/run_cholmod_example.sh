@@ -8,7 +8,7 @@ BINARY="$(find "$REPO_ROOT/build" -type f -name "cholmod_example" 2>/dev/null | 
 if [ -z "$BINARY" ]; then
     echo "ERROR: cholmod_example binary not found under $REPO_ROOT/build/"
     echo "Build it first with:"
-    echo "  cmake --preset release -DHOMA_BUILD_BENCHMARKS=ON -DHOMA_EXAMPLE_WITH_CHOLMOD=ON"
+    echo "  cmake --preset release -DHOMA_BUILD_EXAMPLE=ON -DHOMA_WITH_CHOLMOD=ON"
     echo "  cmake --build --preset release"
     exit 1
 fi

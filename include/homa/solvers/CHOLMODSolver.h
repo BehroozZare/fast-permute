@@ -3,10 +3,11 @@
 
 #ifdef USE_CHOLMOD
 
-#include "LinSysSolver.hpp"
+#include <homa/solvers/LinSysSolver.h>
 
 #include <cholmod.h>
 #include <Eigen/Eigen>
+#include <string>
 #include <vector>
 
 namespace homa {

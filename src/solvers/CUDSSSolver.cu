@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include "CUDSSSolver.hpp"
+#include <homa/solvers/CUDSSSolver.h>
 
 #include <spdlog/spdlog.h>
 #include "omp.h"

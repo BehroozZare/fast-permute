@@ -8,7 +8,7 @@ BINARY="$(find "$REPO_ROOT/build" -type f -name "cudss_example" 2>/dev/null | he
 if [ -z "$BINARY" ]; then
     echo "ERROR: cudss_example binary not found under $REPO_ROOT/build/"
     echo "Build it first with:"
-    echo "  cmake --preset release -DHOMA_BUILD_BENCHMARKS=ON -DHOMA_EXAMPLE_WITH_CUDSS=ON"
+    echo "  cmake --preset release -DHOMA_BUILD_EXAMPLE=ON -DHOMA_WITH_CUDSS=ON"
     echo "  cmake --build --preset release"
     exit 1
 fi

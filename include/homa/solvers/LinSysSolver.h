@@ -1,5 +1,5 @@
 //
-//  LinSysSolver.hpp
+//  LinSysSolver.h
 //  IPC
 //
 //  Created by Minchen Li on 6/30/18.
@@ -10,6 +10,8 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <cassert>
+#include <string>
+#include <vector>
 
 
 namespace homa {

@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "homa/utils/SPD_cot_matrix.h"
-#include "LinSysSolver.hpp"
+#include <homa/solvers/LinSysSolver.h>
 #include "homa/ordering.h"
 #include "homa/types.h"
 #include "homa/utils/remove_diagonal.h"
