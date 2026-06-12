@@ -17,8 +17,7 @@
 namespace homa {
 
 enum class LinSysSolverType
-{
-    PARTH_SOLVER,
+{   
     CPU_CHOLMOD,
     CPU_MKL,
     GPU_CUDSS
