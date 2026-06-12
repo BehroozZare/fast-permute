@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-MESHES_DIR="$REPO_ROOT/examples/meshes"
+MESHES_DIR="$REPO_ROOT/input/meshes"
 
 BINARY="$(find "$REPO_ROOT/build" -type f -name "cudss_example" 2>/dev/null | head -1)"
 if [ -z "$BINARY" ]; then
