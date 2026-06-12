@@ -27,27 +27,31 @@ function(homa_configure_cudss_runtime target_name)
     endif()
 
     if(WIN32)
+        set(_runtime_dlls)
+
         foreach(_dll IN LISTS _runtime_files)
             if(EXISTS "${_dll}" AND _dll MATCHES "\\.dll$")
-                add_custom_command(TARGET ${target_name} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                            "${_dll}"
-                            "$<TARGET_FILE_DIR:${target_name}>"
-                    VERBATIM)
+                list(APPEND _runtime_dlls "${_dll}")
             endif()
         endforeach()
 
         foreach(_dir IN LISTS _runtime_dirs)
             if(EXISTS "${_dir}")
                 file(GLOB _cudss_runtime_dlls "${_dir}/*.dll")
-                foreach(_dll IN LISTS _cudss_runtime_dlls)
-                    add_custom_command(TARGET ${target_name} POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                                "${_dll}"
-                                "$<TARGET_FILE_DIR:${target_name}>"
-                        VERBATIM)
-                endforeach()
+                list(APPEND _runtime_dlls ${_cudss_runtime_dlls})
             endif()
+        endforeach()
+
+        if(_runtime_dlls)
+            list(REMOVE_DUPLICATES _runtime_dlls)
+        endif()
+
+        foreach(_dll IN LISTS _runtime_dlls)
+            add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${_dll}"
+                        "$<TARGET_FILE_DIR:${target_name}>"
+                VERBATIM)
         endforeach()
     endif()
 endfunction()
@@ -163,12 +167,78 @@ function(_homa_cudss_read_version includes)
     endif()
 endfunction()
 
+function(_homa_cudss_apply_imported_runtime wrapper_target imported_target)
+    set(_homa_cudss_runtime_files)
+    set(_homa_cudss_runtime_dirs)
+
+    foreach(_config IN ITEMS "" NOCONFIG DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+        if(_config STREQUAL "")
+            set(_location_property IMPORTED_LOCATION)
+        else()
+            set(_location_property IMPORTED_LOCATION_${_config})
+        endif()
+
+        get_target_property(_runtime_file ${imported_target} ${_location_property})
+        if(_runtime_file AND EXISTS "${_runtime_file}")
+            list(APPEND _homa_cudss_runtime_files "${_runtime_file}")
+            get_filename_component(_runtime_dir "${_runtime_file}" DIRECTORY)
+            list(APPEND _homa_cudss_runtime_dirs "${_runtime_dir}")
+        endif()
+    endforeach()
+
+    if(_homa_cudss_runtime_files)
+        list(REMOVE_DUPLICATES _homa_cudss_runtime_files)
+        set_property(TARGET ${wrapper_target} PROPERTY
+            homa_cudss_runtime_files "${_homa_cudss_runtime_files}")
+    endif()
+    if(_homa_cudss_runtime_dirs)
+        list(REMOVE_DUPLICATES _homa_cudss_runtime_dirs)
+        set_property(TARGET ${wrapper_target} PROPERTY
+            homa_cudss_runtime_dirs "${_homa_cudss_runtime_dirs}")
+    endif()
+endfunction()
+
 function(_homa_cudss_make_target include_dir libraries runtime_files runtime_dirs)
+    set(_homa_cudss_link_libraries "${libraries}")
+    set(_homa_cudss_runtime_files_arg "${runtime_files}")
+    set(_homa_cudss_primary_library)
+    set(_homa_cudss_primary_runtime)
+
+    if(_homa_cudss_link_libraries)
+        list(GET _homa_cudss_link_libraries 0 _homa_cudss_primary_library)
+    endif()
+    if(_homa_cudss_runtime_files_arg)
+        list(GET _homa_cudss_runtime_files_arg 0 _homa_cudss_primary_runtime)
+    endif()
+
     if(NOT TARGET cudss::cudss)
-        add_library(cudss::cudss INTERFACE IMPORTED)
+        if(WIN32 AND _homa_cudss_primary_library AND _homa_cudss_primary_runtime)
+            add_library(cudss::cudss SHARED IMPORTED GLOBAL)
+            set_target_properties(cudss::cudss PROPERTIES
+                IMPORTED_IMPLIB "${_homa_cudss_primary_library}"
+                IMPORTED_LOCATION "${_homa_cudss_primary_runtime}")
+        elseif(WIN32 AND _homa_cudss_primary_library)
+            add_library(cudss::cudss UNKNOWN IMPORTED GLOBAL)
+            set_target_properties(cudss::cudss PROPERTIES
+                IMPORTED_LOCATION "${_homa_cudss_primary_library}")
+        elseif(_homa_cudss_primary_library)
+            add_library(cudss::cudss SHARED IMPORTED GLOBAL)
+            set_target_properties(cudss::cudss PROPERTIES
+                IMPORTED_LOCATION "${_homa_cudss_primary_library}")
+        else()
+            add_library(cudss::cudss INTERFACE IMPORTED GLOBAL)
+        endif()
+
         set_target_properties(cudss::cudss PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${include_dir}"
-            INTERFACE_LINK_LIBRARIES "${libraries}")
+            INTERFACE_INCLUDE_DIRECTORIES "${include_dir}")
+
+        set(_homa_cudss_extra_libraries "${_homa_cudss_link_libraries}")
+        if(_homa_cudss_extra_libraries)
+            list(REMOVE_AT _homa_cudss_extra_libraries 0)
+            if(_homa_cudss_extra_libraries)
+                target_link_libraries(cudss::cudss INTERFACE ${_homa_cudss_extra_libraries})
+            endif()
+        endif()
     endif()
 
     if(NOT TARGET cudss)
@@ -386,9 +456,12 @@ endif()
 
 find_package(cudss CONFIG QUIET)
 
-if(cudss_FOUND AND TARGET cudss::cudss AND NOT TARGET cudss)
+if(cudss_FOUND AND TARGET cudss)
+    _homa_cudss_apply_imported_runtime(cudss cudss)
+elseif(cudss_FOUND AND TARGET cudss::cudss AND NOT TARGET cudss)
     add_library(cudss INTERFACE IMPORTED GLOBAL)
     target_link_libraries(cudss INTERFACE cudss::cudss)
+    _homa_cudss_apply_imported_runtime(cudss cudss::cudss)
 endif()
 
 set(_homa_cudss_roots)

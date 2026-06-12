@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include <homa/solvers/LinSysSolver.h>
+#include "homa/solvers/LinSysSolver.h"
 #include "homa/utils/check_valid_permutation.h"
 #include "homa/ordering.h"
 #include "homa/types.h"

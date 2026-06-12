@@ -159,6 +159,26 @@ if(HOMA_BUILD_EXAMPLE)
     include(${HOMA_SOURCE_DIR}/cmake/recipes/libigl.cmake)
 endif()
 
+function(homa_configure_runtime target_name)
+    if(NOT TARGET ${target_name})
+        message(FATAL_ERROR "homa_configure_runtime: target '${target_name}' does not exist")
+    endif()
+
+    get_property(_homa_runtime_configured TARGET ${target_name} PROPERTY homa_runtime_configured)
+    if(_homa_runtime_configured)
+        return()
+    endif()
+
+    if(COMMAND homa_configure_mkl_runtime)
+        homa_configure_mkl_runtime(${target_name})
+    endif()
+    if(COMMAND homa_configure_cudss_runtime)
+        homa_configure_cudss_runtime(${target_name})
+    endif()
+
+    set_property(TARGET ${target_name} PROPERTY homa_runtime_configured TRUE)
+endfunction()
+
 # Create a dependency interface target to hold configuration
 add_library(homa_deps INTERFACE)
 

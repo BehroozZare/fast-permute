@@ -20,7 +20,11 @@ FetchContent_Declare(homa
 FetchContent_MakeAvailable(homa)
 
 target_link_libraries(my_target PRIVATE Homa::homa)
+homa_configure_runtime(my_target)
 ```
+
+Call `homa_configure_runtime()` for executables that link Homa so Windows DLLs
+and Linux build RPATHs are set for enabled solver backends.
 
 ---
 

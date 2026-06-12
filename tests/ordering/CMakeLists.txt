@@ -4,11 +4,6 @@ if(HOMA_BUILD_TESTS)
     target_include_directories(test_patch_ordering_etree PRIVATE
         ${HOMA_SOURCE_DIR}/include
     )
-    if(COMMAND homa_configure_mkl_runtime)
-        homa_configure_mkl_runtime(test_patch_ordering_etree)
-    endif()
-    if(COMMAND homa_configure_cudss_runtime)
-        homa_configure_cudss_runtime(test_patch_ordering_etree)
-    endif()
+    homa_configure_runtime(test_patch_ordering_etree)
     gtest_discover_tests(test_patch_ordering_etree)
 endif()

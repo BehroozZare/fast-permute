@@ -20,12 +20,7 @@ function(configure_example_target target_name)
         $<$<AND:$<BOOL:${_homa_needs_cuda}>,$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>,$<CXX_COMPILER_ID:GNU>>:-G;-O0;-Xptxas=-O0;-lineinfo;-Xcompiler=-O0,-g3>
     )
 
-    if(COMMAND homa_configure_mkl_runtime)
-        homa_configure_mkl_runtime(${target_name})
-    endif()
-    if(COMMAND homa_configure_cudss_runtime)
-        homa_configure_cudss_runtime(${target_name})
-    endif()
+    homa_configure_runtime(${target_name})
 endfunction()
 
 # -----------------------------------------------------------------------------
