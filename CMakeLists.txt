@@ -113,7 +113,7 @@ endif()
 
 if(_homa_needs_cuda)
     find_package(CUDAToolkit REQUIRED)
-    target_link_libraries(homa_flags INTERFACE CUDA::cusparse CUDA::cusolver)
+    target_link_libraries(homa_flags INTERFACE CUDA::cudart CUDA::cusparse CUDA::cusolver)
 endif()
 
 # Core deps — always needed for the homa library
@@ -203,6 +203,7 @@ target_include_directories(homa
 )
 target_link_libraries(homa
     PUBLIC
+        homa_deps
         Eigen3::Eigen
         spdlog::spdlog
         metis

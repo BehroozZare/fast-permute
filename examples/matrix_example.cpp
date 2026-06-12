@@ -256,14 +256,12 @@ int main(int argc, char* argv[])
 {
     std::string input_matrix;
     std::string solver_name = "cholmod";
-    int         patch_size  = 512;
-    int         use_gpu     = 1;
+    int         patch_size  = 512;    
 
     CLI::App app{"Homa Matrix Market linear solver example"};
     app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
     app.add_option("-s,--solver", solver_name, "Solver backend: cholmod, mkl, cudss");
-    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
-    app.add_option("-g,--use_gpu", use_gpu, "Use GPU for HOMA ordering when available (0|1, default: 1)");
+    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");    
     CLI11_PARSE(app, argc, argv);
 
     SparseMatrix raw;
@@ -311,7 +309,7 @@ int main(int argc, char* argv[])
     const auto t0 = Clock::now();
 
     homa::Options opts;
-    opts.use_gpu             = (use_gpu != 0);
+    opts.use_gpu             = true;
     opts.patch_size          = patch_size;
     opts.use_patch_separator = true;
     opts.compute_etree       = (solver_type == homa::LinSysSolverType::GPU_CUDSS);
@@ -328,29 +326,30 @@ int main(int argc, char* argv[])
     StageTimes homa =
         run_solver_path(solver_type, solver_matrix, A, rhs, ord.perm, ord.etree, true);
 
+    float def_total_ms = 0.f;
+    float homa_total_ms = homa_ordering_ms;
     std::cout << "\n=== " << solver_display_name(solver_type) << " Matrix Results ===\n";
-    std::cout << std::left << std::fixed << std::setprecision(3)
-              << std::setw(18) << "" << std::setw(16) << "Solver-default"
-              << "HOMA\n"
-              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"
-              << homa_ordering_ms << "\n";
+    std::cout << std::left << std::fixed << std::setprecision(3) << std::setw(18) << "" << std::setw(16) << "Solver-default" << "HOMA\n"
+              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---" << homa_ordering_ms << "\n";
 
     if (solver_type == homa::LinSysSolverType::GPU_CUDSS) {
-        std::cout << std::setw(18) << "Reorder  (ms) :" << std::setw(16)
-                  << def.reorder_ms << homa.reorder_ms << "\n"
-                  << std::setw(18) << "Symbolic (ms) :" << std::setw(16)
-                  << def.analysis_ms << homa.analysis_ms << "\n";
+        std::cout << std::setw(18) << "Reorder  (ms) :" << std::setw(16) << def.reorder_ms << homa.reorder_ms << "\n"
+                  << std::setw(18) << "Symbolic (ms) :" << std::setw(16) << def.analysis_ms << homa.analysis_ms << "\n";
+        def_total_ms += def.reorder_ms + def.analysis_ms;
+        homa_total_ms += homa.reorder_ms + homa.analysis_ms;
+        
     } else {
-        std::cout << std::setw(18) << "Analysis (ms) :" << std::setw(16)
-                  << def.analysis_ms << homa.analysis_ms << "\n";
+        std::cout << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def.analysis_ms << homa.analysis_ms << "\n";
+        def_total_ms += def.analysis_ms;
+        homa_total_ms += homa.analysis_ms;
     }
 
-    std::cout << std::setw(18) << "Factorize (ms):" << std::setw(16)
-              << def.factorize_ms << homa.factorize_ms << "\n"
-              << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def.solve_ms
-              << homa.solve_ms << "\n"
-              << std::setw(18) << "Residual      :" << std::setw(16) << def.residual
-              << homa.residual << "\n";
+    def_total_ms += def.factorize_ms+ def.solve_ms;
+    homa_total_ms += homa.factorize_ms + homa.solve_ms;
+    std::cout << std::setw(18) << "Factorize (ms):" << std::setw(16) << def.factorize_ms << homa.factorize_ms << "\n"
+              << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def.solve_ms << homa.solve_ms << "\n"
+              << std::setw(18) << "Total (ms)    :" << std::setw(16) << def_total_ms << homa_total_ms << " (speedup =" << def_total_ms / homa_total_ms << ")\n"
+              << std::setw(18) << "Residual      :" << std::setw(16) << def.residual << homa.residual << "\n";
 
     return 0;
 }
