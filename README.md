@@ -57,13 +57,13 @@ Binaries land in `build/release/examples/`.
 
 ```bash
 # CHOLMOD
-./build/release/examples/cholmod_example -i examples/meshes/dragon.obj
+./build/release/examples/cholmod_example -i input/meshes/dragon.obj
 
 # MKL PARDISO
-./build/release/examples/mkl_example -i examples/meshes/dragon.obj
+./build/release/examples/mkl_example -i input/meshes/dragon.obj
 
 # cuDSS (GPU ordering enabled)
-./build/release/examples/cudss_example -i examples/meshes/dragon.obj -g 1
+./build/release/examples/cudss_example -i input/meshes/dragon.obj -g 1
 ```
 
 Optional flag: `-p <patch_size>` (default 512).
@@ -126,8 +126,3 @@ solver->solve(rhs, result);
 ```
 
 ---
-
-## Bundled meshes
-
-Five triangle meshes are included in `examples/meshes/`:
-`dragon.obj`, `giraffe.obj`, `torus.obj`, `bunnyhead.obj`, `cloth.obj`.
