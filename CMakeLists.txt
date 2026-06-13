@@ -225,12 +225,21 @@ target_include_directories(homa
     PUBLIC  include
     PRIVATE src
 )
+
+set(_homa_public_libs
+    homa_deps
+    Eigen3::Eigen
+    spdlog::spdlog
+)
+
+if(HOMA_WITH_MKL)
+    list(APPEND _homa_public_libs Homa::MKL)
+endif()
+
+list(APPEND _homa_public_libs metis)
+
 target_link_libraries(homa
-    PUBLIC
-        homa_deps
-        Eigen3::Eigen
-        spdlog::spdlog
-        metis
+    PUBLIC ${_homa_public_libs}
     PRIVATE
         homa_flags
         SuiteSparse::AMD
@@ -251,7 +260,6 @@ if(HOMA_WITH_LLOYD_PATCHER)
 endif()
 
 if(HOMA_WITH_MKL)
-    target_link_libraries(homa PUBLIC Homa::MKL)
     target_compile_definitions(homa PUBLIC USE_MKL)
 endif()
 
