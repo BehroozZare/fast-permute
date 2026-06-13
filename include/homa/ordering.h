@@ -1,4 +1,6 @@
 #pragma once
+#include <Eigen/Sparse>
+#include "homa/matrix_view.h"
 #include "homa/patcher.h"
 #include "homa/types.h"
 
@@ -13,6 +15,16 @@ namespace homa {
 /// @param Gi   CSR column indices, size Gp[n]
 OrderingResult compute_ordering(int n, const int *Gp, const int *Gi,
                                 const Options &opts = {});
+
+/// Convenience overload for sparse matrices. The diagonal is removed and the
+/// off-diagonal pattern is symmetrized before ordering.
+OrderingResult compute_ordering(const Eigen::SparseMatrix<double>& A,
+                                const Options& opts = {});
+
+/// Convenience overload for host sparse matrix views. Device views are rejected
+/// because the current ordering implementation consumes host graph arrays.
+OrderingResult compute_ordering(const SparseMatrixView& A,
+                                const Options& opts = {});
 
 /// Same as above but uses a caller-supplied patch assignment, skipping
 /// the internal patching step entirely.

@@ -1,4 +1,5 @@
 #include "homa/ordering.h"
+#include "homa/utils/remove_diagonal.h"
 #include "ordering/cpu_ordering_with_patch.h"
 #ifdef HOMA_WITH_LLOYD_PATCHER
 #include "patching/lloyd_patcher.h"
@@ -117,6 +118,48 @@ OrderingResult compute_ordering(int n, const int *Gp, const int *Gi,
 #endif
 
   return compute_ordering(n, Gp, Gi, node_to_patch, opts);
+}
+
+OrderingResult compute_ordering(const Eigen::SparseMatrix<double>& A,
+                                const Options& opts) {
+  if (A.rows() != A.cols()) {
+    throw std::invalid_argument(
+        "homa::compute_ordering: sparse matrix must be square");
+  }
+
+  Eigen::SparseMatrix<double> compressed = A;
+  compressed.makeCompressed();
+
+  std::vector<int> Gp, Gi;
+  remove_diagonal(static_cast<int>(compressed.rows()),
+                  compressed.outerIndexPtr(),
+                  compressed.innerIndexPtr(),
+                  Gp,
+                  Gi);
+  return compute_ordering(static_cast<int>(compressed.rows()),
+                          Gp.data(),
+                          Gi.data(),
+                          opts);
+}
+
+OrderingResult compute_ordering(const SparseMatrixView& A,
+                                const Options& opts) {
+  if (A.location != MemoryLocation::Host) {
+    throw std::invalid_argument(
+        "homa::compute_ordering: device matrix views are not supported");
+  }
+  if (A.rows <= 0 || A.cols <= 0 || A.rows != A.cols || A.nnz <= 0) {
+    throw std::invalid_argument(
+        "homa::compute_ordering: invalid sparse matrix dimensions");
+  }
+  if (A.outer == nullptr || A.inner == nullptr) {
+    throw std::invalid_argument(
+        "homa::compute_ordering: sparse matrix view has null pattern pointers");
+  }
+
+  std::vector<int> Gp, Gi;
+  remove_diagonal(A.rows, A.outer, A.inner, Gp, Gi);
+  return compute_ordering(A.rows, Gp.data(), Gi.data(), opts);
 }
 
 OrderingResult compute_ordering(int n, const int *Gp, const int *Gi,
