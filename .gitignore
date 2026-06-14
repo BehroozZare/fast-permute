@@ -21,3 +21,4 @@ scripts/*.obj
 imgui.ini
 .polyscope.ini
 *.mtx
+/scripts/examples/results
