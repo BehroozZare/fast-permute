@@ -4,12 +4,13 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MESHES_DIR="$REPO_ROOT/input/meshes"
 
-BINARY="$(find "$REPO_ROOT/build" -type f -name "cudss_example" 2>/dev/null | head -1)"
+BINARY="$(find "$REPO_ROOT/build/bin" -type f -name "cudss_example" 2>/dev/null | head -1)"
 if [ -z "$BINARY" ]; then
     echo "ERROR: cudss_example binary not found under $REPO_ROOT/build/"
     echo "Build it first with:"
-    echo "  cmake --preset release -DHOMA_BUILD_EXAMPLE=ON -DHOMA_WITH_CUDSS=ON"
-    echo "  cmake --build --preset release"
+    echo "  cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \\"
+    echo "        -DHOMA_BUILD_EXAMPLE=ON -DHOMA_WITH_CUDSS=ON"
+    echo "  cmake --build build"
     exit 1
 fi
 

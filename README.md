@@ -8,98 +8,7 @@ low-fill permutation bottom-up. The result plugs directly into CHOLMOD, Intel
 MKL PARDISO, or NVIDIA cuDSS with no solver-side changes.
 
 ---
-
-## Using Homa in your CMake project (FetchContent)
-
-```cmake
-include(FetchContent)
-FetchContent_Declare(homa
-    GIT_REPOSITORY https://github.com/BehroozZare/fast-permute.git
-    GIT_TAG        main
-)
-FetchContent_MakeAvailable(homa)
-
-target_link_libraries(my_target PRIVATE Homa::homa)
-homa_configure_runtime(my_target)
-```
-
-Call `homa_configure_runtime()` for executables that link Homa so Windows DLLs
-and Linux build RPATHs are set for enabled solver backends.
-
----
-
-## Building the examples
-
-When examples are enabled, solver examples are built for the enabled solver
-backends. Disable the backends you do not have installed.
-
-```bash
-# CHOLMOD (requires SuiteSparse)
-cmake --preset release \
-  -DHOMA_BUILD_EXAMPLE=ON \
-  -DHOMA_WITH_CHOLMOD=ON
-cmake --build --preset release
-
-# MKL PARDISO (uses installed MKL or the MKL wheel fallback)
-cmake --preset release \
-  -DHOMA_BUILD_EXAMPLE=ON \
-  -DHOMA_WITH_MKL=ON
-cmake --build --preset release
-
-# cuDSS (requires CUDA + cuDSS)
-cmake --preset release \
-  -DHOMA_BUILD_EXAMPLE=ON \
-  -DHOMA_WITH_CUDSS=ON
-cmake --build --preset release
-```
-
-Binaries land in `build/release/examples/`.
-
----
-
-## Running an example with the bundled dragon mesh
-
-```bash
-# CHOLMOD
-./build/release/examples/cholmod_example -i input/meshes/dragon.obj
-
-# MKL PARDISO
-./build/release/examples/mkl_example -i input/meshes/dragon.obj
-
-# cuDSS (GPU ordering enabled)
-./build/release/examples/cudss_example -i input/meshes/dragon.obj -g 1
-```
-
-Optional flag: `-p <patch_size>` (default 512).
-
-Each binary prints:
-
-```
-Ordering  : <ms>
-Analysis  : <ms>
-Factorize : <ms>
-Solve     : <ms>
-Residual  : <value>
-```
-
----
-
-## Runner scripts
-
-Convenience scripts iterate over all five bundled meshes automatically:
-
-```bash
-scripts/examples/run_cholmod_example.sh
-scripts/examples/run_mkl_example.sh
-scripts/examples/run_cudss_example.sh
-```
-
-Each script locates its binary under `build/` and exits with a clear message
-if the binary has not been built yet.
-
----
-
-## Solver integration - ergonomic API
+## Solver API
 
 ```cpp
 #include <homa/solvers/LinSysSolver.h>
@@ -148,5 +57,59 @@ homa::Options opts;
 opts.compute_etree = true;
 homa::OrderingResult ord = homa::compute_ordering(A, opts);
 ```
+---
+
+## Building the examples
+
+When examples are enabled, solver examples are built for the enabled solver
+backends. Disable the backends you do not have installed.
+
+```bash
+# CHOLMOD
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DHOMA_BUILD_EXAMPLE=ON -DHOMA_WITH_CHOLMOD=ON
+cmake --build build
+
+# MKL PARDISO
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DHOMA_BUILD_EXAMPLE=ON -DHOMA_WITH_MKL=ON
+cmake --build build
+
+# cuDSS
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DHOMA_BUILD_EXAMPLE=ON -DHOMA_WITH_CUDSS=ON
+cmake --build build
+```
+---
+
+### Running the examples
+
+```bash
+# CHOLMOD
+./build/bin/cholmod_example -i input/meshes/dragon.obj
+
+# MKL PARDISO
+./build/bin/mkl_example -i input/meshes/dragon.obj
+
+# cuDSS 
+./build/bin/cudss_example -i input/meshes/dragon.obj
+```
+
+Optional flag: `-p <patch_size>` (default 512).
+
+
+## Using Homa in your CMake project with FetchContent
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(homa
+    GIT_REPOSITORY https://github.com/BehroozZare/fast-permute.git
+    GIT_TAG        main
+)
+FetchContent_MakeAvailable(homa)
+
+target_link_libraries(my_target PRIVATE Homa::homa)
+homa_configure_runtime(my_target)
+```
+
+Call `homa_configure_runtime()` for executables that link Homa so Windows DLLs
+and Linux build RPATHs are set for enabled solver backends.
 
 ---
