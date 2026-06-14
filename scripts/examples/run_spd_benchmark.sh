@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------
-# Loop matrix_example over every .mtx file in input/ and write a
-# per-matrix JSON result to results/<solver>/<name>.json.
+# Loop matrix_example over every .mtx file recursively under input/
+# and write a per-matrix JSON result to
+# results/<solver>/<relpath>/<name>.json, mirroring the input
+# directory layout (so groups like input/HB/foo.mtx end up in
+# results/<solver>/HB/foo.json).
 #
 # Usage:
 #     scripts/examples/run_spd_benchmark.sh                (default solver: cudss)
@@ -16,7 +19,7 @@ SOLVER="${1:-cudss}"
 PATCH_SIZE="${2:-512}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$SCRIPT_DIR/../.."
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 INPUT_DIR="$REPO_ROOT/input"
 BINARY="$REPO_ROOT/build/bin/matrix_example"
 OUT_DIR="results/$SOLVER"
@@ -31,13 +34,18 @@ if [ ! -x "$BINARY" ]; then
     exit 1
 fi
 
-shopt -s nullglob
-mtx_files=("$INPUT_DIR"/*.mtx)
-shopt -u nullglob
+if [ ! -d "$INPUT_DIR" ]; then
+    echo "ERROR: input directory not found: \"$INPUT_DIR\""
+    exit 1
+fi
+
+mtx_files=()
+while IFS= read -r -d '' f; do
+    mtx_files+=("$f")
+done < <(find "$INPUT_DIR" -type f -name "*.mtx" -print0 | LC_ALL=C sort -z)
 
 if [ "${#mtx_files[@]}" -eq 0 ]; then
-    echo "ERROR: no .mtx files found in \"$INPUT_DIR\""
-    echo "Run scripts/download_suitesparse_spd.py first to populate it."
+    echo "ERROR: no .mtx files found under \"$INPUT_DIR\""    
     exit 1
 fi
 
@@ -47,12 +55,22 @@ COUNT=0
 
 for f in "${mtx_files[@]}"; do
     COUNT=$((COUNT + 1))
+    rel="${f#"$INPUT_DIR"/}"
+    rel_dir="$(dirname "$rel")"
     name="$(basename "$f" .mtx)"
+
+    if [ "$rel_dir" = "." ]; then
+        out_subdir="$OUT_DIR"
+    else
+        out_subdir="$OUT_DIR/$rel_dir"
+        mkdir -p "$out_subdir"
+    fi
+
     echo
     echo "============================================================"
-    echo "  Matrix: $(basename "$f")  |  solver: $SOLVER  |  patch: $PATCH_SIZE"
+    echo "  Matrix: $rel  |  solver: $SOLVER  |  patch: $PATCH_SIZE"
     echo "============================================================"
-    "$BINARY" -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --out "$OUT_DIR/${name}.json"
+    "$BINARY" -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --out "$out_subdir/${name}.json"
 done
 
 echo
