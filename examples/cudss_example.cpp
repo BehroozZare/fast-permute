@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <cuda_runtime.h>
 
 #include "homa/utils/SPD_cot_matrix.h"
 #include <homa/solvers/LinSysSolver.h>
