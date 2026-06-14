@@ -20,73 +20,13 @@
 #include "homa/types.h"
 #include "homa/utils/remove_diagonal.h"
 
-#include <spdlog/spdlog.h>
+#include "util.h"
 
-#ifdef USE_CUDSS
-#include <cuda_runtime.h>
-#endif
+#include <spdlog/spdlog.h>
 
 namespace {
 
 using SparseMatrix = Eigen::SparseMatrix<double>;
-
-#ifdef USE_CUDSS
-class GpuTimer {
-public:
-    GpuTimer()
-    {
-        cudaEventCreate(&start_);
-        cudaEventCreate(&stop_);
-    }
-
-    ~GpuTimer()
-    {
-        cudaEventDestroy(start_);
-        cudaEventDestroy(stop_);
-    }
-
-    void start() { cudaEventRecord(start_); }
-
-    double stop_ms()
-    {
-        cudaEventRecord(stop_);
-        cudaEventSynchronize(stop_);
-        float ms = 0.0f;
-        cudaEventElapsedTime(&ms, start_, stop_);
-        return static_cast<double>(ms);
-    }
-
-private:
-    cudaEvent_t start_{};
-    cudaEvent_t stop_{};
-};
-#endif
-
-struct StageTimes {
-    double reorder_ms   = 0.0;
-    double analysis_ms  = 0.0;
-    double factorize_ms = 0.0;
-    double solve_ms     = 0.0;
-    double residual     = 0.0;
-};
-
-std::string to_lower(std::string value)
-{
-    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-    });
-    return value;
-}
-
-bool matrix_market_symmetric(const std::string& filename)
-{
-    std::ifstream in(filename);
-    std::string   header;
-    std::getline(in, header);
-    header = to_lower(header);
-    return header.find(" symmetric") != std::string::npos ||
-           header.find(" hermitian") != std::string::npos;
-}
 
 SparseMatrix expand_symmetric_storage(const SparseMatrix& raw)
 {
@@ -108,47 +48,6 @@ SparseMatrix expand_symmetric_storage(const SparseMatrix& raw)
                          : SparseMatrix(raw.selfadjointView<Eigen::Upper>());
     expanded.makeCompressed();
     return expanded;
-}
-
-homa::LinSysSolverType solver_type_from_name(const std::string& solver_name)
-{
-    const std::string name = to_lower(solver_name);
-
-    if (name == "cholmod" || name == "cpu_cholmod") {
-        return homa::LinSysSolverType::CPU_CHOLMOD;
-    }
-    if (name == "mkl" || name == "pardiso" || name == "cpu_mkl") {
-        return homa::LinSysSolverType::CPU_MKL;
-    }
-    if (name == "cudss" || name == "gpu_cudss") {
-        return homa::LinSysSolverType::GPU_CUDSS;
-    }
-
-    throw std::invalid_argument("Unknown solver: " + solver_name);
-}
-
-std::string solver_display_name(homa::LinSysSolverType solver_type)
-{
-    switch (solver_type) {
-    case homa::LinSysSolverType::CPU_CHOLMOD:
-        return "CHOLMOD";
-    case homa::LinSysSolverType::CPU_MKL:
-        return "MKL PARDISO";
-    case homa::LinSysSolverType::GPU_CUDSS:
-        return "cuDSS";
-    default:
-        return "Unknown";
-    }
-}
-
-std::unique_ptr<homa::LinSysSolver> make_solver(homa::LinSysSolverType solver_type)
-{
-    std::unique_ptr<homa::LinSysSolver> solver(homa::LinSysSolver::create(solver_type));
-    if (!solver) {
-        throw std::runtime_error("Requested solver backend was not built: " +
-                                 solver_display_name(solver_type));
-    }
-    return solver;
 }
 
 SparseMatrix solver_matrix_for(homa::LinSysSolverType solver_type, const SparseMatrix& A)
@@ -190,8 +89,8 @@ void warm_up_if_needed(homa::LinSysSolverType solver_type,
         return;
     }
 
-#ifdef USE_CUDSS
-    std::unique_ptr<homa::LinSysSolver> solver = make_solver(solver_type);
+#ifdef USE_CUDSS    
+    std::unique_ptr<homa::LinSysSolver> solver(homa::LinSysSolver::create(solver_type));
     solver->setMatrix(solver_matrix.outerIndexPtr(),
                       solver_matrix.innerIndexPtr(),
                       solver_matrix.valuePtr(),
@@ -217,8 +116,8 @@ StageTimes run_solver_path(homa::LinSysSolverType solver_type,
                            bool                   use_homa_ordering)
 {
     StageTimes times;
-
-    std::unique_ptr<homa::LinSysSolver> solver = make_solver(solver_type);
+        
+    std::unique_ptr<homa::LinSysSolver> solver(homa::LinSysSolver::create(solver_type));
     solver->setMatrix(solver_matrix.outerIndexPtr(),
                       solver_matrix.innerIndexPtr(),
                       solver_matrix.valuePtr(),
@@ -256,12 +155,15 @@ int main(int argc, char* argv[])
 {
     std::string input_matrix;
     std::string solver_name = "cholmod";
-    int         patch_size  = 512;    
+    int         patch_size  = 512;
+    std::string output_json;
 
     CLI::App app{"Homa Matrix Market linear solver example"};
     app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
     app.add_option("-s,--solver", solver_name, "Solver backend: cholmod, mkl, cudss");
-    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");    
+    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
+    app.add_option("-o,--out", output_json,
+        "Optional JSON file to write benchmark results to (no output if empty)");
     CLI11_PARSE(app, argc, argv);
 
     SparseMatrix raw;
@@ -275,7 +177,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    SparseMatrix A = matrix_market_symmetric(input_matrix) ? expand_symmetric_storage(raw) : raw;
+    SparseMatrix A = is_matrix_market_symmetric(input_matrix) ? expand_symmetric_storage(raw) : raw;
     A.makeCompressed();
 
     homa::LinSysSolverType solver_type = homa::LinSysSolverType::CPU_CHOLMOD;
@@ -325,9 +227,18 @@ int main(int argc, char* argv[])
 
     StageTimes homa =
         run_solver_path(solver_type, solver_matrix, A, rhs, ord.perm, ord.etree, true);
+    homa.ordering_ms = homa_ordering_ms;
 
-    float def_total_ms = 0.f;
-    float homa_total_ms = homa_ordering_ms;
+    double def_total_ms  = def.ordering_ms  + def.factorize_ms  + def.solve_ms;
+    double homa_total_ms = homa.ordering_ms + homa.factorize_ms + homa.solve_ms;
+    if (solver_type == homa::LinSysSolverType::GPU_CUDSS) {
+        def_total_ms  += def.reorder_ms  + def.analysis_ms;
+        homa_total_ms += homa.reorder_ms + homa.analysis_ms;
+    } else {
+        def_total_ms  += def.analysis_ms;
+        homa_total_ms += homa.analysis_ms;
+    }
+
     std::cout << "\n=== " << solver_display_name(solver_type) << " Matrix Results ===\n";
     std::cout << std::left << std::fixed << std::setprecision(3) << std::setw(18) << "" << std::setw(16) << "Solver-default" << "HOMA\n"
               << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---" << homa_ordering_ms << "\n";
@@ -335,21 +246,28 @@ int main(int argc, char* argv[])
     if (solver_type == homa::LinSysSolverType::GPU_CUDSS) {
         std::cout << std::setw(18) << "Reorder  (ms) :" << std::setw(16) << def.reorder_ms << homa.reorder_ms << "\n"
                   << std::setw(18) << "Symbolic (ms) :" << std::setw(16) << def.analysis_ms << homa.analysis_ms << "\n";
-        def_total_ms += def.reorder_ms + def.analysis_ms;
-        homa_total_ms += homa.reorder_ms + homa.analysis_ms;
-        
     } else {
         std::cout << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def.analysis_ms << homa.analysis_ms << "\n";
-        def_total_ms += def.analysis_ms;
-        homa_total_ms += homa.analysis_ms;
     }
 
-    def_total_ms += def.factorize_ms+ def.solve_ms;
-    homa_total_ms += homa.factorize_ms + homa.solve_ms;
     std::cout << std::setw(18) << "Factorize (ms):" << std::setw(16) << def.factorize_ms << homa.factorize_ms << "\n"
               << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def.solve_ms << homa.solve_ms << "\n"
               << std::setw(18) << "Total (ms)    :" << std::setw(16) << def_total_ms << homa_total_ms << " (speedup =" << def_total_ms / homa_total_ms << ")\n"
               << std::setw(18) << "Residual      :" << std::setw(16) << def.residual << homa.residual << "\n";
+
+    if (!output_json.empty()) {
+        BenchmarkRecord rec;
+        rec.matrix_path      = input_matrix;
+        rec.solver_name      = solver_display_name(solver_type);
+        rec.n                = static_cast<int>(A.rows());
+        rec.nnz              = static_cast<long long>(A.nonZeros());
+        rec.patch_size       = patch_size;
+        rec.default_times    = def;
+        rec.homa_times       = homa;
+        rec.default_total_ms = def_total_ms;
+        rec.homa_total_ms    = homa_total_ms;
+        write_results_json(output_json, rec);
+    }
 
     return 0;
 }
