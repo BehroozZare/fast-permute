@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 #include <homa/solvers/CUDSSSolver.h>
 
 #include <spdlog/spdlog.h>
@@ -175,16 +176,19 @@ CUDSSSolver::CUDSSSolver()
         exit(EXIT_FAILURE);
     }
     
-    is_allocated = false;
+    is_allocated            = false;
+    owns_sparse_matrix_mem  = false;
+    owns_bvalues_mem        = false;
+    owns_xvalues_mem        = false;
 }
 
 void CUDSSSolver::clean_sparse_matrix_mem()
 {
-    if (rowOffsets_dev != nullptr)
+    if (owns_sparse_matrix_mem && rowOffsets_dev != nullptr)
         CUDA_ERROR(cudaFree(rowOffsets_dev));
-    if (colIndices_dev != nullptr)
+    if (owns_sparse_matrix_mem && colIndices_dev != nullptr)
         CUDA_ERROR(cudaFree(colIndices_dev));
-    if (values_dev != nullptr)
+    if (owns_sparse_matrix_mem && values_dev != nullptr)
         CUDA_ERROR(cudaFree(values_dev));
     if (A != nullptr)
         cudssMatrixDestroy(A);
@@ -193,6 +197,7 @@ void CUDSSSolver::clean_sparse_matrix_mem()
     values_dev     = nullptr;
     A              = nullptr;
     is_allocated   = false;
+    owns_sparse_matrix_mem = false;
 }
 
 void CUDSSSolver::clean_rhs_sol_mem()
@@ -201,14 +206,16 @@ void CUDSSSolver::clean_rhs_sol_mem()
         cudssMatrixDestroy(x_mat);
     if (b_mat != nullptr)
         cudssMatrixDestroy(b_mat);
-    if (xvalues_dev != nullptr)
+    if (owns_xvalues_mem && xvalues_dev != nullptr)
         CUDA_ERROR(cudaFree(xvalues_dev));
-    if (bvalues_dev != nullptr)
+    if (owns_bvalues_mem && bvalues_dev != nullptr)
         CUDA_ERROR(cudaFree(bvalues_dev));
     xvalues_dev = nullptr;
     bvalues_dev = nullptr;
     x_mat       = nullptr;
     b_mat       = nullptr;
+    owns_bvalues_mem = false;
+    owns_xvalues_mem = false;
 }
 
 
@@ -226,9 +233,11 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     
     // Log matrix properties for debugging
     spdlog::info("CUDSSSolver::setMatrix - N={}, NNZ={}", A_N, NNZ);
+    recordMatrixPattern(p, i, A_N, NNZ, SparseFormat::CSR, MemoryLocation::Host);
     
     // Check if reallocation is needed BEFORE updating member variables
-    bool needs_realloc = !is_allocated || this->NNZ != NNZ || this->N != A_N;
+    bool needs_realloc = !is_allocated || !owns_sparse_matrix_mem ||
+                         this->NNZ != NNZ || this->N != A_N;
     
     this->N   = A_N;
     this->NNZ = NNZ;
@@ -241,6 +250,10 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
         CUDA_ERROR(cudaMalloc((void**)&colIndices_dev, NNZ * sizeof(int)));
         CUDA_ERROR(cudaMalloc((void**)&values_dev, NNZ * sizeof(double)));
         is_allocated = true;
+        owns_sparse_matrix_mem = true;
+    } else if (A != nullptr) {
+        cudssMatrixDestroy(A);
+        A = nullptr;
     }
 
 
@@ -272,6 +285,94 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
         spdlog::error("CUDSSSolver::matrix creation failed with status: {}", status);
         exit(EXIT_FAILURE);
     }
+}
+
+void CUDSSSolver::setMatrix(SparseMatrixView& matrix)
+{
+    if (matrix.location == MemoryLocation::Host) {
+        setMatrix(matrix.outer,
+                  matrix.inner,
+                  matrix.values,
+                  matrix.rows,
+                  matrix.nnz);
+        return;
+    }
+
+    if (matrix.rows <= 0 || matrix.cols <= 0 || matrix.rows != matrix.cols ||
+        matrix.nnz <= 0) {
+        spdlog::error("CUDSSSolver::setMatrix(device) - Invalid dimensions: {}x{}, NNZ={}",
+                      matrix.rows,
+                      matrix.cols,
+                      matrix.nnz);
+        exit(EXIT_FAILURE);
+    }
+    if (matrix.outer == nullptr || matrix.inner == nullptr || matrix.values == nullptr) {
+        spdlog::error("CUDSSSolver::setMatrix(device) - Null pointer passed");
+        exit(EXIT_FAILURE);
+    }
+    if (matrix.format != SparseFormat::CSR) {
+        throw std::invalid_argument(
+            "CUDSSSolver::setMatrix(device) expects CSR device matrix views");
+    }
+
+    clean_sparse_matrix_mem();
+
+    this->N   = matrix.rows;
+    this->NNZ = matrix.nnz;
+    recordMatrixPattern(matrix.outer,
+                        matrix.inner,
+                        matrix.rows,
+                        matrix.nnz,
+                        matrix.format,
+                        MemoryLocation::Device);
+    rowOffsets_dev = matrix.outer;
+    colIndices_dev = matrix.inner;
+    values_dev     = matrix.values;
+    is_allocated   = true;
+    owns_sparse_matrix_mem = false;
+
+    auto status = cudssMatrixCreateCsr(&A,
+                                       N,
+                                       N,
+                                       NNZ,
+                                       rowOffsets_dev,
+                                       nullptr,
+                                       colIndices_dev,
+                                       values_dev,
+                                       CUDA_R_32I,
+                                       CUDA_R_64F,
+                                       CUDSS_MTYPE_SPD,
+                                       CUDSS_MVIEW_FULL,
+                                       CUDSS_BASE_ZERO);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::device matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void CUDSSSolver::copyDeviceMatrixPatternToHost()
+{
+    if (matrix_view_.location != MemoryLocation::Device) {
+        return;
+    }
+
+    if (matrix_view_.outer == nullptr || matrix_view_.inner == nullptr ||
+        N <= 0 || matrix_view_.nnz <= 0) {
+        throw std::runtime_error(
+            "CUDSSSolver::ordering cannot copy an invalid device matrix pattern");
+    }
+
+    owned_host_outer_.resize(static_cast<size_t>(N) + 1);
+    owned_host_inner_.resize(static_cast<size_t>(matrix_view_.nnz));
+
+    CUDA_ERROR(cudaMemcpy(owned_host_outer_.data(),
+                          matrix_view_.outer,
+                          (static_cast<size_t>(N) + 1) * sizeof(int),
+                          cudaMemcpyDeviceToHost));
+    CUDA_ERROR(cudaMemcpy(owned_host_inner_.data(),
+                          matrix_view_.inner,
+                          static_cast<size_t>(matrix_view_.nnz) * sizeof(int),
+                          cudaMemcpyDeviceToHost));
 }
 
 void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree)
@@ -414,6 +515,8 @@ void CUDSSSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, doub
     // Allocate device memory for N × nrhs matrices
     CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(double)));
     CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(double)));
+    owns_bvalues_mem = true;
+    owns_xvalues_mem = true;
     
     // Copy RHS to device (data is column-major)
     CUDA_ERROR(cudaMemcpy(
@@ -452,6 +555,85 @@ void CUDSSSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, doub
     clean_rhs_sol_mem();
 }
 
+void CUDSSSolver::innerSolveView(DenseMatrixView& rhs, DenseMatrixView& result)
+{
+    if (rhs.rows != N || result.rows != N || rhs.cols != result.cols) {
+        spdlog::error("CUDSSSolver::solve - incompatible dense dimensions");
+        exit(EXIT_FAILURE);
+    }
+    if (rhs.values == nullptr || result.values == nullptr) {
+        spdlog::error("CUDSSSolver::solve - Null dense pointer passed");
+        exit(EXIT_FAILURE);
+    }
+
+    const int nrhs   = rhs.cols;
+    const int rhs_ld = rhs.leading_dim == 0 ? rhs.rows : rhs.leading_dim;
+    const int res_ld = result.leading_dim == 0 ? result.rows : result.leading_dim;
+
+    if (rhs.location == MemoryLocation::Host && rhs_ld != rhs.rows) {
+        throw std::invalid_argument(
+            "CUDSSSolver::solve host RHS views must be packed column-major");
+    }
+    if (result.location == MemoryLocation::Host && res_ld != result.rows) {
+        throw std::invalid_argument(
+            "CUDSSSolver::solve host result views must be packed column-major");
+    }
+
+    spdlog::info("CUDSSSolver::solve - Matrix size: {}, nrhs: {}", N, nrhs);
+
+    clean_rhs_sol_mem();
+
+    if (rhs.location == MemoryLocation::Device) {
+        bvalues_dev = rhs.values;
+        owns_bvalues_mem = false;
+    } else {
+        CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(double)));
+        owns_bvalues_mem = true;
+        CUDA_ERROR(cudaMemcpy(bvalues_dev,
+                              rhs.values,
+                              N * nrhs * sizeof(double),
+                              cudaMemcpyHostToDevice));
+    }
+
+    if (result.location == MemoryLocation::Device) {
+        xvalues_dev = result.values;
+        owns_xvalues_mem = false;
+    } else {
+        CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(double)));
+        owns_xvalues_mem = true;
+    }
+
+    auto status = cudssMatrixCreateDn(
+        &b_mat, N, nrhs, rhs_ld, bvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    status = cudssMatrixCreateDn(
+        &x_mat, N, nrhs, res_ld, xvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    status = cudssExecute(
+        handle, CUDSS_PHASE_SOLVE, config, data, A, x_mat, b_mat);
+    if (status != CUDSS_STATUS_SUCCESS) {
+        spdlog::error("CUDSSSolver::solve failed with status: {}", status);
+        exit(EXIT_FAILURE);
+    }
+
+    if (result.location == MemoryLocation::Host) {
+        CUDA_ERROR(cudaMemcpy(result.values,
+                              xvalues_dev,
+                              N * nrhs * sizeof(double),
+                              cudaMemcpyDeviceToHost));
+    }
+
+    clean_rhs_sol_mem();
+}
+
 void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
 {
     // Validate input dimensions
@@ -466,6 +648,8 @@ void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
     clean_rhs_sol_mem();
     CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * sizeof(double)));
     CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * sizeof(double)));
+    owns_bvalues_mem = true;
+    owns_xvalues_mem = true;
     // Copying the memory
     CUDA_ERROR(cudaMemcpy(
         bvalues_dev, rhs.data(), N * sizeof(double), cudaMemcpyHostToDevice));
@@ -523,6 +707,8 @@ void CUDSSSolver::resetSolver()
         spdlog::error("CUDSSSolver::resetSolver - cudssDataCreate failed with status: {}", status);
         exit(EXIT_FAILURE);
     }
+
+    Base::initVariables();
     
     spdlog::info("CUDSSSolver::resetSolver - Solver state reset successfully");
 }

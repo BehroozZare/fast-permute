@@ -200,7 +200,7 @@ void warm_up_if_needed(homa::LinSysSolverType solver_type,
 
     std::vector<int> empty;
     solver->ordering(empty, empty);
-    solver->analyze_pattern(empty, empty);
+    solver->analyze_pattern();
     solver->factorize();
     Eigen::VectorXd sol;
     solver->solve(rhs, sol);
@@ -232,7 +232,7 @@ StageTimes run_solver_path(homa::LinSysSolverType solver_type,
                              use_homa_ordering ? etree : empty);
         });
         times.analysis_ms = time_step(solver_type, [&]() {
-            solver->analyze_pattern(empty, empty);
+            solver->analyze_pattern();
         });
     } else {
         times.analysis_ms = time_step(solver_type, [&]() {
@@ -306,7 +306,6 @@ int main(int argc, char* argv[])
         solver_type, solver_matrix, A, rhs, empty_perm, empty_etree, false);
 
     using Clock = std::chrono::high_resolution_clock;
-    const auto t0 = Clock::now();
 
     homa::Options opts;
     opts.use_gpu             = true;
@@ -315,6 +314,7 @@ int main(int argc, char* argv[])
     opts.compute_etree       = (solver_type == homa::LinSysSolverType::GPU_CUDSS);
     opts.local_method        = homa::Options::LocalMethod::AMD;
 
+    const auto t0 = Clock::now();
     homa::OrderingResult ord = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
     const double homa_ordering_ms =
         std::chrono::duration<double, std::milli>(Clock::now() - t0).count();

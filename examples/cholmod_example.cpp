@@ -3,13 +3,14 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 
 #include "homa/utils/SPD_cot_matrix.h"
 #include <homa/solvers/LinSysSolver.h>
 #include "homa/ordering.h"
 #include "homa/types.h"
-#include "homa/utils/remove_diagonal.h"
 #include "homa/utils/check_valid_permutation.h"
+#include "homa/utils/remove_diagonal.h"
 #include <igl/read_triangle_mesh.h>
 #include <spdlog/spdlog.h>
 
@@ -32,6 +33,7 @@ int main(int argc, char* argv[])
 
     Eigen::SparseMatrix<double> L;
     homa::computeSPD_cot_matrix(V, F, L);
+    L.makeCompressed();
     spdlog::info("Matrix: {}x{}, {} non-zeros", L.rows(), L.cols(), L.nonZeros());
 
     int n = static_cast<int>(L.rows());
@@ -42,20 +44,19 @@ int main(int argc, char* argv[])
 
     using Clock = std::chrono::high_resolution_clock;
     auto elapsed_ms = [](Clock::time_point a, Clock::time_point b) {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
+        return std::chrono::duration<double, std::milli>(b - a).count();
     };
 
     // --- Solver-default path (CHOLMOD internal METIS ordering) ---
-    long def_analysis_ms = 0, def_factorize_ms = 0, def_solve_ms = 0;
+    double def_analysis_ms = 0.0, def_factorize_ms = 0.0, def_solve_ms = 0.0;
     double def_residual = 0.0;
     {
         std::unique_ptr<homa::LinSysSolver> solver(
             homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD));
-        solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
+        solver->setMatrix(L);
 
-        std::vector<int> empty;
         auto t0 = Clock::now();
-        solver->analyze_pattern(empty, empty);
+        solver->analyze_pattern();
         def_analysis_ms = elapsed_ms(t0, Clock::now());
 
         t0 = Clock::now();
@@ -70,7 +71,7 @@ int main(int argc, char* argv[])
     }
 
     // --- HOMA path ---
-    long homa_ordering_ms = 0, homa_analysis_ms = 0, homa_factorize_ms = 0, homa_solve_ms = 0;
+    double homa_ordering_ms = 0.0, homa_analysis_ms = 0.0, homa_factorize_ms = 0.0, homa_solve_ms = 0.0;
     double homa_residual = 0.0;
     {
         homa::Options opts;
@@ -87,7 +88,7 @@ int main(int argc, char* argv[])
 
         std::unique_ptr<homa::LinSysSolver> solver(
             homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD));
-        solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
+        solver->setMatrix(L);
 
         t0 = Clock::now();
         solver->analyze_pattern(ord.perm, ord.etree);
@@ -105,9 +106,9 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "\n=== CHOLMOD Results ===\n";
-    float def_total_ms = def_analysis_ms + +def_factorize_ms + def_solve_ms;
-    float homa_total_ms = homa_ordering_ms + homa_analysis_ms + homa_factorize_ms + homa_solve_ms;
-    std::cout << std::left
+    double def_total_ms = def_analysis_ms + def_factorize_ms + def_solve_ms;
+    double homa_total_ms = homa_ordering_ms + homa_analysis_ms + homa_factorize_ms + homa_solve_ms;
+    std::cout << std::left << std::fixed << std::setprecision(3)
               << std::setw(18) << ""                << std::setw(16) << "Solver-default" << "HOMA\n"
               << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"            << homa_ordering_ms  << "\n"
               << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def_analysis_ms  << homa_analysis_ms  << "\n"

@@ -198,25 +198,42 @@ if(TARGET Eigen3::Eigen)
 endif()
 
 set(_homa_sources
-    src/ordering/homa.cpp
+    src/ordering/homa.cpp    
     src/ordering/cpu_ordering_with_patch.cpp
     src/ordering/amd_order_helper.cpp
     src/patching/metis_patcher.cpp
     src/utils/remove_diagonal.cpp
     src/utils/check_valid_permutation.cpp
     src/solvers/LinSysSolver.cpp
+    include/homa/solvers/LinSysSolver.h
+	include/homa/matrix_view.h
+	include/homa/ordering.h
+	include/homa/patcher.h
+	include/homa/types.h
+	include/homa/utils/check_valid_permutation.h
+	include/homa/utils/compress_hessian.h	
+	include/homa/utils/nvtx_helper.h
+	include/homa/utils/remove_diagonal.h
+	include/homa/utils/SPD_cot_matrix.h
 )
 if(HOMA_WITH_LLOYD_PATCHER)
     list(APPEND _homa_sources src/patching/lloyd_patcher.cpp)
 endif()
 if(HOMA_WITH_CHOLMOD)
-    list(APPEND _homa_sources src/solvers/CHOLMODSolver.cpp)
+    list(APPEND _homa_sources 
+        src/solvers/CHOLMODSolver.cpp
+        include/homa/solvers/CHOLMODSolver.h)
 endif()
 if(HOMA_WITH_MKL)
-    list(APPEND _homa_sources src/solvers/MKLSolver.cpp)
+    list(APPEND _homa_sources
+        src/solvers/MKLSolver.cpp
+        include/homa/solvers/MKLSolver.h)
 endif()
 if(HOMA_WITH_CUDSS)
-    list(APPEND _homa_sources src/solvers/CUDSSSolver.cu)
+    list(APPEND _homa_sources 
+        src/solvers/CUDSSSolver.cu
+        include/homa/solvers/CUDSSSolver.h
+        include/homa/utils/cuda_error_handler.h)
 endif()
 
 add_library(homa STATIC ${_homa_sources})

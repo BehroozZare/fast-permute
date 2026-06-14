@@ -99,34 +99,54 @@ if the binary has not been built yet.
 
 ---
 
-## Solver integration — 4-step API
+## Solver integration - ergonomic API
 
 ```cpp
-#include <homa/ordering.h>                  // homa::Ordering, homa::Options
-#include <homa/solvers/LinSysSolver.hpp>    // homa::LinSysSolver
+#include <homa/solvers/LinSysSolver.h>
 
-// 1. Build ordering
-homa::Ordering* ord = homa::Ordering::create(homa::DEMO_ORDERING_TYPE::PATCH_ORDERING);
+std::unique_ptr<homa::LinSysSolver> solver(
+    homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD));
+
 homa::Options opts;
 opts.patch_size = 512;
-ord->applyOptions(opts);
-ord->setGraph(Gp, Gi, n, nnz);
-ord->init();
 
-std::vector<int> perm, etree;
-ord->compute_permutation(perm, etree, /*for_gpu=*/false);
-
-// 2. Set matrix
-homa::LinSysSolver* solver = homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD);
-solver->setMatrix(p, i, x, n, nnz);
-
-// 3. Analyze pattern (symbolic factorization)
-solver->ordering(perm, etree);
-solver->analyze_pattern(perm, etree);
-
-// 4. Factorize and solve
+solver->setMatrix(A);        // Eigen::SparseMatrix<double>
+solver->ordering(opts);      // stores solver->ordering_result
+solver->analyze_pattern();   // consumes solver-owned ordering state
 solver->factorize();
 solver->solve(rhs, result);
+```
+
+`setMatrix(A)` borrows Eigen's compressed sparse arrays; `A` must be square,
+compressed, and outlive the solver analysis/factorization/solve using it.
+
+Raw pointer and device-aware view APIs are also available:
+
+```cpp
+solver->setMatrix(p, i, x, n, nnz);
+
+homa::SparseMatrixView Adev{n, n, nnz, d_rowptr, d_colind, d_values,
+                            homa::SparseFormat::CSR,
+                            homa::MemoryLocation::Device};
+solver->setMatrix(Adev); // cuDSS only
+```
+
+MKL expects lower-triangular storage:
+
+```cpp
+Eigen::SparseMatrix<double> A_lower = A.triangularView<Eigen::Lower>();
+A_lower.makeCompressed();
+solver->setMatrix(A_lower);
+```
+
+If you only want HOMA's permutation/tree for another solver stack, use the
+standalone ordering API. This works even when CHOLMOD, MKL, and cuDSS are not
+built:
+
+```cpp
+homa::Options opts;
+opts.compute_etree = true;
+homa::OrderingResult ord = homa::compute_ordering(A, opts);
 ```
 
 ---

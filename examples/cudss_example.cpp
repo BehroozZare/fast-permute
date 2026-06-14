@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
         solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
         std::vector<int> empty;
         solver->ordering(empty, empty);
-        solver->analyze_pattern(empty, empty);
+        solver->analyze_pattern();
         solver->factorize();
         Eigen::VectorXd sol;
         solver->solve(rhs, sol);
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
         def_reorder_ms = gpu_timer.stop_ms();
 
         gpu_timer.start();
-        solver->analyze_pattern(empty, empty); // cuDSS SYMBOLIC_FACTORIZATION phase
+        solver->analyze_pattern(); // cuDSS SYMBOLIC_FACTORIZATION phase
         def_symbolic_ms = gpu_timer.stop_ms();
 
         gpu_timer.start();
@@ -151,14 +151,12 @@ int main(int argc, char* argv[])
             homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
         solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
 
-        std::vector<int> empty;
-
         gpu_timer.start();
         solver->ordering(ord.perm, ord.etree); // cuDSS REORDERING phase (HOMA perm + etree)
         homa_reorder_ms = gpu_timer.stop_ms();
 
         gpu_timer.start();
-        solver->analyze_pattern(empty, empty); // cuDSS SYMBOLIC_FACTORIZATION phase
+        solver->analyze_pattern(); // cuDSS SYMBOLIC_FACTORIZATION phase
         homa_symbolic_ms = gpu_timer.stop_ms();
 
         gpu_timer.start();

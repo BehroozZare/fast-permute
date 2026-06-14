@@ -30,6 +30,7 @@ public:                // Access specifier
     void *Ai, *Ap, *Ax, *bx;
     ~CHOLMODSolver();
     CHOLMODSolver();  // Allow runtime choice
+    using Base::setMatrix;
     
     // GPU initialization methods
     void initializeGPU();

@@ -138,6 +138,7 @@ void MKLSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     releasePardisoMemory();
 
     assert(p[A_N] == NNZ);
+    recordMatrixPattern(p, i, A_N, NNZ, SparseFormat::CSC, MemoryLocation::Host);
     this->N = A_N;
     this->NNZ = NNZ;
     this->N_MKL = A_N;

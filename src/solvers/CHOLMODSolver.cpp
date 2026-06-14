@@ -185,6 +185,7 @@ void CHOLMODSolver::setMatrix(int*              p,
                               int               NNZ)
 {
     assert(p[A_N] == NNZ);
+    recordMatrixPattern(p, i, A_N, NNZ, SparseFormat::CSC, MemoryLocation::Host);
     this->N   = A_N;
     this->NNZ = NNZ;
 
@@ -410,6 +411,8 @@ void CHOLMODSolver::resetSolver()
     x_solve = NULL;
     Ai = Ap = Ax = NULL;
     bx           = NULL;
+
+    Base::initVariables();
 }
 
 void CHOLMODSolver::save_factor(
