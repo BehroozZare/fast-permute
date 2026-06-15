@@ -6,6 +6,7 @@
 #ifdef USE_MKL
 
 #include <homa/solvers/MKLSolver.h>
+#include "scalar_traits.h"
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -27,12 +28,14 @@ static_assert(sizeof(MKL_INT) == sizeof(int),
 #define HOMA_MKL_THREADING_LAYER MKL_THREADING_INTEL
 #endif
 
-MKLSolver::~MKLSolver()
+template <class Scalar>
+MKLSolver<Scalar>::~MKLSolver()
 {
     releasePardisoMemory();
 }
 
-MKLSolver::MKLSolver()
+template <class Scalar>
+MKLSolver<Scalar>::MKLSolver()
 {
     configureMKLRuntime();
     resetPardisoHandle();
@@ -46,7 +49,8 @@ MKLSolver::MKLSolver()
     Base::initVariables();
 }
 
-void MKLSolver::configureMKLRuntime()
+template <class Scalar>
+void MKLSolver<Scalar>::configureMKLRuntime()
 {
     static std::once_flag configure_once;
     std::call_once(configure_once, []() {
@@ -55,7 +59,8 @@ void MKLSolver::configureMKLRuntime()
     });
 }
 
-void MKLSolver::resetPardisoHandle()
+template <class Scalar>
+void MKLSolver<Scalar>::resetPardisoHandle()
 {
     for (int i = 0; i < 64; i++) {
         pt[i] = nullptr;
@@ -64,7 +69,8 @@ void MKLSolver::resetPardisoHandle()
     factorized_         = false;
 }
 
-void MKLSolver::releasePardisoMemory()
+template <class Scalar>
+void MKLSolver<Scalar>::releasePardisoMemory()
 {
     if (!has_pardiso_memory_) {
         return;
@@ -85,7 +91,8 @@ void MKLSolver::releasePardisoMemory()
     resetPardisoHandle();
 }
 
-void MKLSolver::setMKLConfigParam()
+template <class Scalar>
+void MKLSolver<Scalar>::setMKLConfigParam()
 {
     for (int i = 0; i < 64; i++) {
         iparm[i] = 0;
@@ -116,6 +123,9 @@ void MKLSolver::setMKLConfigParam()
     iparm[59] = 1;  /* Use in-core intel MKL pardiso */
 
     iparm[26] = 1;
+    // 0 = double precision, 1 = single precision (PARDISO consults this to
+    // interpret the void* matrix/rhs/solution buffers we pass below).
+    iparm[27] = detail::mkl_iparm27_v<Scalar>;
     iparm[34] = 1;  /* Zero-based indexing */
     iparm[30] = 0;
     iparm[35] = 0;
@@ -128,19 +138,21 @@ void MKLSolver::setMKLConfigParam()
     mtype = 2;  /* Real and SPD matrices */
 }
 
-void MKLSolver::clean_memory()
+template <class Scalar>
+void MKLSolver<Scalar>::clean_memory()
 {
     releasePardisoMemory();
 }
 
-void MKLSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
+template <class Scalar>
+void MKLSolver<Scalar>::setMatrix(int* p, int* i, Scalar* x, int A_N, int NNZ_in)
 {
     releasePardisoMemory();
 
-    assert(p[A_N] == NNZ);
-    recordMatrixPattern(p, i, A_N, NNZ, SparseFormat::CSC, MemoryLocation::Host);
+    assert(p[A_N] == NNZ_in);
+    recordMatrixPattern(p, i, A_N, NNZ_in, SparseFormat::CSC, MemoryLocation::Host);
     this->N = A_N;
-    this->NNZ = NNZ;
+    this->NNZ = NNZ_in;
     this->N_MKL = A_N;
 
     Ap = p;
@@ -148,7 +160,8 @@ void MKLSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     Ax = x;
 }
 
-void MKLSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+template <class Scalar>
+void MKLSolver<Scalar>::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     releasePardisoMemory();
     resetPardisoHandle();
@@ -178,8 +191,10 @@ void MKLSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::v
 
     phase = 11;
     error = 0;
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai,
-            perm.data(), &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
+    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL,
+            static_cast<void*>(Ax), Ap, Ai,
+            perm.data(), &nrhs, iparm, &msglvl,
+            static_cast<void*>(&ddum), static_cast<void*>(&ddum), &error);
 
     if (error != 0) {
         spdlog::error("MKL PARDISO: ERROR during symbolic factorization - code: {}", error);
@@ -192,7 +207,8 @@ void MKLSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::v
     spdlog::info("MKL PARDISO: Symbolic analysis complete");
 }
 
-void MKLSolver::innerFactorize(void)
+template <class Scalar>
+void MKLSolver<Scalar>::innerFactorize(void)
 {
     if (!has_pardiso_memory_) {
         throw std::runtime_error("MKL PARDISO factorize called before analyze_pattern");
@@ -200,8 +216,10 @@ void MKLSolver::innerFactorize(void)
 
     phase = 22;
     error = 0;
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai,
-            perm.data(), &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
+    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL,
+            static_cast<void*>(Ax), Ap, Ai,
+            perm.data(), &nrhs, iparm, &msglvl,
+            static_cast<void*>(&ddum), static_cast<void*>(&ddum), &error);
 
     L_NNZ = iparm[17];
 
@@ -215,13 +233,16 @@ void MKLSolver::innerFactorize(void)
     spdlog::info("MKL PARDISO: Numerical factorization complete, L_NNZ = {}", L_NNZ);
 }
 
-void MKLSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
+template <class Scalar>
+void MKLSolver<Scalar>::innerSolve(typename MKLSolver<Scalar>::Vec& rhs,
+                                   typename MKLSolver<Scalar>::Vec& result)
 {
     if (!factorized_) {
         throw std::runtime_error("MKL PARDISO solve called before factorize");
     }
 
-    double* x = (double*)mkl_calloc(rhs.size() * nrhs, sizeof(double), 64);
+    Scalar* x = static_cast<Scalar*>(
+        mkl_calloc(static_cast<size_t>(rhs.size()) * nrhs, sizeof(Scalar), 64));
     if (!x) {
         throw std::bad_alloc();
     }
@@ -230,8 +251,10 @@ void MKLSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
     error = 0;
     iparm[7] = 0; /* Max numbers of iterative refinement steps. */
 
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL, Ax, Ap, Ai,
-            perm.data(), &nrhs, iparm, &msglvl, rhs.data(), x, &error);
+    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL,
+            static_cast<void*>(Ax), Ap, Ai,
+            perm.data(), &nrhs, iparm, &msglvl,
+            static_cast<void*>(rhs.data()), static_cast<void*>(x), &error);
 
     if (error != 0) {
         spdlog::error("MKL PARDISO: ERROR during solve - code: {}", error);
@@ -239,33 +262,37 @@ void MKLSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
         throw std::runtime_error("Solve failed with error code: " + std::to_string(error));
     }
 
-    result = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(x, N);
+    result = Eigen::Map<Vec, Eigen::Unaligned>(x, N);
     mkl_free(x);
 }
 
-void MKLSolver::innerSolve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result)
+template <class Scalar>
+void MKLSolver<Scalar>::innerSolve(typename MKLSolver<Scalar>::Mat& rhs,
+                                   typename MKLSolver<Scalar>::Mat& result)
 {
     // Delegate to raw pointer version
     result.resize(rhs.rows(), rhs.cols());
     innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
 }
 
-void MKLSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data)
+template <class Scalar>
+void MKLSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data, int rows, int cols, Scalar* result_data)
 {
     // Solve column by column
     for (int c = 0; c < cols; c++) {
         // Map column c of input (column-major layout)
-        Eigen::VectorXd rhs_col = Eigen::Map<const Eigen::VectorXd>(rhs_data + c * rows, rows);
-        Eigen::VectorXd result_col(rows);
-        
+        Vec rhs_col = Eigen::Map<const Vec>(rhs_data + c * rows, rows);
+        Vec result_col(rows);
+
         innerSolve(rhs_col, result_col);
-        
+
         // Copy result to output column
-        memcpy(result_data + c * rows, result_col.data(), rows * sizeof(double));
+        std::memcpy(result_data + c * rows, result_col.data(), rows * sizeof(Scalar));
     }
 }
 
-void MKLSolver::resetSolver()
+template <class Scalar>
+void MKLSolver<Scalar>::resetSolver()
 {
     releasePardisoMemory();
     resetPardisoHandle();
@@ -280,10 +307,14 @@ void MKLSolver::resetSolver()
     Base::initVariables();
 }
 
-LinSysSolverType MKLSolver::type() const
+template <class Scalar>
+LinSysSolverType MKLSolver<Scalar>::type() const
 {
     return LinSysSolverType::CPU_MKL;
 }
+
+template class MKLSolver<float>;
+template class MKLSolver<double>;
 
 }  // namespace homa
 

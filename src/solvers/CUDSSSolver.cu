@@ -1,8 +1,6 @@
 //
-//  CHOLMODSolver.cpp
+//  CUDSSSolver.cu
 //  IPC
-//
-//  Created by Minchen Li on 6/22/18.
 //
 
 #ifdef USE_CUDSS
@@ -12,9 +10,11 @@
 #include <climits>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <homa/solvers/CUDSSSolver.h>
+#include "scalar_traits.h"
 
 #include <spdlog/spdlog.h>
 #include "omp.h"
@@ -69,7 +69,8 @@ bool parsePositiveIntEnv(const char* env_name, int& out_value)
 #endif
 } // namespace
 
-CUDSSSolver::~CUDSSSolver()
+template <class Scalar>
+CUDSSSolver<Scalar>::~CUDSSSolver()
 {
     cudssConfigDestroy(config);
     cudssDataDestroy(handle, data);
@@ -78,7 +79,8 @@ CUDSSSolver::~CUDSSSolver()
     cudssDestroy(handle);
 }
 
-CUDSSSolver::CUDSSSolver()
+template <class Scalar>
+CUDSSSolver<Scalar>::CUDSSSolver()
 {
     rowOffsets_dev = nullptr;
     colIndices_dev = nullptr;
@@ -95,7 +97,7 @@ CUDSSSolver::CUDSSSolver()
     NNZ            = 0;
     auto status = cudssCreate(&handle);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::constructor - cudssCreate failed with status: {}", status);
+        spdlog::error("CUDSSSolver::constructor - cudssCreate failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
@@ -120,13 +122,13 @@ CUDSSSolver::CUDSSSolver()
         } else if (mt_strict) {
             spdlog::error(
                 "CUDSSSolver: Failed to enable MT mode (status: {}) with strict mode enabled",
-                status);
+                static_cast<int>(status));
             exit(EXIT_FAILURE);
         } else {
             spdlog::warn(
                 "CUDSSSolver: Failed to enable MT mode (status: {}); falling back to "
                 "single-threaded reordering",
-                status);
+                static_cast<int>(status));
         }
     } else {
         spdlog::info(
@@ -136,7 +138,7 @@ CUDSSSolver::CUDSSSolver()
     
     status = cudssConfigCreate(&config);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::constructor - cudssConfigCreate failed with status: {}", status);
+        spdlog::error("CUDSSSolver::constructor - cudssConfigCreate failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
@@ -153,13 +155,13 @@ CUDSSSolver::CUDSSSolver()
             spdlog::error(
                 "CUDSSSolver: Failed to set CUDSS_CONFIG_HOST_NTHREADS (status: {}) with "
                 "strict mode enabled",
-                status);
+                static_cast<int>(status));
             exit(EXIT_FAILURE);
         } else {
             spdlog::warn(
                 "CUDSSSolver: Failed to set CUDSS_CONFIG_HOST_NTHREADS (status: {}); "
                 "continuing with cuDSS default thread policy",
-                status);
+                static_cast<int>(status));
         }
     }
 #else
@@ -172,7 +174,7 @@ CUDSSSolver::CUDSSSolver()
     
     status = cudssDataCreate(handle, &data);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::constructor - cudssDataCreate failed with status: {}", status);
+        spdlog::error("CUDSSSolver::constructor - cudssDataCreate failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
     
@@ -182,7 +184,8 @@ CUDSSSolver::CUDSSSolver()
     owns_xvalues_mem        = false;
 }
 
-void CUDSSSolver::clean_sparse_matrix_mem()
+template <class Scalar>
+void CUDSSSolver<Scalar>::clean_sparse_matrix_mem()
 {
     if (owns_sparse_matrix_mem && rowOffsets_dev != nullptr)
         CUDA_ERROR(cudaFree(rowOffsets_dev));
@@ -200,7 +203,8 @@ void CUDSSSolver::clean_sparse_matrix_mem()
     owns_sparse_matrix_mem = false;
 }
 
-void CUDSSSolver::clean_rhs_sol_mem()
+template <class Scalar>
+void CUDSSSolver<Scalar>::clean_rhs_sol_mem()
 {
     if (x_mat != nullptr)
         cudssMatrixDestroy(x_mat);
@@ -219,11 +223,12 @@ void CUDSSSolver::clean_rhs_sol_mem()
 }
 
 
-void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
+template <class Scalar>
+void CUDSSSolver<Scalar>::setMatrix(int* p, int* i, Scalar* x, int A_N, int NNZ_in)
 {
     // Validate input parameters
-    if (A_N <= 0 || NNZ <= 0) {
-        spdlog::error("CUDSSSolver::setMatrix - Invalid dimensions: N={}, NNZ={}", A_N, NNZ);
+    if (A_N <= 0 || NNZ_in <= 0) {
+        spdlog::error("CUDSSSolver::setMatrix - Invalid dimensions: N={}, NNZ={}", A_N, NNZ_in);
         exit(EXIT_FAILURE);
     }
     if (p == nullptr || i == nullptr || x == nullptr) {
@@ -232,23 +237,23 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     }
     
     // Log matrix properties for debugging
-    spdlog::info("CUDSSSolver::setMatrix - N={}, NNZ={}", A_N, NNZ);
-    recordMatrixPattern(p, i, A_N, NNZ, SparseFormat::CSR, MemoryLocation::Host);
     
+    spdlog::info("CUDSSSolver::setMatrix - N={}, NNZ={}", A_N, NNZ_in);
+    recordMatrixPattern(p, i, A_N, NNZ_in, SparseFormat::CSR, MemoryLocation::Host);
     // Check if reallocation is needed BEFORE updating member variables
     bool needs_realloc = !is_allocated || !owns_sparse_matrix_mem ||
-                         this->NNZ != NNZ || this->N != A_N;
     
+                         this->NNZ != NNZ_in || this->N != A_N;
     this->N   = A_N;
-    this->NNZ = NNZ;
+    this->NNZ = NNZ_in;
 
     // Allocating memory
     if (needs_realloc) {
         clean_sparse_matrix_mem();
         CUDA_ERROR(
             cudaMalloc((void**)&rowOffsets_dev, (A_N + 1) * sizeof(int)));
-        CUDA_ERROR(cudaMalloc((void**)&colIndices_dev, NNZ * sizeof(int)));
-        CUDA_ERROR(cudaMalloc((void**)&values_dev, NNZ * sizeof(double)));
+        CUDA_ERROR(cudaMalloc((void**)&colIndices_dev, NNZ_in * sizeof(int)));
+        CUDA_ERROR(cudaMalloc((void**)&values_dev, NNZ_in * sizeof(Scalar)));
         is_allocated = true;
         owns_sparse_matrix_mem = true;
     } else if (A != nullptr) {
@@ -261,33 +266,34 @@ void CUDSSSolver::setMatrix(int* p, int* i, double* x, int A_N, int NNZ)
     CUDA_ERROR(cudaMemcpy(
         rowOffsets_dev, p, (A_N + 1) * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_ERROR(cudaMemcpy(
-        colIndices_dev, i, NNZ * sizeof(int), cudaMemcpyHostToDevice));
+        colIndices_dev, i, NNZ_in * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_ERROR(cudaMemcpy(
-        values_dev, x, NNZ * sizeof(double), cudaMemcpyHostToDevice));
+        values_dev, x, NNZ_in * sizeof(Scalar), cudaMemcpyHostToDevice));
 
     // Creating matrix
     // Note: Eigen::SparseMatrix is CSC (column-major) by default
     // The caller should expand symmetric matrices to full format using selfadjointView
     auto status = cudssMatrixCreateCsr(&A,
-                         N,                    // nrows
-                         N,                    // ncols  
-                         NNZ,                  // nnz
-                         rowOffsets_dev,       // csrRowOffsets
-                         nullptr,              // csrRowOffsetsEnd (optional)
-                         colIndices_dev,       // csrColInd
-                         values_dev,           // csrValues
-                         CUDA_R_32I,           // csrRowOffsetsType
-                         CUDA_R_64F,           // csrValuesType (double precision)
-                         CUDSS_MTYPE_SPD,      // matrixType (Symmetric Positive Definite)
-                         CUDSS_MVIEW_FULL,     // viewType (full matrix expected)
-                         CUDSS_BASE_ZERO);     // indexBase
+                         N,                                   // nrows
+                         N,                                   // ncols
+                         NNZ,                                 // nnz
+                         rowOffsets_dev,                      // csrRowOffsets
+                         nullptr,                             // csrRowOffsetsEnd (optional)
+                         colIndices_dev,                      // csrColInd
+                         values_dev,                          // csrValues
+                         CUDA_R_32I,                          // csrRowOffsetsType
+                         detail::cudss_dtype_v<Scalar>,       // csrValuesType
+                         CUDSS_MTYPE_SPD,                     // matrixType (Symmetric Positive Definite)
+                         CUDSS_MVIEW_FULL,                    // viewType (full matrix expected)
+                         CUDSS_BASE_ZERO);                    // indexBase
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 }
 
-void CUDSSSolver::setMatrix(SparseMatrixView& matrix)
+template <class Scalar>
+void CUDSSSolver<Scalar>::setMatrix(SparseMatrixView<Scalar>& matrix)
 {
     if (matrix.location == MemoryLocation::Host) {
         setMatrix(matrix.outer,
@@ -340,17 +346,18 @@ void CUDSSSolver::setMatrix(SparseMatrixView& matrix)
                                        colIndices_dev,
                                        values_dev,
                                        CUDA_R_32I,
-                                       CUDA_R_64F,
+                                       detail::cudss_dtype_v<Scalar>,
                                        CUDSS_MTYPE_SPD,
                                        CUDSS_MVIEW_FULL,
                                        CUDSS_BASE_ZERO);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::device matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::device matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 }
 
-void CUDSSSolver::copyDeviceMatrixPatternToHost()
+template <class Scalar>
+void CUDSSSolver<Scalar>::copyDeviceMatrixPatternToHost()
 {
     if (matrix_view_.location != MemoryLocation::Device) {
         return;
@@ -375,16 +382,17 @@ void CUDSSSolver::copyDeviceMatrixPatternToHost()
                           cudaMemcpyDeviceToHost));
 }
 
-void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+template <class Scalar>
+void CUDSSSolver<Scalar>::innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     assert(is_allocated);
     cudssStatus_t status;
 
-    if (user_defined_perm.size() == N && etree.size() > 0) {
+    if (static_cast<int>(user_defined_perm.size()) == N && etree.size() > 0) {
 #ifndef NDEBUG
         int sum = 0;
         for (auto& e: etree) {
-            sum+=e;
+            sum += e;
         }
         assert(sum == N);
 #endif
@@ -400,7 +408,7 @@ void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector
                               user_defined_perm.data(),
                               N * sizeof(int));
         if (status != CUDSS_STATUS_SUCCESS) {
-            spdlog::error("CUDSSSolver::cudssDataSet for user permutation failed with status: {}", status);
+            spdlog::error("CUDSSSolver::cudssDataSet for user permutation failed with status: {}", static_cast<int>(status));
             exit(EXIT_FAILURE);
         }
 
@@ -411,18 +419,18 @@ void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector
                               etree.data(),
                               etree.size() * sizeof(int));
         if (status != CUDSS_STATUS_SUCCESS) {
-            spdlog::error("CUDSSSolver::cudssDataSet for user elimination tree failed with status: {}", status);
+            spdlog::error("CUDSSSolver::cudssDataSet for user elimination tree failed with status: {}", static_cast<int>(status));
             exit(EXIT_FAILURE);
         }
 
 
         // Compute the number of levels in the etree
-        int level = std::log2(etree.size() + 1);
+        int level = static_cast<int>(std::log2(static_cast<double>(etree.size() + 1)));
         spdlog::info("CUDSS: Number of levels in the etree: {}", level);
         // Set the number of levels in the etree
         status = cudssConfigSet(config, CUDSS_CONFIG_ND_NLEVELS, &level, sizeof(int));
         if (status != CUDSS_STATUS_SUCCESS) {
-            spdlog::error("CUDSSSolver::cudssConfigSet for ND_NLEVELS failed with status: {}", status);
+            spdlog::error("CUDSSSolver::cudssConfigSet for ND_NLEVELS failed with status: {}", static_cast<int>(status));
             exit(EXIT_FAILURE);
         }
 
@@ -436,7 +444,7 @@ void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector
             nullptr,
             nullptr);
         if (status != CUDSS_STATUS_SUCCESS) {
-            spdlog::error("CUDSSSolver::reordering failed with status: {}", status);
+            spdlog::error("CUDSSSolver::reordering failed with status: {}", static_cast<int>(status));
             exit(EXIT_FAILURE);
         }
     }  else {
@@ -453,14 +461,15 @@ void CUDSSSolver::innerOrdering(std::vector<int>& user_defined_perm, std::vector
             nullptr,
             nullptr);
         if (status != CUDSS_STATUS_SUCCESS) {
-            spdlog::error("CUDSSSolver::reordering failed with status: {}", status);
+            spdlog::error("CUDSSSolver::reordering failed with status: {}", static_cast<int>(status));
             exit(EXIT_FAILURE);
         }
     }
 }
 
 
-void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+template <class Scalar>
+void CUDSSSolver<Scalar>::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     assert(is_allocated);
     cudssStatus_t status;
@@ -474,12 +483,13 @@ void CUDSSSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std:
         nullptr,
         nullptr);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::symbolic factorization failed with status: {}", status);
+        spdlog::error("CUDSSSolver::symbolic factorization failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 }
 
-void CUDSSSolver::innerFactorize(void)
+template <class Scalar>
+void CUDSSSolver<Scalar>::innerFactorize(void)
 {
     assert(is_allocated);
     auto status = cudssExecute(
@@ -491,14 +501,17 @@ void CUDSSSolver::innerFactorize(void)
 }
 
 
-void CUDSSSolver::innerSolve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result)
+template <class Scalar>
+void CUDSSSolver<Scalar>::innerSolve(typename CUDSSSolver<Scalar>::Mat& rhs,
+                                     typename CUDSSSolver<Scalar>::Mat& result)
 {
     // Delegate to raw pointer version to avoid ABI issues
     result.resize(rhs.rows(), rhs.cols());
     innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
 }
 
-void CUDSSSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data)
+template <class Scalar>
+void CUDSSSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data, int rows, int cols, Scalar* result_data)
 {
     // Validate input dimensions
     if (rows != N) {
@@ -513,28 +526,28 @@ void CUDSSSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, doub
     clean_rhs_sol_mem();
     
     // Allocate device memory for N × nrhs matrices
-    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(double)));
-    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(double)));
+    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(Scalar)));
+    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(Scalar)));
     owns_bvalues_mem = true;
     owns_xvalues_mem = true;
     
     // Copy RHS to device (data is column-major)
     CUDA_ERROR(cudaMemcpy(
-        bvalues_dev, rhs_data, N * nrhs * sizeof(double), cudaMemcpyHostToDevice));
-    
+        bvalues_dev, rhs_data, N * nrhs * sizeof(Scalar), cudaMemcpyHostToDevice));
+
     // Create RHS dense matrix (N × nrhs, leading dimension = N)
     auto status = cudssMatrixCreateDn(
-        &b_mat, N, nrhs, N, bvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+        &b_mat, N, nrhs, N, bvalues_dev, detail::cudss_dtype_v<Scalar>, CUDSS_LAYOUT_COL_MAJOR);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
     // Create solution dense matrix (N × nrhs, leading dimension = N)
     status = cudssMatrixCreateDn(
-        &x_mat, N, nrhs, N, xvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+        &x_mat, N, nrhs, N, xvalues_dev, detail::cudss_dtype_v<Scalar>, CUDSS_LAYOUT_COL_MAJOR);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
@@ -542,20 +555,21 @@ void CUDSSSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, doub
     status = cudssExecute(
         handle, CUDSS_PHASE_SOLVE, config, data, A, x_mat, b_mat);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::solve failed with status: {}", status);
+        spdlog::error("CUDSSSolver::solve failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
     
     // Copy result back to host
     CUDA_ERROR(cudaMemcpy(result_data,
                           xvalues_dev,
-                          N * nrhs * sizeof(double),
+                          N * nrhs * sizeof(Scalar),
                           cudaMemcpyDeviceToHost));
     
     clean_rhs_sol_mem();
 }
 
-void CUDSSSolver::innerSolveView(DenseMatrixView& rhs, DenseMatrixView& result)
+template <class Scalar>
+void CUDSSSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs, DenseMatrixView<Scalar>& result)
 {
     if (rhs.rows != N || result.rows != N || rhs.cols != result.cols) {
         spdlog::error("CUDSSSolver::solve - incompatible dense dimensions");
@@ -587,11 +601,11 @@ void CUDSSSolver::innerSolveView(DenseMatrixView& rhs, DenseMatrixView& result)
         bvalues_dev = rhs.values;
         owns_bvalues_mem = false;
     } else {
-        CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(double)));
+        CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(Scalar)));
         owns_bvalues_mem = true;
         CUDA_ERROR(cudaMemcpy(bvalues_dev,
                               rhs.values,
-                              N * nrhs * sizeof(double),
+                              N * nrhs * sizeof(Scalar),
                               cudaMemcpyHostToDevice));
     }
 
@@ -599,42 +613,44 @@ void CUDSSSolver::innerSolveView(DenseMatrixView& rhs, DenseMatrixView& result)
         xvalues_dev = result.values;
         owns_xvalues_mem = false;
     } else {
-        CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(double)));
+        CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(Scalar)));
         owns_xvalues_mem = true;
     }
 
     auto status = cudssMatrixCreateDn(
-        &b_mat, N, nrhs, rhs_ld, bvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+        &b_mat, N, nrhs, rhs_ld, bvalues_dev, detail::cudss_dtype_v<Scalar>, CUDSS_LAYOUT_COL_MAJOR);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
     status = cudssMatrixCreateDn(
-        &x_mat, N, nrhs, res_ld, xvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+        &x_mat, N, nrhs, res_ld, xvalues_dev, detail::cudss_dtype_v<Scalar>, CUDSS_LAYOUT_COL_MAJOR);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
     status = cudssExecute(
         handle, CUDSS_PHASE_SOLVE, config, data, A, x_mat, b_mat);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::solve failed with status: {}", status);
+        spdlog::error("CUDSSSolver::solve failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
     if (result.location == MemoryLocation::Host) {
         CUDA_ERROR(cudaMemcpy(result.values,
                               xvalues_dev,
-                              N * nrhs * sizeof(double),
+                              N * nrhs * sizeof(Scalar),
                               cudaMemcpyDeviceToHost));
     }
 
     clean_rhs_sol_mem();
 }
 
-void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
+template <class Scalar>
+void CUDSSSolver<Scalar>::innerSolve(typename CUDSSSolver<Scalar>::Vec& rhs,
+                                     typename CUDSSSolver<Scalar>::Vec& result)
 {
     // Validate input dimensions
     if (rhs.size() != N) {
@@ -646,28 +662,28 @@ void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
     
     // Clean up any existing memory first
     clean_rhs_sol_mem();
-    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * sizeof(double)));
-    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * sizeof(double)));
+    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * sizeof(Scalar)));
+    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * sizeof(Scalar)));
     owns_bvalues_mem = true;
     owns_xvalues_mem = true;
     // Copying the memory
     CUDA_ERROR(cudaMemcpy(
-        bvalues_dev, rhs.data(), N * sizeof(double), cudaMemcpyHostToDevice));
+        bvalues_dev, rhs.data(), N * sizeof(Scalar), cudaMemcpyHostToDevice));
     // Creating the rhs matrix (N×1 column vector)
     spdlog::info("Creating RHS dense matrix: N={}, ncols=1, ld={}", N, N);
     auto status = cudssMatrixCreateDn(
-        &b_mat, N, 1, N, bvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+        &b_mat, N, 1, N, bvalues_dev, detail::cudss_dtype_v<Scalar>, CUDSS_LAYOUT_COL_MAJOR);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
     // Creating solution matrix (N×1 column vector)
     spdlog::info("Creating solution dense matrix: N={}, ncols=1, ld={}", N, N);
     status = cudssMatrixCreateDn(
-        &x_mat, N, 1, N, xvalues_dev, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR);
+        &x_mat, N, 1, N, xvalues_dev, detail::cudss_dtype_v<Scalar>, CUDSS_LAYOUT_COL_MAJOR);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", status);
+        spdlog::error("CUDSSSolver::solution matrix creation failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
@@ -676,7 +692,7 @@ void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
     status = cudssExecute(
         handle, CUDSS_PHASE_SOLVE, config, data, A, x_mat, b_mat);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::solve failed with status: {} ", status);
+        spdlog::error("CUDSSSolver::solve failed with status: {} ", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
     spdlog::info("CUDSS solve completed successfully");
@@ -684,12 +700,13 @@ void CUDSSSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
     result.conservativeResize(rhs.size());
     CUDA_ERROR(cudaMemcpy(result.data(),
                           xvalues_dev,
-                          result.rows() * sizeof(double),
+                          result.rows() * sizeof(Scalar),
                           cudaMemcpyDeviceToHost));
     clean_rhs_sol_mem();
 }
 
-void CUDSSSolver::resetSolver()
+template <class Scalar>
+void CUDSSSolver<Scalar>::resetSolver()
 {
     // Destroy old data object (contains stale symbolic factorization)
     if (data != nullptr) {
@@ -704,7 +721,7 @@ void CUDSSSolver::resetSolver()
     // Recreate data object for new matrix structure
     auto status = cudssDataCreate(handle, &data);
     if (status != CUDSS_STATUS_SUCCESS) {
-        spdlog::error("CUDSSSolver::resetSolver - cudssDataCreate failed with status: {}", status);
+        spdlog::error("CUDSSSolver::resetSolver - cudssDataCreate failed with status: {}", static_cast<int>(status));
         exit(EXIT_FAILURE);
     }
 
@@ -713,16 +730,20 @@ void CUDSSSolver::resetSolver()
     spdlog::info("CUDSSSolver::resetSolver - Solver state reset successfully");
 }
 
-LinSysSolverType CUDSSSolver::type() const
+template <class Scalar>
+LinSysSolverType CUDSSSolver<Scalar>::type() const
 {
     return LinSysSolverType::GPU_CUDSS;
-};
+}
 
-int CUDSSSolver::getFactorNNZ()
+template <class Scalar>
+int CUDSSSolver<Scalar>::getFactorNNZ()
 {
     return 0;
 }
 
+template class CUDSSSolver<float>;
+template class CUDSSSolver<double>;
 }  // namespace homa
 
 #endif

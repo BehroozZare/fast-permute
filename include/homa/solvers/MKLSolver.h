@@ -11,10 +11,21 @@
 
 namespace homa {
 
-class MKLSolver : public LinSysSolver {
-    typedef LinSysSolver Base;
-
+template <class Scalar>
+class MKLSolver : public LinSysSolver<Scalar> {
 public:
+    using Base = LinSysSolver<Scalar>;
+    using typename Base::Vec;
+    using typename Base::Mat;
+    using Base::N;
+    using Base::NNZ;
+    using Base::L_NNZ;
+    using Base::ordering_result;
+    using Base::ordering_type;
+    using Base::recordMatrixPattern;
+    using Base::initVariables;
+    using Base::setMatrix;
+
     MKL_INT mtype = 2; /* Real SPD matrix */
     MKL_INT nrhs = 1;  /* Number of right hand sides. */
     void* pt[64];
@@ -22,13 +33,13 @@ public:
     MKL_INT iparm[64];
     MKL_INT maxfct, mnum, phase, error, msglvl;
     /* Auxiliary variables. */
-    double ddum;  /* Double dummy */
-    MKL_INT idum; /* Integer dummy. */
+    Scalar  ddum;       /* Scalar dummy */
+    MKL_INT idum;       /* Integer dummy. */
 
-    MKL_INT *Ap;
-    MKL_INT *Ai;
-    double *Ax;
-    MKL_INT N_MKL;
+    MKL_INT* Ap;
+    MKL_INT* Ai;
+    Scalar*  Ax;
+    MKL_INT  N_MKL;
 
     std::vector<MKL_INT> perm;
     bool has_pardiso_memory_ = false;
@@ -36,14 +47,13 @@ public:
 
     ~MKLSolver();
     MKLSolver();
-    using Base::setMatrix;
 
-    void setMatrix(int *p, int *i, double *x, int A_N, int NNZ) override;
+    void setMatrix(int* p, int* i, Scalar* x, int A_N, int NNZ) override;
     void innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree) override;
     void innerFactorize(void) override;
-    void innerSolve(Eigen::VectorXd &rhs, Eigen::VectorXd &result) override;
-    void innerSolve(Eigen::MatrixXd &rhs, Eigen::MatrixXd &result) override;
-    void innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data) override;
+    void innerSolve(Vec& rhs, Vec& result) override;
+    void innerSolve(Mat& rhs, Mat& result) override;
+    void innerSolveRaw(const Scalar* rhs_data, int rows, int cols, Scalar* result_data) override;
     void resetSolver() override;
     LinSysSolverType type() const override;
 
@@ -55,6 +65,12 @@ private:
     void clean_memory();
 };
 
-}
+extern template class MKLSolver<float>;
+extern template class MKLSolver<double>;
+
+using MKLSolverD = MKLSolver<double>;
+using MKLSolverF = MKLSolver<float>;
+
+}  // namespace homa
 
 #endif

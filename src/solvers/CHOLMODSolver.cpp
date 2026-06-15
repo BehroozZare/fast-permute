@@ -8,13 +8,17 @@
 #ifdef USE_CHOLMOD
 
 #include <homa/solvers/CHOLMODSolver.h>
+#include "scalar_traits.h"
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include "omp.h"
 #include <spdlog/spdlog.h>
 
 namespace homa {
-CHOLMODSolver::~CHOLMODSolver()
+
+template <class Scalar>
+CHOLMODSolver<Scalar>::~CHOLMODSolver()
 {
     if (use_gpu) {
         // GPU mode cleanup with int64 functions
@@ -65,7 +69,8 @@ CHOLMODSolver::~CHOLMODSolver()
     }
 }
 
-CHOLMODSolver::CHOLMODSolver()
+template <class Scalar>
+CHOLMODSolver<Scalar>::CHOLMODSolver()
 {
     // Use int64 version for GPU mode, regular for CPU mode
     if (use_gpu) {
@@ -76,6 +81,7 @@ CHOLMODSolver::CHOLMODSolver()
         spdlog::info("CHOLMOD initialized in CPU-only mode");
     }
 
+    // Precision is selected per matrix via xdtype on allocate_* calls.
     bx      = NULL;
     A       = NULL;
     L       = NULL;
@@ -96,7 +102,8 @@ CHOLMODSolver::CHOLMODSolver()
     }
 }
 
-void CHOLMODSolver::initializeGPU()
+template <class Scalar>
+void CHOLMODSolver<Scalar>::initializeGPU()
 {
     // Enable GPU usage for CHOLMOD
     cm.useGPU = 1;
@@ -112,13 +119,13 @@ void CHOLMODSolver::initializeGPU()
     spdlog::info("CHOLMOD GPU mode enabled with supernodal LL' factorization");
 }
 
-bool CHOLMODSolver::probeGPU()
+template <class Scalar>
+bool CHOLMODSolver<Scalar>::probeGPU()
 {
     // Probe for GPU availability
     #if defined(CHOLMOD_HAS_CUDA)
     int gpu_status = cholmod_l_gpu_probe(&cm);
-    if (gpu_status == 1) {
-        gpu_available = true;
+    if (gpu_status == 1) {        
         spdlog::info("CHOLMOD GPU detected and available");
         // Allocate GPU memory
         cholmod_l_gpu_allocate(&cm);
@@ -134,7 +141,8 @@ bool CHOLMODSolver::probeGPU()
     #endif
 }
 
-void CHOLMODSolver::cholmod_clean_memory()
+template <class Scalar>
+void CHOLMODSolver<Scalar>::cholmod_clean_memory()
 {
     if (use_gpu) {
         // GPU mode cleanup with int64 functions
@@ -178,23 +186,24 @@ void CHOLMODSolver::cholmod_clean_memory()
     Ai = Ap = Ax = NULL;
 }
 
-void CHOLMODSolver::setMatrix(int*              p,
-                              int*              i,
-                              double*           x,
-                              int               A_N,
-                              int               NNZ)
+template <class Scalar>
+void CHOLMODSolver<Scalar>::setMatrix(int*    p,
+                                      int*    i,
+                                      Scalar* x,
+                                      int     A_N,
+                                      int     NNZ_in)
 {
-    assert(p[A_N] == NNZ);
-    recordMatrixPattern(p, i, A_N, NNZ, SparseFormat::CSC, MemoryLocation::Host);
+    assert(p[A_N] == NNZ_in);
+    recordMatrixPattern(p, i, A_N, NNZ_in, SparseFormat::CSC, MemoryLocation::Host);
     this->N   = A_N;
-    this->NNZ = NNZ;
+    this->NNZ = NNZ_in;
 
     this->cholmod_clean_memory();
 
     if (!A) {
         if (use_gpu) {
             A = cholmod_l_allocate_sparse(
-                N, N, NNZ, true, true, -1, CHOLMOD_REAL, &cm);
+                N, N, NNZ, true, true, -1, detail::cholmod_xdtype_v<Scalar>, &cm);
             //Convert the values in p and i to long int (int64_t)
             p_long.resize(N + 1);
             i_long.resize(NNZ);
@@ -226,7 +235,7 @@ void CHOLMODSolver::setMatrix(int*              p,
             }
         } else {
             A = cholmod_allocate_sparse(
-                N, N, NNZ, true, true, -1, CHOLMOD_REAL, &cm);
+                N, N, NNZ, true, true, -1, detail::cholmod_xdtype_v<Scalar>, &cm);
 
             this->Ap = A->p;
             this->Ax = A->x;
@@ -245,28 +254,23 @@ void CHOLMODSolver::setMatrix(int*              p,
 
 }
 
-void CHOLMODSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+template <class Scalar>
+void CHOLMODSolver<Scalar>::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
 {
     if (use_gpu) {
         cholmod_l_free_factor(&L, &cm);
         std::vector<long int> long_user_defined_perm(user_defined_perm.size());
-        for (int i = 0; i < user_defined_perm.size(); i++) {
+        for (size_t i = 0; i < user_defined_perm.size(); i++) {
             long_user_defined_perm[i] = user_defined_perm[i];
         }
-        
-        // Verify GPU is available before analysis
-        if (!gpu_available) {
-            spdlog::error("GPU mode enabled but GPU not available for CHOLMOD analysis");
-            throw std::runtime_error("GPU not available for CHOLMOD - GPU mode was requested but GPU is not available");
-        }
-        
+
         // Ensure GPU and supernodal settings are still active
         cm.useGPU = 1;
         cm.supernodal = CHOLMOD_SUPERNODAL;
         
         spdlog::info("Matrix size: {}, NNZ: {} (GPU mode)", N, NNZ);
         
-        if (user_defined_perm.size() == N) {
+        if (static_cast<int>(user_defined_perm.size()) == N) {
             spdlog::info("Using user provided permutation (GPU mode)");
             cm.nmethods           = 1;
             cm.method[0].ordering = CHOLMOD_GIVEN;
@@ -285,7 +289,7 @@ void CHOLMODSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, st
         cm.useGPU = 0;
         cm.supernodal = CHOLMOD_SUPERNODAL;
         
-        if (user_defined_perm.size() == N) {
+        if (static_cast<int>(user_defined_perm.size()) == N) {
             spdlog::info("Using user provided permutation (CPU mode)");
             cm.nmethods           = 1;
             cm.method[0].ordering = CHOLMOD_GIVEN;
@@ -305,10 +309,11 @@ void CHOLMODSolver::innerAnalyze_pattern(std::vector<int>& user_defined_perm, st
         std::cerr << "ERROR during symbolic factorization:" << std::endl;
         throw std::runtime_error("Symbolic factorization failed");
     }
-    L_NNZ = cm.lnz * 2 - N;
+    L_NNZ = static_cast<int>(cm.lnz * 2 - N);
 }
 
-void CHOLMODSolver::innerFactorize(void)
+template <class Scalar>
+void CHOLMODSolver<Scalar>::innerFactorize(void)
 {
     if (use_gpu) {
         cholmod_l_factorize(A, L, &cm);
@@ -346,33 +351,38 @@ void CHOLMODSolver::innerFactorize(void)
     }
 }
 
-void CHOLMODSolver::innerSolve(Eigen::MatrixXd& rhs, Eigen::MatrixXd& result)
+template <class Scalar>
+void CHOLMODSolver<Scalar>::innerSolve(typename CHOLMODSolver<Scalar>::Mat& rhs,
+                                       typename CHOLMODSolver<Scalar>::Mat& result)
 {
     // Delegate to raw pointer version
     result.resize(rhs.rows(), rhs.cols());
     innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
 }
 
-void CHOLMODSolver::innerSolveRaw(const double* rhs_data, int rows, int cols, double* result_data)
+template <class Scalar>
+void CHOLMODSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data, int rows, int cols, Scalar* result_data)
 {
     // Solve column by column since CHOLMOD doesn't have built-in multi-RHS support
     for (int c = 0; c < cols; c++) {
         // Map column c of input (column-major layout)
-        Eigen::VectorXd rhs_col = Eigen::Map<const Eigen::VectorXd>(rhs_data + c * rows, rows);
-        Eigen::VectorXd result_col(rows);
-        
+        Vec rhs_col = Eigen::Map<const Vec>(rhs_data + c * rows, rows);
+        Vec result_col(rows);
+
         innerSolve(rhs_col, result_col);
-        
+
         // Copy result to output column
-        memcpy(result_data + c * rows, result_col.data(), rows * sizeof(double));
+        std::memcpy(result_data + c * rows, result_col.data(), rows * sizeof(Scalar));
     }
 }
 
-void CHOLMODSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
+template <class Scalar>
+void CHOLMODSolver<Scalar>::innerSolve(typename CHOLMODSolver<Scalar>::Vec& rhs,
+                                       typename CHOLMODSolver<Scalar>::Vec& result)
 {
     if (use_gpu) {
         if (!b) {
-            b  = cholmod_l_allocate_dense(N, 1, N, CHOLMOD_REAL, &cm);
+            b  = cholmod_l_allocate_dense(N, 1, N, detail::cholmod_xdtype_v<Scalar>, &cm);
             bx = b->x;
         }
         b->x = rhs.data();
@@ -384,7 +394,7 @@ void CHOLMODSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
         x_solve = cholmod_l_solve(CHOLMOD_A, L, b, &cm);
     } else {
         if (!b) {
-            b  = cholmod_allocate_dense(N, 1, N, CHOLMOD_REAL, &cm);
+            b  = cholmod_allocate_dense(N, 1, N, detail::cholmod_xdtype_v<Scalar>, &cm);
             bx = b->x;
         }
         b->x = rhs.data();
@@ -395,13 +405,14 @@ void CHOLMODSolver::innerSolve(Eigen::VectorXd& rhs, Eigen::VectorXd& result)
 
         x_solve = cholmod_solve(CHOLMOD_A, L, b, &cm);
     }
-    
+
     result.conservativeResize(rhs.size());
-    memcpy(result.data(), x_solve->x, result.rows() * sizeof(result[0]));    
+    std::memcpy(result.data(), x_solve->x, result.rows() * sizeof(Scalar));
 }
 
 
-void CHOLMODSolver::resetSolver()
+template <class Scalar>
+void CHOLMODSolver<Scalar>::resetSolver()
 {
     cholmod_clean_memory();
 
@@ -415,7 +426,8 @@ void CHOLMODSolver::resetSolver()
     Base::initVariables();
 }
 
-void CHOLMODSolver::save_factor(
+template <class Scalar>
+void CHOLMODSolver<Scalar>::save_factor(
     const std::string &filePath) {
     cholmod_sparse *spm;
     
@@ -437,10 +449,14 @@ void CHOLMODSolver::save_factor(
     fclose(out);
 }
 
-LinSysSolverType CHOLMODSolver::type() const
+template <class Scalar>
+LinSysSolverType CHOLMODSolver<Scalar>::type() const
 {
     return LinSysSolverType::CPU_CHOLMOD;
-};
+}
+
+template class CHOLMODSolver<float>;
+template class CHOLMODSolver<double>;
 
 }  // namespace homa
 
