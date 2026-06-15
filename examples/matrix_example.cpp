@@ -12,6 +12,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "homa/solvers/LinSysSolver.h"
@@ -26,15 +27,20 @@
 
 namespace {
 
-using SparseMatrix = Eigen::SparseMatrix<double>;
+template <class Scalar>
+using SparseMat = Eigen::SparseMatrix<Scalar>;
 
-SparseMatrix expand_symmetric_storage(const SparseMatrix& raw)
+template <class Scalar>
+using Vec = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+
+template <class Scalar>
+SparseMat<Scalar> expand_symmetric_storage(const SparseMat<Scalar>& raw)
 {
     Eigen::Index lower = 0;
     Eigen::Index upper = 0;
 
     for (int c = 0; c < raw.outerSize(); ++c) {
-        for (SparseMatrix::InnerIterator it(raw, c); it; ++it) {
+        for (typename SparseMat<Scalar>::InnerIterator it(raw, c); it; ++it) {
             if (it.row() > it.col()) {
                 ++lower;
             } else if (it.row() < it.col()) {
@@ -43,22 +49,23 @@ SparseMatrix expand_symmetric_storage(const SparseMatrix& raw)
         }
     }
 
-    SparseMatrix expanded =
-        (lower >= upper) ? SparseMatrix(raw.selfadjointView<Eigen::Lower>())
-                         : SparseMatrix(raw.selfadjointView<Eigen::Upper>());
+    SparseMat<Scalar> expanded =
+        (lower >= upper) ? SparseMat<Scalar>(raw.template selfadjointView<Eigen::Lower>())
+                         : SparseMat<Scalar>(raw.template selfadjointView<Eigen::Upper>());
     expanded.makeCompressed();
     return expanded;
 }
 
-SparseMatrix solver_matrix_for(homa::LinSysSolverType solver_type, const SparseMatrix& A)
+template <class Scalar>
+SparseMat<Scalar> solver_matrix_for(homa::LinSysSolverType solver_type, const SparseMat<Scalar>& A)
 {
     if (solver_type == homa::LinSysSolverType::CPU_MKL) {
-        SparseMatrix lower = A.triangularView<Eigen::Lower>();
+        SparseMat<Scalar> lower = A.template triangularView<Eigen::Lower>();
         lower.makeCompressed();
         return lower;
     }
 
-    SparseMatrix solver_matrix = A;
+    SparseMat<Scalar> solver_matrix = A;
     solver_matrix.makeCompressed();
     return solver_matrix;
 }
@@ -81,16 +88,18 @@ double time_step(homa::LinSysSolverType solver_type, Fn&& fn)
     return std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
 }
 
+template <class Scalar>
 void warm_up_if_needed(homa::LinSysSolverType solver_type,
-                       SparseMatrix&          solver_matrix,
-                       Eigen::VectorXd&       rhs)
+                       SparseMat<Scalar>&     solver_matrix,
+                       Vec<Scalar>&           rhs)
 {
     if (solver_type != homa::LinSysSolverType::GPU_CUDSS) {
         return;
     }
 
-#ifdef USE_CUDSS    
-    std::unique_ptr<homa::LinSysSolver> solver(homa::LinSysSolver::create(solver_type));
+#ifdef USE_CUDSS
+    std::unique_ptr<homa::LinSysSolver<Scalar>> solver(
+        homa::LinSysSolver<Scalar>::create(solver_type));
     solver->setMatrix(solver_matrix.outerIndexPtr(),
                       solver_matrix.innerIndexPtr(),
                       solver_matrix.valuePtr(),
@@ -101,23 +110,25 @@ void warm_up_if_needed(homa::LinSysSolverType solver_type,
     solver->ordering(empty, empty);
     solver->analyze_pattern();
     solver->factorize();
-    Eigen::VectorXd sol;
+    Vec<Scalar> sol;
     solver->solve(rhs, sol);
     cudaDeviceSynchronize();
 #endif
 }
 
-StageTimes run_solver_path(homa::LinSysSolverType solver_type,
-                           SparseMatrix&          solver_matrix,
-                           const SparseMatrix&    residual_matrix,
-                           Eigen::VectorXd&       rhs,
-                           std::vector<int>&      perm,
-                           std::vector<int>&      etree,
-                           bool                   use_homa_ordering)
+template <class Scalar>
+StageTimes run_solver_path(homa::LinSysSolverType   solver_type,
+                           SparseMat<Scalar>&       solver_matrix,
+                           const SparseMat<Scalar>& residual_matrix,
+                           Vec<Scalar>&             rhs,
+                           std::vector<int>&        perm,
+                           std::vector<int>&        etree,
+                           bool                     use_homa_ordering)
 {
     StageTimes times;
-        
-    std::unique_ptr<homa::LinSysSolver> solver(homa::LinSysSolver::create(solver_type));
+
+    std::unique_ptr<homa::LinSysSolver<Scalar>> solver(
+        homa::LinSysSolver<Scalar>::create(solver_type));
     solver->setMatrix(solver_matrix.outerIndexPtr(),
                       solver_matrix.innerIndexPtr(),
                       solver_matrix.valuePtr(),
@@ -142,31 +153,28 @@ StageTimes run_solver_path(homa::LinSysSolverType solver_type,
 
     times.factorize_ms = time_step(solver_type, [&]() { solver->factorize(); });
 
-    Eigen::VectorXd sol;
+    Vec<Scalar> sol;
     times.solve_ms = time_step(solver_type, [&]() { solver->solve(rhs, sol); });
-    times.residual = (rhs - residual_matrix * sol).norm();
+    times.residual = static_cast<double>((rhs - residual_matrix * sol).norm());
 
     return times;
 }
 
-} // namespace
-
-int main(int argc, char* argv[])
+template <class Scalar>
+const char* precision_label()
 {
-    std::string input_matrix;
-    std::string solver_name = "cholmod";
-    int         patch_size  = 512;
-    std::string output_json;
+    if constexpr (std::is_same_v<Scalar, float>)  return "float";
+    if constexpr (std::is_same_v<Scalar, double>) return "double";
+    return "unknown";
+}
 
-    CLI::App app{"Homa Matrix Market linear solver example"};
-    app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
-    app.add_option("-s,--solver", solver_name, "Solver backend: cholmod, mkl, cudss");
-    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
-    app.add_option("-o,--out", output_json,
-        "Optional JSON file to write benchmark results to (no output if empty)");
-    CLI11_PARSE(app, argc, argv);
-
-    SparseMatrix raw;
+template <class Scalar>
+int run_benchmark(const std::string&     input_matrix,
+                  homa::LinSysSolverType solver_type,
+                  int                    patch_size,
+                  const std::string&     output_json)
+{
+    SparseMat<Scalar> raw;
     if (!Eigen::loadMarket(raw, input_matrix)) {
         std::cerr << "Failed to read Matrix Market file: " << input_matrix << "\n";
         return 1;
@@ -177,20 +185,15 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    SparseMatrix A = is_matrix_market_symmetric(input_matrix) ? expand_symmetric_storage(raw) : raw;
+    SparseMat<Scalar> A = is_matrix_market_symmetric(input_matrix)
+                              ? expand_symmetric_storage<Scalar>(raw)
+                              : raw;
     A.makeCompressed();
 
-    homa::LinSysSolverType solver_type = homa::LinSysSolverType::CPU_CHOLMOD;
-    try {
-        solver_type = solver_type_from_name(solver_name);
-    } catch (const std::invalid_argument& e) {
-        std::cerr << e.what() << "\n";
-        return 1;
-    }
+    SparseMat<Scalar> solver_matrix = solver_matrix_for<Scalar>(solver_type, A);
 
-    SparseMatrix solver_matrix = solver_matrix_for(solver_type, A);
-
-    spdlog::info("Matrix: {}x{}, {} non-zeros", A.rows(), A.cols(), A.nonZeros());
+    spdlog::info("Matrix: {}x{}, {} non-zeros, precision={}",
+                 A.rows(), A.cols(), A.nonZeros(), precision_label<Scalar>());
     if (solver_matrix.nonZeros() != A.nonZeros()) {
         spdlog::info("Solver matrix: {} non-zeros", solver_matrix.nonZeros());
     }
@@ -199,12 +202,12 @@ int main(int argc, char* argv[])
     std::vector<int> Gp, Gi;
     homa::remove_diagonal(n, A.outerIndexPtr(), A.innerIndexPtr(), Gp, Gi);
 
-    Eigen::VectorXd rhs = Eigen::VectorXd::Random(n);
+    Vec<Scalar> rhs = Vec<Scalar>::Random(n);
 
-    warm_up_if_needed(solver_type, solver_matrix, rhs);
+    warm_up_if_needed<Scalar>(solver_type, solver_matrix, rhs);
 
     std::vector<int> empty_perm, empty_etree;
-    StageTimes       def = run_solver_path(
+    StageTimes def = run_solver_path<Scalar>(
         solver_type, solver_matrix, A, rhs, empty_perm, empty_etree, false);
 
     using Clock = std::chrono::high_resolution_clock;
@@ -225,8 +228,8 @@ int main(int argc, char* argv[])
         spdlog::error("HOMA permutation is invalid!");
     }
 
-    StageTimes homa =
-        run_solver_path(solver_type, solver_matrix, A, rhs, ord.perm, ord.etree, true);
+    StageTimes homa = run_solver_path<Scalar>(
+        solver_type, solver_matrix, A, rhs, ord.perm, ord.etree, true);
     homa.ordering_ms = homa_ordering_ms;
 
     double def_total_ms  = def.ordering_ms  + def.factorize_ms  + def.solve_ms;
@@ -239,7 +242,8 @@ int main(int argc, char* argv[])
         homa_total_ms += homa.analysis_ms;
     }
 
-    std::cout << "\n=== " << solver_display_name(solver_type) << " Matrix Results ===\n";
+    std::cout << "\n=== " << solver_display_name(solver_type)
+              << " Matrix Results (" << precision_label<Scalar>() << ") ===\n";
     std::cout << std::left << std::fixed << std::setprecision(3) << std::setw(18) << "" << std::setw(16) << "Solver-default" << "HOMA\n"
               << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---" << homa_ordering_ms << "\n";
 
@@ -259,6 +263,7 @@ int main(int argc, char* argv[])
         BenchmarkRecord rec;
         rec.matrix_path      = input_matrix;
         rec.solver_name      = solver_display_name(solver_type);
+        rec.precision        = precision_label<Scalar>();
         rec.n                = static_cast<int>(A.rows());
         rec.nnz              = static_cast<long long>(A.nonZeros());
         rec.patch_size       = patch_size;
@@ -270,4 +275,45 @@ int main(int argc, char* argv[])
     }
 
     return 0;
+}
+
+} // namespace
+
+int main(int argc, char* argv[])
+{
+    std::string input_matrix;
+    std::string solver_name = "cholmod";
+    std::string precision   = "double";
+    int         patch_size  = 512;
+    std::string output_json;
+
+    CLI::App app{"Homa Matrix Market linear solver example"};
+    app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
+    app.add_option("-s,--solver", solver_name, "Solver backend: cholmod, mkl, cudss");
+    app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
+    app.add_option("--precision", precision,
+        "Floating-point precision: double (default) or float");
+    app.add_option("-o,--out", output_json,
+        "Optional JSON file to write benchmark results to (no output if empty)");
+    CLI11_PARSE(app, argc, argv);
+
+    homa::LinSysSolverType solver_type = homa::LinSysSolverType::CPU_CHOLMOD;
+    try {
+        solver_type = solver_type_from_name(solver_name);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << e.what() << "\n";
+        return 1;
+    }
+
+    const std::string prec = to_lower(precision);
+    if (prec == "double" || prec == "fp64" || prec == "f64") {
+        return run_benchmark<double>(input_matrix, solver_type, patch_size, output_json);
+    }
+    if (prec == "float" || prec == "fp32" || prec == "f32" || prec == "single") {
+        return run_benchmark<float>(input_matrix, solver_type, patch_size, output_json);
+    }
+
+    std::cerr << "Unknown precision '" << precision
+              << "' (expected 'double' or 'float')\n";
+    return 1;
 }
