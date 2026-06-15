@@ -20,7 +20,8 @@
 
 namespace homa {
 
-    void LinSysSolver::setMatrix(const Eigen::SparseMatrix<double>& A) {
+    template <class Scalar>
+    void LinSysSolver<Scalar>::setMatrix(const Eigen::SparseMatrix<Scalar>& A) {
         if (A.rows() != A.cols()) {
             throw std::invalid_argument("LinSysSolver::setMatrix expects a square matrix");
         }
@@ -29,9 +30,9 @@ namespace homa {
                 "LinSysSolver::setMatrix expects a compressed Eigen::SparseMatrix; call makeCompressed() first");
         }
 
-        if (type() == LinSysSolverType::CPU_MKL) {
+        if (this->type() == LinSysSolverType::CPU_MKL) {
             for (int c = 0; c < A.outerSize(); ++c) {
-                for (Eigen::SparseMatrix<double>::InnerIterator it(A, c); it; ++it) {
+                for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(A, c); it; ++it) {
                     if (it.row() < it.col()) {
                         throw std::invalid_argument(
                             "LinSysSolver::setMatrix with CPU_MKL expects lower-triangular storage; pass A.triangularView<Eigen::Lower>().makeCompressed()");
@@ -42,12 +43,13 @@ namespace homa {
 
         setMatrix(const_cast<int*>(A.outerIndexPtr()),
                   const_cast<int*>(A.innerIndexPtr()),
-                  const_cast<double*>(A.valuePtr()),
+                  const_cast<Scalar*>(A.valuePtr()),
                   static_cast<int>(A.rows()),
                   static_cast<int>(A.nonZeros()));
     }
 
-    void LinSysSolver::setMatrix(SparseMatrixView& A) {
+    template <class Scalar>
+    void LinSysSolver<Scalar>::setMatrix(SparseMatrixView<Scalar>& A) {
         if (A.location != MemoryLocation::Host) {
             throw std::invalid_argument("This solver backend does not accept device matrix pointers");
         }
@@ -61,12 +63,13 @@ namespace homa {
         setMatrix(A.outer, A.inner, A.values, A.rows, A.nnz);
     }
 
-    void LinSysSolver::recordMatrixPattern(const int*     outer,
-                                           const int*     inner,
-                                           int            n,
-                                           int            nnz,
-                                           SparseFormat   format,
-                                           MemoryLocation location) {
+    template <class Scalar>
+    void LinSysSolver<Scalar>::recordMatrixPattern(const int*     outer,
+                                                   const int*     inner,
+                                                   int            n,
+                                                   int            nnz,
+                                                   SparseFormat   format,
+                                                   MemoryLocation location) {
         if (outer == nullptr || inner == nullptr) {
             throw std::invalid_argument("LinSysSolver::recordMatrixPattern received a null pointer");
         }
@@ -86,12 +89,14 @@ namespace homa {
         ordering_applied_ = false;
     }
 
-    void LinSysSolver::copyDeviceMatrixPatternToHost() {
+    template <class Scalar>
+    void LinSysSolver<Scalar>::copyDeviceMatrixPatternToHost() {
         throw std::runtime_error(
             "LinSysSolver::ordering cannot copy a device matrix pattern for this backend");
     }
 
-    void LinSysSolver::ordering(const Options& opts) {
+    template <class Scalar>
+    void LinSysSolver<Scalar>::ordering(const Options& opts) {
         if (N <= 0 || matrix_view_.outer == nullptr || matrix_view_.inner == nullptr) {
             throw std::runtime_error("LinSysSolver::ordering called before setMatrix");
         }
@@ -111,7 +116,7 @@ namespace homa {
         remove_diagonal(N, outer, inner, Gp, Gi);
 
         Options local_opts = opts;
-        if (type() == LinSysSolverType::GPU_CUDSS) {
+        if (this->type() == LinSysSolverType::GPU_CUDSS) {
             local_opts.compute_etree = true;
         }
 
@@ -120,13 +125,16 @@ namespace homa {
         ordering_applied_ = true;
     }
 
-    void LinSysSolver::setOrdering(const OrderingResult& ordering) {
+    template <class Scalar>
+    void LinSysSolver<Scalar>::setOrdering(const OrderingResult& ordering) {
         ordering_result = ordering;
         innerOrdering(ordering_result.perm, ordering_result.etree);
         ordering_applied_ = true;
     }
 
-    void LinSysSolver::innerSolveView(DenseMatrixView& rhs, DenseMatrixView& result) {
+    template <class Scalar>
+    void LinSysSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs,
+                                              DenseMatrixView<Scalar>& result) {
         if (rhs.location != MemoryLocation::Host || result.location != MemoryLocation::Host) {
             throw std::invalid_argument("This solver backend only accepts host dense vectors/matrices");
         }
@@ -146,24 +154,23 @@ namespace homa {
         innerSolveRaw(rhs.values, rhs.rows, rhs.cols, result.values);
     }
 
-    LinSysSolver *LinSysSolver::create(const LinSysSolverType type) {
+    template <class Scalar>
+    LinSysSolver<Scalar>* LinSysSolver<Scalar>::create(const LinSysSolverType type) {
         switch (type) {
-
 
 #ifdef USE_CHOLMOD
             case LinSysSolverType::CPU_CHOLMOD:
-                return new CHOLMODSolver();
+                return new CHOLMODSolver<Scalar>();
 #endif
 
 #ifdef USE_CUDSS
             case LinSysSolverType::GPU_CUDSS:
-                return new CUDSSSolver();
+                return new CUDSSSolver<Scalar>();
 #endif
-
 
 #ifdef USE_MKL
             case LinSysSolverType::CPU_MKL:
-                return new MKLSolver();
+                return new MKLSolver<Scalar>();
 #endif
             default:
                 std::cerr << "Uknown linear system solver type" << std::endl;
@@ -171,5 +178,7 @@ namespace homa {
         }
     }
 
+    template class LinSysSolver<float>;
+    template class LinSysSolver<double>;
 
 } // namespace homa

@@ -1,11 +1,15 @@
 #pragma once
+#include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 
+#include <homa/solvers/LinSysSolver.h>
 #include <spdlog/spdlog.h>
 
 #ifdef USE_CUDSS
@@ -24,6 +28,7 @@ struct StageTimes {
 struct BenchmarkRecord {
     std::string matrix_path;
     std::string solver_name;
+    std::string precision;   // "float" or "double"
     int         n          = 0;
     long long   nnz        = 0;
     int         patch_size = 0;
@@ -97,8 +102,9 @@ inline bool write_results_json(const std::string&     path,
         << "    \"n\": "      << rec.n                        << ",\n"
         << "    \"nnz\": "    << rec.nnz                      << "\n"
         << "  },\n"
-        << "  \"solver\": \""   << json_escape(rec.solver_name) << "\",\n"
-        << "  \"patch_size\": " << rec.patch_size               << ",\n"
+        << "  \"solver\": \""    << json_escape(rec.solver_name) << "\",\n"
+        << "  \"precision\": \"" << json_escape(rec.precision)   << "\",\n"
+        << "  \"patch_size\": "  << rec.patch_size                << ",\n"
         << "  \"default\": {\n";
     detail::write_stage_times(out, rec.default_times, rec.default_total_ms);
     out << "  },\n"

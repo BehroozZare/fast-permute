@@ -1,8 +1,11 @@
 #pragma once
 #include <Eigen/Sparse>
+#include <stdexcept>
+#include <vector>
 #include "homa/matrix_view.h"
 #include "homa/patcher.h"
 #include "homa/types.h"
+#include "homa/utils/remove_diagonal.h"
 
 namespace homa {
 
@@ -17,13 +20,16 @@ OrderingResult compute_ordering(int n, const int *Gp, const int *Gi,
                                 const Options &opts = {});
 
 /// Convenience overload for sparse matrices. The diagonal is removed and the
-/// off-diagonal pattern is symmetrized before ordering.
-OrderingResult compute_ordering(const Eigen::SparseMatrix<double>& A,
+/// off-diagonal pattern is symmetrized before ordering. The Scalar argument is
+/// only used for the sparsity pattern -- values are not read.
+template <class Scalar>
+OrderingResult compute_ordering(const Eigen::SparseMatrix<Scalar>& A,
                                 const Options& opts = {});
 
 /// Convenience overload for host sparse matrix views. Device views are rejected
 /// because the current ordering implementation consumes host graph arrays.
-OrderingResult compute_ordering(const SparseMatrixView& A,
+template <class Scalar>
+OrderingResult compute_ordering(const SparseMatrixView<Scalar>& A,
                                 const Options& opts = {});
 
 /// Same as above but uses a caller-supplied patch assignment, skipping

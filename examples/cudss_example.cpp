@@ -86,8 +86,8 @@ int main(int argc, char* argv[])
 
     // --- Warm-up: pay CUDA/cuDSS one-time init costs before any timed run ---
     {
-        std::unique_ptr<homa::LinSysSolver> solver(
-            homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
+        std::unique_ptr<homa::LinSysSolverD> solver(
+            homa::LinSysSolverD::create(homa::LinSysSolverType::GPU_CUDSS));
         solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
         std::vector<int> empty;
         solver->ordering(empty, empty);
@@ -103,8 +103,8 @@ int main(int argc, char* argv[])
     float  def_factorize_ms = 0.0f, def_solve_ms = 0.0f;
     double def_residual     = 0.0;
     {
-        std::unique_ptr<homa::LinSysSolver> solver(
-            homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
+        std::unique_ptr<homa::LinSysSolverD> solver(
+            homa::LinSysSolverD::create(homa::LinSysSolverType::GPU_CUDSS));
         solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
 
         std::vector<int> empty;
@@ -148,8 +148,8 @@ int main(int argc, char* argv[])
         if (!homa::check_valid_permutation(ord.perm.data(), ord.perm.size()))
             spdlog::error("HOMA permutation is invalid!");
 
-        std::unique_ptr<homa::LinSysSolver> solver(
-            homa::LinSysSolver::create(homa::LinSysSolverType::GPU_CUDSS));
+        std::unique_ptr<homa::LinSysSolverD> solver(
+            homa::LinSysSolverD::create(homa::LinSysSolverType::GPU_CUDSS));
         solver->setMatrix(L.outerIndexPtr(), L.innerIndexPtr(), L.valuePtr(), n, L.nonZeros());
 
         gpu_timer.start();

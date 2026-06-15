@@ -51,8 +51,8 @@ int main(int argc, char* argv[])
     double def_analysis_ms = 0.0, def_factorize_ms = 0.0, def_solve_ms = 0.0;
     double def_residual = 0.0;
     {
-        std::unique_ptr<homa::LinSysSolver> solver(
-            homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD));
+        std::unique_ptr<homa::LinSysSolverD> solver(
+            homa::LinSysSolverD::create(homa::LinSysSolverType::CPU_CHOLMOD));
         solver->setMatrix(L);
 
         auto t0 = Clock::now();
@@ -86,8 +86,8 @@ int main(int argc, char* argv[])
         if (!homa::check_valid_permutation(ord.perm.data(), ord.perm.size()))
             spdlog::error("HOMA permutation is invalid!");
 
-        std::unique_ptr<homa::LinSysSolver> solver(
-            homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD));
+        std::unique_ptr<homa::LinSysSolverD> solver(
+            homa::LinSysSolverD::create(homa::LinSysSolverType::CPU_CHOLMOD));
         solver->setMatrix(L);
 
         t0 = Clock::now();

@@ -120,14 +120,15 @@ OrderingResult compute_ordering(int n, const int *Gp, const int *Gi,
   return compute_ordering(n, Gp, Gi, node_to_patch, opts);
 }
 
-OrderingResult compute_ordering(const Eigen::SparseMatrix<double>& A,
+template <class Scalar>
+OrderingResult compute_ordering(const Eigen::SparseMatrix<Scalar>& A,
                                 const Options& opts) {
   if (A.rows() != A.cols()) {
     throw std::invalid_argument(
         "homa::compute_ordering: sparse matrix must be square");
   }
 
-  Eigen::SparseMatrix<double> compressed = A;
+  Eigen::SparseMatrix<Scalar> compressed = A;
   compressed.makeCompressed();
 
   std::vector<int> Gp, Gi;
@@ -142,7 +143,8 @@ OrderingResult compute_ordering(const Eigen::SparseMatrix<double>& A,
                           opts);
 }
 
-OrderingResult compute_ordering(const SparseMatrixView& A,
+template <class Scalar>
+OrderingResult compute_ordering(const SparseMatrixView<Scalar>& A,
                                 const Options& opts) {
   if (A.location != MemoryLocation::Host) {
     throw std::invalid_argument(
@@ -173,5 +175,14 @@ OrderingResult compute_ordering(int n, const int *Gp, const int *Gi,
 
   return run_ordering(n, Gp, Gi, node_to_patch, opts);
 }
+
+template OrderingResult compute_ordering<float>(const Eigen::SparseMatrix<float>&,
+                                                const Options&);
+template OrderingResult compute_ordering<double>(const Eigen::SparseMatrix<double>&,
+                                                 const Options&);
+template OrderingResult compute_ordering<float>(const SparseMatrixView<float>&,
+                                              const Options&);
+template OrderingResult compute_ordering<double>(const SparseMatrixView<double>&,
+                                                 const Options&);
 
 } // namespace homa
