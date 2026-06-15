@@ -45,15 +45,15 @@ The user then can hand the permutation to any third-party solver that supports a
 
 ## 2. Sparse SPD linear solver
 
-The `LinSysSolver` interface is a uniform front-end to all three backends, by switching backends through changing the `LinSysSolverType` argument.
+The `LinSysSolver` interface is a uniform front-end to all three backends, by switching backends through changing the `LinSysSolverType` argument. `LinSysSolver` is a class template parameterized on `Scalar`; both `float` and `double` are supported, with convenience aliases `homa::LinSysSolverD` and `homa::LinSysSolverF`.
 
 ```cpp
 #include <homa/solvers/LinSysSolver.h>
 
-std::unique_ptr<homa::LinSysSolver> solver(
-    homa::LinSysSolver::create(homa::LinSysSolverType::CPU_CHOLMOD));
-//                                                  ::CPU_MKL
-//                                                  ::GPU_CUDSS
+std::unique_ptr<homa::LinSysSolverD> solver(
+    homa::LinSysSolverD::create(homa::LinSysSolverType::CPU_CHOLMOD));
+//                                                          ::CPU_MKL
+//                                                          ::GPU_CUDSS
 
 homa::Options opts;
 opts.patch_size = 512;
@@ -73,9 +73,9 @@ Raw pointer and device-aware view APIs are also available:
 ```cpp
 solver->setMatrix(p, i, x, n, nnz);
 
-homa::SparseMatrixView Adev{n, n, nnz, d_rowptr, d_colind, d_values,
-                            homa::SparseFormat::CSR,
-                            homa::MemoryLocation::Device};
+homa::SparseMatrixView<double> Adev{n, n, nnz, d_rowptr, d_colind, d_values,
+                                    homa::SparseFormat::CSR,
+                                    homa::MemoryLocation::Device};
 solver->setMatrix(Adev); // cuDSS only
 ```
 
