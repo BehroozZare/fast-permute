@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "homa/solvers/LinSysSolver.h"
@@ -54,6 +55,46 @@ SparseMat<Scalar> expand_symmetric_storage(const SparseMat<Scalar>& raw)
                          : SparseMat<Scalar>(raw.template selfadjointView<Eigen::Upper>());
     expanded.makeCompressed();
     return expanded;
+}
+
+template <class Scalar>
+SparseMat<Scalar> make_spd_from_pattern(const SparseMat<Scalar>& raw)
+{
+    const int n = static_cast<int>(raw.rows());
+    std::vector<std::pair<int, int>> edges;
+
+    for (int c = 0; c < raw.outerSize(); ++c) {
+        for (typename SparseMat<Scalar>::InnerIterator it(raw, c); it; ++it) {
+            const int r = static_cast<int>(it.row());
+            if (r == c) {
+                continue;
+            }
+            edges.emplace_back(r, c);
+            edges.emplace_back(c, r);
+        }
+    }
+
+    std::sort(edges.begin(), edges.end());
+    edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
+
+    std::vector<int> degree(n, 0);
+    for (const auto& edge : edges) {
+        ++degree[edge.first];
+    }
+
+    std::vector<Eigen::Triplet<Scalar>> triplets;
+    triplets.reserve(edges.size() + static_cast<size_t>(n));
+    for (const auto& edge : edges) {
+        triplets.emplace_back(edge.first, edge.second, Scalar(-1));
+    }
+    for (int i = 0; i < n; ++i) {
+        triplets.emplace_back(i, i, static_cast<Scalar>(degree[i] + 1));
+    }
+
+    SparseMat<Scalar> spd(n, n);
+    spd.setFromTriplets(triplets.begin(), triplets.end());
+    spd.makeCompressed();
+    return spd;
 }
 
 template <class Scalar>
@@ -172,7 +213,8 @@ template <class Scalar>
 int run_benchmark(const std::string&     input_matrix,
                   homa::LinSysSolverType solver_type,
                   int                    patch_size,
-                  const std::string&     output_json)
+                  const std::string&     output_json,
+                  bool                   make_spd_pattern)
 {
     SparseMat<Scalar> raw;
     if (!Eigen::loadMarket(raw, input_matrix)) {
@@ -185,9 +227,11 @@ int run_benchmark(const std::string&     input_matrix,
         return 1;
     }
 
-    SparseMat<Scalar> A = is_matrix_market_symmetric(input_matrix)
-                              ? expand_symmetric_storage<Scalar>(raw)
-                              : raw;
+    SparseMat<Scalar> A = make_spd_pattern
+                              ? make_spd_from_pattern<Scalar>(raw)
+                              : (is_matrix_market_symmetric(input_matrix)
+                                     ? expand_symmetric_storage<Scalar>(raw)
+                                     : raw);
     A.makeCompressed();
 
     SparseMat<Scalar> solver_matrix = solver_matrix_for<Scalar>(solver_type, A);
@@ -286,6 +330,7 @@ int main(int argc, char* argv[])
     std::string precision   = "double";
     int         patch_size  = 512;
     std::string output_json;
+    bool        make_spd_pattern = false;
 
     CLI::App app{"Homa Matrix Market linear solver example"};
     app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
@@ -295,6 +340,8 @@ int main(int argc, char* argv[])
         "Floating-point precision: double (default) or float");
     app.add_option("-o,--out", output_json,
         "Optional JSON file to write benchmark results to (no output if empty)");
+    app.add_flag("--make-spd-from-pattern", make_spd_pattern,
+        "Build a guaranteed SPD matrix from the input sparsity pattern");
     CLI11_PARSE(app, argc, argv);
 
     homa::LinSysSolverType solver_type = homa::LinSysSolverType::CPU_CHOLMOD;
@@ -307,10 +354,12 @@ int main(int argc, char* argv[])
 
     const std::string prec = to_lower(precision);
     if (prec == "double" || prec == "fp64" || prec == "f64") {
-        return run_benchmark<double>(input_matrix, solver_type, patch_size, output_json);
+        return run_benchmark<double>(
+            input_matrix, solver_type, patch_size, output_json, make_spd_pattern);
     }
     if (prec == "float" || prec == "fp32" || prec == "f32" || prec == "single") {
-        return run_benchmark<float>(input_matrix, solver_type, patch_size, output_json);
+        return run_benchmark<float>(
+            input_matrix, solver_type, patch_size, output_json, make_spd_pattern);
     }
 
     std::cerr << "Unknown precision '" << precision

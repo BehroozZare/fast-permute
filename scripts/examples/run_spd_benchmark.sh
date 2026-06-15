@@ -2,9 +2,9 @@
 # ------------------------------------------------------------------
 # Loop matrix_example over every .mtx file recursively under input/
 # and write a per-matrix JSON result to
-# results/<solver>/<relpath>/<name>.json, mirroring the input
+# results/<solver>/<relpath>/<name>_<precision>.json, mirroring the input
 # directory layout (so groups like input/HB/foo.mtx end up in
-# results/<solver>/HB/foo.json).
+# results/<solver>/HB/foo_double.json and foo_float.json).
 #
 # Usage:
 #     scripts/examples/run_spd_benchmark.sh                (default solver: cudss)
@@ -70,7 +70,8 @@ for f in "${mtx_files[@]}"; do
     echo "============================================================"
     echo "  Matrix: $rel  |  solver: $SOLVER  |  patch: $PATCH_SIZE"
     echo "============================================================"
-    "$BINARY" -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --out "$out_subdir/${name}.json"
+    "$BINARY" -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision double --make-spd-from-pattern --out "$out_subdir/${name}_double.json"
+    "$BINARY" -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision float --make-spd-from-pattern --out "$out_subdir/${name}_float.json"
 done
 
 echo

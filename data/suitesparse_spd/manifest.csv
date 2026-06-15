@@ -1,0 +1,1044 @@
+group,name,nrows,ncols,nnz,is_real,is_binary,is_nd,posdef,pattern_symmetry,numerical_symmetry,kind,nentries,estimated_mb,url
+Cunningham,m3plates,11107,11107,6639,1,0,1,0,1.0,1.0,acoustics problem,6639,0.205,https://sparse.tamu.edu/MM/Cunningham/m3plates.tar.gz
+Pajek,EVA,8497,8497,6726,1,1,0,0,0.003866745984533016,0.003866745984533016,directed graph,6726,0.207,https://sparse.tamu.edu/MM/Pajek/EVA.tar.gz
+Boeing,bcsstm38,8032,8032,10485,1,0,1,0,1.0,1.0,structural problem,10485,0.322,https://sparse.tamu.edu/MM/Boeing/bcsstm38.tar.gz
+MathWorks,Pd,8081,8081,13036,1,0,0,0,0.0,0.0,counter-example problem,13036,0.400,https://sparse.tamu.edu/MM/MathWorks/Pd.tar.gz
+Pajek,Erdos972,5488,5488,14170,1,1,0,0,1.0,1.0,undirected graph,14170,0.434,https://sparse.tamu.edu/MM/Pajek/Erdos972.tar.gz
+Pajek,Erdos982,5822,5822,14750,1,1,0,0,1.0,1.0,undirected graph,14750,0.452,https://sparse.tamu.edu/MM/Pajek/Erdos982.tar.gz
+Pajek,Erdos992,6100,6100,15030,1,1,0,0,1.0,1.0,undirected graph,15030,0.461,https://sparse.tamu.edu/MM/Pajek/Erdos992.tar.gz
+HB,bcsstm25,15439,15439,15439,1,0,1,1,1.0,1.0,structural problem,15439,0.473,https://sparse.tamu.edu/MM/HB/bcsstm25.tar.gz
+Boeing,bcsstm37,25503,25503,15525,1,0,1,0,1.0,1.0,structural problem,15525,0.476,https://sparse.tamu.edu/MM/Boeing/bcsstm37.tar.gz
+AG-Monien,ukerbe1,5981,5981,15704,1,1,1,0,1.0,1.0,2D/3D problem,15704,0.481,https://sparse.tamu.edu/MM/AG-Monien/ukerbe1.tar.gz
+Pajek,California,9664,9664,16150,1,1,0,0,0.02241486068111455,0.02241486068111455,directed graph,16150,0.495,https://sparse.tamu.edu/MM/Pajek/California.tar.gz
+Pajek,Erdos02,6927,6927,16944,1,1,0,0,1.0,1.0,undirected graph,16944,0.519,https://sparse.tamu.edu/MM/Pajek/Erdos02.tar.gz
+Bai,olm5000,5000,5000,19996,1,0,1,0,0.6667111229661243,0.3332888770338757,computational fluid dynamics problem,19996,0.612,https://sparse.tamu.edu/MM/Bai/olm5000.tar.gz
+Gset,G57,5000,5000,20000,1,0,0,0,1.0,1.0,undirected weighted random graph,20000,0.612,https://sparse.tamu.edu/MM/Gset/G57.tar.gz
+HB,sherman3,5005,5005,20033,1,0,1,0,1.0,0.4532871972318339,computational fluid dynamics problem,20033,0.613,https://sparse.tamu.edu/MM/HB/sherman3.tar.gz
+Bai,rw5151,5151,5151,20199,1,0,0,0,0.4902222882320907,0.0,statistical/mathematical problem,20199,0.618,https://sparse.tamu.edu/MM/Bai/rw5151.tar.gz
+Oberwolfach,t3dl_e,20360,20360,20360,1,0,1,1,1.0,1.0,duplicate model reduction problem,20360,0.623,https://sparse.tamu.edu/MM/Oberwolfach/t3dl_e.tar.gz
+Boeing,bcsstm35,30237,30237,20619,1,0,1,0,1.0,1.0,structural problem,20619,0.631,https://sparse.tamu.edu/MM/Boeing/bcsstm35.tar.gz
+SNAP,p2p-Gnutella08,6301,6301,20777,1,1,0,0,0.0,0.0,directed graph,20777,0.636,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella08.tar.gz
+HB,bcspwr10,5300,5300,21842,1,1,0,0,1.0,1.0,power network problem,21842,0.669,https://sparse.tamu.edu/MM/HB/bcspwr10.tar.gz
+Hamrle,Hamrle2,5952,5952,22162,1,0,0,0,0.0009930486593843098,0.0001805543017062382,circuit simulation problem,22162,0.678,https://sparse.tamu.edu/MM/Hamrle/Hamrle2.tar.gz
+Zitney,hydr1c,5308,5308,22592,1,0,0,0,0.004126315789473685,0.0006197432492253209,chemical process simulation problem sequence,23752,0.727,https://sparse.tamu.edu/MM/Zitney/hydr1c.tar.gz
+Zitney,hydr1,5308,5308,22680,1,0,0,0,0.004126315789473685,0.0006173383896287151,chemical process simulation problem,23752,0.727,https://sparse.tamu.edu/MM/Zitney/hydr1.tar.gz
+Nasa,barth4,6019,6019,23492,1,1,1,0,0.0,0.0,duplicate structural problem,23492,0.719,https://sparse.tamu.edu/MM/Nasa/barth4.tar.gz
+AG-Monien,airfoil1_dual,8034,8034,23626,1,1,1,0,1.0,1.0,2D/3D problem,23626,0.723,https://sparse.tamu.edu/MM/AG-Monien/airfoil1_dual.tar.gz
+Pajek,geom,7343,7343,23796,1,0,0,0,1.0,1.0,undirected weighted graph,23796,0.728,https://sparse.tamu.edu/MM/Pajek/geom.tar.gz
+Gset,G55,5000,5000,24996,1,1,0,0,1.0,1.0,duplicate undirected random graph,24996,0.765,https://sparse.tamu.edu/MM/Gset/G55.tar.gz
+Gset,G56,5000,5000,24996,1,0,0,0,1.0,1.0,undirected weighted random graph,24996,0.765,https://sparse.tamu.edu/MM/Gset/G56.tar.gz
+Grund,meg4,5860,5860,25258,1,0,0,0,1.0,1.0,circuit simulation problem,46842,1.431,https://sparse.tamu.edu/MM/Grund/meg4.tar.gz
+SNAP,p2p-Gnutella09,8114,8114,26013,1,1,0,0,0.0,0.0,directed graph,26013,0.796,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella09.tar.gz
+Nasa,barth,6691,6691,26439,1,1,1,0,0.0,0.0,duplicate structural problem,26439,0.809,https://sparse.tamu.edu/MM/Nasa/barth.tar.gz
+SNAP,as-735,7716,7716,26467,1,1,0,0,1.0,1.0,undirected graph sequence,26467,0.810,https://sparse.tamu.edu/MM/SNAP/as-735.tar.gz
+AG-Monien,3elt_dual,9000,9000,26556,1,1,1,0,1.0,1.0,2D/3D problem,26556,0.812,https://sparse.tamu.edu/MM/AG-Monien/3elt_dual.tar.gz
+Gset,G62,7000,7000,28000,1,0,0,0,1.0,1.0,undirected weighted random graph,28000,0.856,https://sparse.tamu.edu/MM/Gset/G62.tar.gz
+Hohn,fd12,7500,7500,28462,1,0,1,0,0.0002810765230834094,0.0,materials problem,28462,0.871,https://sparse.tamu.edu/MM/Hohn/fd12.tar.gz
+SNAP,ca-GrQc,5242,5242,28980,1,1,0,0,1.0,1.0,undirected graph,28980,0.886,https://sparse.tamu.edu/MM/SNAP/ca-GrQc.tar.gz
+Grund,bayer03,6747,6747,29195,1,0,0,0,0.003132397173723459,0.0002740852405097985,chemical process simulation problem,56196,1.717,https://sparse.tamu.edu/MM/Grund/bayer03.tar.gz
+Bai,rdb5000,5000,5000,29600,1,0,1,0,1.0,0.7967479674796748,computational fluid dynamics problem,29600,0.905,https://sparse.tamu.edu/MM/Bai/rdb5000.tar.gz
+Lucifora,cell1,7055,7055,30082,1,0,0,0,0.9970503597122302,0.0,directed weighted graph,34855,1.066,https://sparse.tamu.edu/MM/Lucifora/cell1.tar.gz
+Lucifora,cell2,7055,7055,30082,1,0,0,0,0.9970503597122302,0.004342728101793546,directed weighted graph,34855,1.066,https://sparse.tamu.edu/MM/Lucifora/cell2.tar.gz
+Newman,hep-th,8361,8361,31502,1,0,0,0,1.0,1.0,undirected weighted graph,31502,0.963,https://sparse.tamu.edu/MM/Newman/hep-th.tar.gz
+SNAP,p2p-Gnutella06,8717,8717,31525,1,1,0,0,0.0,0.0,directed graph,31525,0.964,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella06.tar.gz
+Pothen,commanche_dual,7920,7920,31680,1,1,1,0,1.0,1.0,structural problem,31680,0.969,https://sparse.tamu.edu/MM/Pothen/commanche_dual.tar.gz
+SNAP,p2p-Gnutella05,8846,8846,31839,1,1,0,0,0.0,0.0,directed graph,31839,0.974,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella05.tar.gz
+Gset,G65,8000,8000,32000,1,0,0,0,1.0,1.0,undirected weighted random graph,32000,0.979,https://sparse.tamu.edu/MM/Gset/G65.tar.gz
+Rajat,rajat03,7602,7602,32653,1,0,0,0,1.0,0.4024380527448012,circuit simulation problem,32653,0.998,https://sparse.tamu.edu/MM/Rajat/rajat03.tar.gz
+Grund,poli_large,15575,15575,33033,1,0,0,0,0.003543059603405909,0.0004582426394776034,economic problem,33074,1.011,https://sparse.tamu.edu/MM/Grund/poli_large.tar.gz
+Hollinger,jan99jac020,6774,6774,33744,1,0,0,0,0.003759634062284604,0.0,economic problem,38692,1.183,https://sparse.tamu.edu/MM/Hollinger/jan99jac020.tar.gz
+Hollinger,jan99jac020sc,6774,6774,33744,1,0,0,0,0.003759634062284604,0.0,economic problem,38692,1.183,https://sparse.tamu.edu/MM/Hollinger/jan99jac020sc.tar.gz
+Gset,G60,7000,7000,34296,1,1,0,0,1.0,1.0,duplicate undirected random graph,34296,1.049,https://sparse.tamu.edu/MM/Gset/G60.tar.gz
+Gset,G61,7000,7000,34296,1,0,0,0,1.0,1.0,undirected weighted random graph,34296,1.049,https://sparse.tamu.edu/MM/Gset/G61.tar.gz
+Rommes,bips98_606,7135,7135,34738,1,0,1,0,0.9086859688195991,0.7583878152166104,eigenvalue/model reduction problem,34738,1.062,https://sparse.tamu.edu/MM/Rommes/bips98_606.tar.gz
+Oberwolfach,rail_5177,5177,5177,35185,1,0,1,0,1.0,1.0,model reduction problem,35185,1.076,https://sparse.tamu.edu/MM/Oberwolfach/rail_5177.tar.gz
+SNAP,soc-sign-bitcoin-otc,5881,5881,35592,1,0,0,0,0.7923128792987189,0.5689480782198246,directed weighted temporal graph,35592,1.088,https://sparse.tamu.edu/MM/SNAP/soc-sign-bitcoin-otc.tar.gz
+Gset,G66,9000,9000,36000,1,0,0,0,1.0,1.0,undirected weighted random graph,36000,1.101,https://sparse.tamu.edu/MM/Gset/G66.tar.gz
+Gleich,wb-cs-stanford,9914,9914,36854,1,1,0,0,0.4572071438616228,0.4572071438616228,directed graph,36854,1.127,https://sparse.tamu.edu/MM/Gleich/wb-cs-stanford.tar.gz
+Grund,poli3,16955,16955,37849,1,0,0,0,0.00507322676366421,0.0005743275581506652,economic problem,37849,1.157,https://sparse.tamu.edu/MM/Grund/poli3.tar.gz
+SNAP,p2p-Gnutella04,10879,10879,39994,1,1,0,0,0.0,0.0,directed graph,39994,1.222,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella04.tar.gz
+Gset,G67,10000,10000,40000,1,0,0,0,1.0,1.0,undirected weighted random graph,40000,1.223,https://sparse.tamu.edu/MM/Gset/G67.tar.gz
+VDOL,freeFlyingRobot_11,5438,5438,40054,1,0,0,0,1.0,1.0,optimal control problem,40054,1.224,https://sparse.tamu.edu/MM/VDOL/freeFlyingRobot_11.tar.gz
+VDOL,freeFlyingRobot_10,5218,5218,40080,1,0,0,0,1.0,1.0,optimal control problem,40080,1.225,https://sparse.tamu.edu/MM/VDOL/freeFlyingRobot_10.tar.gz
+Pothen,barth4,6019,6019,40965,1,1,1,0,1.0,1.0,structural problem,40965,1.252,https://sparse.tamu.edu/MM/Pothen/barth4.tar.gz
+Rommes,bips98_1142,9735,9735,40983,1,0,1,0,0.8020552507215579,0.6694154587839767,eigenvalue/model reduction problem,40983,1.253,https://sparse.tamu.edu/MM/Rommes/bips98_1142.tar.gz
+Pajek,Lederberg,8843,8843,41601,1,0,0,0,0.003029210241615579,0.003029210241615579,directed multigraph,41601,1.272,https://sparse.tamu.edu/MM/Pajek/Lederberg.tar.gz
+Bai,dw4096,8192,8192,41746,1,0,1,0,0.9626274065685164,0.9154199201287477,electromagnetics problem,41746,1.276,https://sparse.tamu.edu/MM/Bai/dw4096.tar.gz
+Bai,dw8192,8192,8192,41746,1,0,1,0,0.9626274065685164,0.9154199201287477,electromagnetics problem,41746,1.276,https://sparse.tamu.edu/MM/Bai/dw8192.tar.gz
+VDOL,freeFlyingRobot_12,5578,5578,41940,1,0,0,0,1.0,1.0,optimal control problem,41940,1.282,https://sparse.tamu.edu/MM/VDOL/freeFlyingRobot_12.tar.gz
+MathWorks,Kaufhold,8765,8765,42471,1,0,0,0,1.0,0.778437073518068,counter-example problem,42471,1.298,https://sparse.tamu.edu/MM/MathWorks/Kaufhold.tar.gz
+Hollinger,g7jac020,5850,5850,42568,1,0,0,0,0.06184526063359838,0.0,economic problem,45465,1.389,https://sparse.tamu.edu/MM/Hollinger/g7jac020.tar.gz
+Hollinger,g7jac020sc,5850,5850,42568,1,0,0,0,0.06184526063359838,0.0,economic problem,45465,1.389,https://sparse.tamu.edu/MM/Hollinger/g7jac020sc.tar.gz
+Alemdar,Alemdar,6245,6245,42581,1,0,1,0,1.0,1.0,2D/3D problem,42581,1.301,https://sparse.tamu.edu/MM/Alemdar/Alemdar.tar.gz
+Rajat,rajat01,6833,6833,43250,1,1,0,0,0.9957479284779764,0.9957479284779764,circuit simulation problem,43250,1.322,https://sparse.tamu.edu/MM/Rajat/rajat01.tar.gz
+VDOL,freeFlyingRobot_14,5958,5958,43298,1,0,0,0,1.0,1.0,optimal control problem,43298,1.323,https://sparse.tamu.edu/MM/VDOL/freeFlyingRobot_14.tar.gz
+VDOL,freeFlyingRobot_15,6038,6038,43378,1,0,0,0,1.0,1.0,optimal control problem,43378,1.326,https://sparse.tamu.edu/MM/VDOL/freeFlyingRobot_15.tar.gz
+Schenk_IBMNA,c-29,5033,5033,43731,1,0,0,0,1.0,1.0,optimization problem,43731,1.337,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-29.tar.gz
+VDOL,freeFlyingRobot_13,5718,5718,43994,1,0,0,0,1.0,1.0,optimal control problem,43994,1.345,https://sparse.tamu.edu/MM/VDOL/freeFlyingRobot_13.tar.gz
+VDOL,freeFlyingRobot_16,6078,6078,44006,1,0,0,0,1.0,1.0,optimal control problem,44006,1.345,https://sparse.tamu.edu/MM/VDOL/freeFlyingRobot_16.tar.gz
+Hohn,fd15,11532,11532,44206,1,0,1,0,0.0,0.0,materials problem,44206,1.351,https://sparse.tamu.edu/MM/Hohn/fd15.tar.gz
+Rommes,bips98_1450,11305,11305,44678,1,0,1,0,0.7593684272891549,0.6277809047012471,eigenvalue/model reduction problem,44678,1.365,https://sparse.tamu.edu/MM/Rommes/bips98_1450.tar.gz
+Rommes,nopss_11k,11685,11685,44941,1,0,1,0,0.7502077151335311,0.6233827893175075,eigenvalue/model reduction problem,44941,1.373,https://sparse.tamu.edu/MM/Rommes/nopss_11k.tar.gz
+GHS_indef,qpband,20000,20000,45000,1,0,0,0,1.0,1.0,optimization problem,45000,1.375,https://sparse.tamu.edu/MM/GHS_indef/qpband.tar.gz
+Marini,eurqsa,7245,7245,46142,1,0,0,0,1.0,1.0,economic problem,46142,1.410,https://sparse.tamu.edu/MM/Marini/eurqsa.tar.gz
+Pothen,barth,6691,6691,46187,1,1,1,0,1.0,1.0,structural problem,46187,1.411,https://sparse.tamu.edu/MM/Pothen/barth.tar.gz
+Boeing,bcsstm39,46772,46772,46772,1,0,1,1,1.0,1.0,structural problem,46772,1.429,https://sparse.tamu.edu/MM/Boeing/bcsstm39.tar.gz
+SNAP,Oregon-1,11492,11492,46818,1,1,0,0,1.0,1.0,undirected graph sequence,46818,1.431,https://sparse.tamu.edu/MM/SNAP/Oregon-1.tar.gz
+Rajat,rajat06,10922,10922,46983,1,1,0,0,1.0,1.0,circuit simulation problem,46983,1.436,https://sparse.tamu.edu/MM/Rajat/rajat06.tar.gz
+Bomhof,circuit_3,12127,12127,48137,1,0,0,0,0.7700717835450027,0.3001104362230811,circuit simulation problem,48137,1.471,https://sparse.tamu.edu/MM/Bomhof/circuit_3.tar.gz
+Arenas,PGPgiantcompo,10680,10680,48632,1,0,0,0,1.0,1.0,undirected multigraph,48632,1.486,https://sparse.tamu.edu/MM/Arenas/PGPgiantcompo.tar.gz
+Rommes,mimo46x46_system,13250,13250,48735,1,0,1,0,0.7075597554196776,0.5857142857142857,eigenvalue/model reduction problem,48735,1.489,https://sparse.tamu.edu/MM/Rommes/mimo46x46_system.tar.gz
+Rommes,xingo_afonso_itaipu,13250,13250,48735,1,0,1,0,0.7075597554196776,0.5857142857142857,eigenvalue/model reduction problem,48735,1.489,https://sparse.tamu.edu/MM/Rommes/xingo_afonso_itaipu.tar.gz
+Rommes,mimo28x28_system,13251,13251,48737,1,0,1,0,0.707540090603374,0.5856980072816208,eigenvalue/model reduction problem,48737,1.489,https://sparse.tamu.edu/MM/Rommes/mimo28x28_system.tar.gz
+Rommes,ww_vref_6405,13251,13251,48737,1,0,1,0,0.707540090603374,0.5856980072816208,eigenvalue/model reduction problem,48737,1.489,https://sparse.tamu.edu/MM/Rommes/ww_vref_6405.tar.gz
+Rajat,rajat13,7598,7598,48762,1,0,0,0,1.0,0.2965265970366772,circuit simulation problem,48922,1.495,https://sparse.tamu.edu/MM/Rajat/rajat13.tar.gz
+Rommes,zeros_nopss_13k,13296,13296,48827,1,0,1,0,0.7083056110002218,0.5842204479929031,eigenvalue/model reduction problem,48827,1.492,https://sparse.tamu.edu/MM/Rommes/zeros_nopss_13k.tar.gz
+Rommes,mimo8x8_system,13309,13309,48872,1,0,1,0,0.7060291752177048,0.584447279383216,eigenvalue/model reduction problem,48872,1.493,https://sparse.tamu.edu/MM/Rommes/mimo8x8_system.tar.gz
+Rommes,bips07_1693,13275,13275,49044,1,0,1,0,0.706761938919083,0.5845449278560985,eigenvalue/model reduction problem,49044,1.499,https://sparse.tamu.edu/MM/Rommes/bips07_1693.tar.gz
+DIMACS10,delaunay_n13,8192,8192,49094,1,1,0,0,1.0,1.0,undirected graph,49094,1.500,https://sparse.tamu.edu/MM/DIMACS10/delaunay_n13.tar.gz
+GHS_indef,tuma2,12992,12992,49365,1,0,1,0,1.0,1.0,2D/3D problem,49365,1.508,https://sparse.tamu.edu/MM/GHS_indef/tuma2.tar.gz
+Bai,cryg10000,10000,10000,49699,1,0,1,0,0.9974558553112169,0.0,materials problem,49699,1.519,https://sparse.tamu.edu/MM/Bai/cryg10000.tar.gz
+GHS_indef,bloweybq,10001,10001,49999,1,0,1,1,1.0,1.0,materials problem,69991,2.138,https://sparse.tamu.edu/MM/GHS_indef/bloweybq.tar.gz
+CPM,cz5108,5108,5108,51412,1,0,1,0,0.433914996544575,0.2362214927436075,2D/3D problem,51412,1.571,https://sparse.tamu.edu/MM/CPM/cz5108.tar.gz
+JGD_Homology,n3c6-b7,6435,6435,51480,1,0,0,0,1.0,0.5333333333333333,combinatorial problem,51480,1.573,https://sparse.tamu.edu/MM/JGD_Homology/n3c6-b7.tar.gz
+SNAP,ca-HepTh,9877,9877,51971,1,1,0,0,1.0,1.0,undirected graph,51971,1.588,https://sparse.tamu.edu/MM/SNAP/ca-HepTh.tar.gz
+Hollinger,mark3jac020,9129,9129,52883,1,0,0,0,0.07363006419249245,0.01351166293878669,economic problem,56175,1.716,https://sparse.tamu.edu/MM/Hollinger/mark3jac020.tar.gz
+Hollinger,mark3jac020sc,9129,9129,52883,1,0,0,0,0.07363006419249245,0.007349249098461679,economic problem,56175,1.716,https://sparse.tamu.edu/MM/Hollinger/mark3jac020sc.tar.gz
+VDOL,kineticBatchReactor_3,5082,5082,53219,1,0,0,0,1.0,1.0,optimal control problem,53219,1.626,https://sparse.tamu.edu/MM/VDOL/kineticBatchReactor_3.tar.gz
+Shen,shermanACd,6136,6136,53329,1,0,1,0,0.1520140698832454,0.01665501239590617,2D/3D problem,53329,1.629,https://sparse.tamu.edu/MM/Shen/shermanACd.tar.gz
+GHS_indef,ncvxqp9,16554,16554,54040,1,0,0,0,1.0,1.0,optimization problem,54040,1.651,https://sparse.tamu.edu/MM/GHS_indef/ncvxqp9.tar.gz
+TSOPF,TSOPF_RS_b9_c6,7224,7224,54082,1,0,0,0,0.1544436146377894,0.0002560546249866638,power network problem,54082,1.652,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b9_c6.tar.gz
+Pajek,Zewail,6752,6752,54233,1,0,0,0,0.001843929783153858,0.001843929783153858,directed multigraph,54233,1.657,https://sparse.tamu.edu/MM/Pajek/Zewail.tar.gz
+Schenk_IBMNA,c-32,5975,5975,54471,1,0,0,0,1.0,1.0,optimization problem,54471,1.664,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-32.tar.gz
+SNAP,p2p-Gnutella25,22687,22687,54705,1,1,0,0,0.0,0.0,directed graph,54705,1.671,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella25.tar.gz
+Schenk_IBMNA,c-33,6317,6317,56123,1,0,0,0,1.0,1.0,optimization problem,56123,1.715,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-33.tar.gz
+AG-Monien,whitaker3_dual,19190,19190,57162,1,1,1,0,1.0,1.0,2D/3D problem,57162,1.746,https://sparse.tamu.edu/MM/AG-Monien/whitaker3_dual.tar.gz
+AG-Monien,whitaker3,9800,9800,57978,1,1,1,0,1.0,1.0,2D/3D problem,57978,1.771,https://sparse.tamu.edu/MM/AG-Monien/whitaker3.tar.gz
+Gset,G58,5000,5000,59140,1,1,0,0,1.0,1.0,duplicate undirected random graph,59140,1.807,https://sparse.tamu.edu/MM/Gset/G58.tar.gz
+Gset,G59,5000,5000,59140,1,0,0,0,1.0,1.0,undirected weighted random graph,59140,1.807,https://sparse.tamu.edu/MM/Gset/G59.tar.gz
+AG-Monien,crack_dual,20141,20141,60086,1,1,1,0,1.0,1.0,2D/3D problem,60086,1.836,https://sparse.tamu.edu/MM/AG-Monien/crack_dual.tar.gz
+AG-Monien,crack,10240,10240,60760,1,1,1,0,1.0,1.0,2D/3D problem,60760,1.856,https://sparse.tamu.edu/MM/AG-Monien/crack.tar.gz
+GHS_indef,sit100,10262,10262,61046,1,0,1,0,1.0,1.0,2D/3D problem,61046,1.865,https://sparse.tamu.edu/MM/GHS_indef/sit100.tar.gz
+Nasa,barth5,15606,15606,61484,1,1,1,0,0.0,0.0,duplicate structural problem,61484,1.878,https://sparse.tamu.edu/MM/Nasa/barth5.tar.gz
+Rommes,bips07_1998,15066,15066,62198,1,0,1,0,0.7978660841804587,0.6687809795849786,eigenvalue/model reduction problem,62198,1.900,https://sparse.tamu.edu/MM/Rommes/bips07_1998.tar.gz
+Schenk_IBMNA,c-35,6537,6537,62891,1,0,0,0,1.0,1.0,optimization problem,62891,1.921,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-35.tar.gz
+Grund,bayer02,13935,13935,63307,1,0,0,0,0.001884570082449941,0.000284346713425904,chemical process simulation problem,63679,1.945,https://sparse.tamu.edu/MM/Grund/bayer02.tar.gz
+Hohn,fd18,16428,16428,63406,1,0,1,0,3.154275620603729e-05,0.0,materials problem,63406,1.937,https://sparse.tamu.edu/MM/Hohn/fd18.tar.gz
+Rajat,rajat07,14842,14842,63913,1,1,0,0,1.0,1.0,circuit simulation problem,63913,1.952,https://sparse.tamu.edu/MM/Rajat/rajat07.tar.gz
+Schenk_IBMNA,c-34,6611,6611,64333,1,0,0,0,1.0,1.0,optimization problem,64333,1.965,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-34.tar.gz
+LiuWenzhuo,powersim,15838,15838,64424,1,0,0,0,0.5913695769855386,0.5337339974478245,power network problem,67562,2.064,https://sparse.tamu.edu/MM/LiuWenzhuo/powersim.tar.gz
+SNAP,p2p-Gnutella24,26518,26518,65369,1,1,0,0,0.0,0.0,directed graph,65369,1.997,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella24.tar.gz
+SNAP,Oregon-2,11806,11806,65460,1,1,0,0,1.0,1.0,undirected graph sequence,65460,2.000,https://sparse.tamu.edu/MM/SNAP/Oregon-2.tar.gz
+DIMACS10,fe_4elt2,11143,11143,65636,1,1,0,0,1.0,1.0,undirected graph,65636,2.005,https://sparse.tamu.edu/MM/DIMACS10/fe_4elt2.tar.gz
+Schenk_IBMNA,c-30,5321,5321,65693,1,0,0,0,1.0,1.0,optimization problem,65693,2.007,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-30.tar.gz
+Schenk_IBMNA,c-36,7479,7479,65941,1,0,0,0,1.0,1.0,optimization problem,65941,2.014,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-36.tar.gz
+Rommes,bips07_2476,16861,16861,66498,1,0,1,0,0.7574573297176583,0.6349098739830914,eigenvalue/model reduction problem,66498,2.031,https://sparse.tamu.edu/MM/Rommes/bips07_2476.tar.gz
+Oberwolfach,flowmeter0,9669,9669,67391,1,0,1,0,1.0,1.0,model reduction problem,67391,2.059,https://sparse.tamu.edu/MM/Oberwolfach/flowmeter0.tar.gz
+Oberwolfach,flowmeter5,9669,9669,67391,1,0,1,0,1.0,0.06222930598385364,model reduction problem,67391,2.059,https://sparse.tamu.edu/MM/Oberwolfach/flowmeter5.tar.gz
+GHS_indef,dtoc,24993,24993,69972,1,0,0,0,1.0,1.0,optimization problem,69972,2.137,https://sparse.tamu.edu/MM/GHS_indef/dtoc.tar.gz
+GHS_indef,aug3d,24300,24300,69984,1,0,1,0,1.0,1.0,2D/3D problem,69984,2.138,https://sparse.tamu.edu/MM/GHS_indef/aug3d.tar.gz
+Gaertner,nopoly,10774,10774,70842,1,0,0,0,1.0,1.0,undirected weighted graph,70842,2.164,https://sparse.tamu.edu/MM/Gaertner/nopoly.tar.gz
+AG-Monien,L-9,17983,17983,71192,1,1,1,0,1.0,1.0,2D/3D problem,71192,2.175,https://sparse.tamu.edu/MM/AG-Monien/L-9.tar.gz
+Grund,bayer10,13436,13436,71594,1,0,0,0,0.002528365095919851,0.0002234917796929782,chemical process simulation problem,94926,2.899,https://sparse.tamu.edu/MM/Grund/bayer10.tar.gz
+FIDAP,ex18,5773,5773,71701,1,0,1,0,1.0,0.4973910933139182,computational fluid dynamics problem,71805,2.193,https://sparse.tamu.edu/MM/FIDAP/ex18.tar.gz
+Pajek,FA,10617,10617,72176,1,0,0,0,0.232333869090506,0.005847142936318794,directed weighted graph,72176,2.205,https://sparse.tamu.edu/MM/Pajek/FA.tar.gz
+Hollinger,jan99jac040,13694,13694,72734,1,0,0,0,0.003470816220281136,0.0,economic problem,82842,2.530,https://sparse.tamu.edu/MM/Hollinger/jan99jac040.tar.gz
+Hollinger,jan99jac040sc,13694,13694,72734,1,0,0,0,0.003470816220281136,0.0,economic problem,82842,2.530,https://sparse.tamu.edu/MM/Hollinger/jan99jac040sc.tar.gz
+Grund,poli4,33833,33833,73249,1,0,0,0,0.003551857113862391,0.0002029632636492795,economic problem,73249,2.237,https://sparse.tamu.edu/MM/Grund/poli4.tar.gz
+Rommes,descriptor_xingo6u,20738,20738,73916,1,0,1,0,0.6848202865775669,0.5745268504272713,eigenvalue/model reduction problem,73916,2.258,https://sparse.tamu.edu/MM/Rommes/descriptor_xingo6u.tar.gz
+GHS_indef,ncvxqp1,12111,12111,73963,1,0,0,0,1.0,1.0,optimization problem,73963,2.259,https://sparse.tamu.edu/MM/GHS_indef/ncvxqp1.tar.gz
+Rommes,xingo3012,20944,20944,74386,1,0,1,0,0.681002526603102,0.5712336093539642,eigenvalue/model reduction problem,74386,2.272,https://sparse.tamu.edu/MM/Rommes/xingo3012.tar.gz
+Schenk_IBMNA,c-37,8204,8204,74676,1,0,0,0,1.0,1.0,optimization problem,74676,2.281,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-37.tar.gz
+VDOL,kineticBatchReactor_4,7105,7105,74869,1,0,0,0,1.0,1.0,optimal control problem,74869,2.287,https://sparse.tamu.edu/MM/VDOL/kineticBatchReactor_4.tar.gz
+Rommes,bips07_3078,21128,21128,75729,1,0,1,0,0.6861363964744979,0.5750975292587777,eigenvalue/model reduction problem,75729,2.313,https://sparse.tamu.edu/MM/Rommes/bips07_3078.tar.gz
+GHS_indef,aug2d,29008,29008,76832,1,0,1,0,1.0,1.0,2D/3D problem,76832,2.347,https://sparse.tamu.edu/MM/GHS_indef/aug2d.tar.gz
+Schenk_IBMNA,c-38,8127,8127,77689,1,0,0,0,1.0,1.0,optimization problem,77689,2.373,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-38.tar.gz
+Schenk_IBMNA,c-31,5339,5339,78571,1,0,0,0,1.0,1.0,optimization problem,78571,2.400,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-31.tar.gz
+Gaertner,pesa,11738,11738,79566,1,0,0,0,1.0,0.999970513652179,directed weighted graph,79566,2.430,https://sparse.tamu.edu/MM/Gaertner/pesa.tar.gz
+ML_Graph,optdigits_10NN,5620,5620,79650,1,0,0,0,1.0,1.0,undirected weighted graph,79650,2.433,https://sparse.tamu.edu/MM/ML_Graph/optdigits_10NN.tar.gz
+Oberwolfach,LFAT5000,19994,19994,79966,1,0,1,1,1.0,1.0,model reduction problem,79966,2.442,https://sparse.tamu.edu/MM/Oberwolfach/LFAT5000.tar.gz
+GHS_indef,aug2dc,30200,30200,80000,1,0,1,0,1.0,1.0,2D/3D problem,80000,2.443,https://sparse.tamu.edu/MM/GHS_indef/aug2dc.tar.gz
+VDOL,lowThrust_3,7064,7064,80645,1,0,0,0,1.0,1.0,optimal control problem,80645,2.463,https://sparse.tamu.edu/MM/VDOL/lowThrust_3.tar.gz
+VDOL,kineticBatchReactor_5,7641,7641,80767,1,0,0,0,1.0,1.0,optimal control problem,80767,2.467,https://sparse.tamu.edu/MM/VDOL/kineticBatchReactor_5.tar.gz
+ML_Graph,usps_norm_5NN,11000,11000,81112,1,0,0,0,1.0,1.0,undirected weighted graph,81112,2.477,https://sparse.tamu.edu/MM/ML_Graph/usps_norm_5NN.tar.gz
+Schenk_IBMNA,c-40,9941,9941,81501,1,0,0,0,1.0,1.0,optimization problem,81501,2.489,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-40.tar.gz
+VDOL,kineticBatchReactor_6,7773,7773,82500,1,0,0,0,1.0,1.0,optimal control problem,82500,2.520,https://sparse.tamu.edu/MM/VDOL/kineticBatchReactor_6.tar.gz
+Gset,G63,7000,7000,82918,1,1,0,0,1.0,1.0,duplicate undirected random graph,82918,2.532,https://sparse.tamu.edu/MM/Gset/G63.tar.gz
+Gset,G64,7000,7000,82918,1,0,0,0,1.0,1.0,undirected weighted random graph,82918,2.532,https://sparse.tamu.edu/MM/Gset/G64.tar.gz
+Rajat,rajat08,19362,19362,83443,1,1,0,0,1.0,1.0,circuit simulation problem,83443,2.548,https://sparse.tamu.edu/MM/Rajat/rajat08.tar.gz
+TOKAMAK,utm5940,5940,5940,83842,1,0,1,0,0.5290493183743677,0.0,electromagnetics problem,83842,2.561,https://sparse.tamu.edu/MM/TOKAMAK/utm5940.tar.gz
+AG-Monien,biplane-9,21701,21701,84076,1,1,1,0,1.0,1.0,2D/3D problem,84076,2.568,https://sparse.tamu.edu/MM/AG-Monien/biplane-9.tar.gz
+VDOL,kineticBatchReactor_7,7968,7968,84508,1,0,0,0,1.0,1.0,optimal control problem,84508,2.581,https://sparse.tamu.edu/MM/VDOL/kineticBatchReactor_7.tar.gz
+Schenk_IBMNA,c-44,10728,10728,85000,1,0,0,0,1.0,1.0,optimization problem,85000,2.596,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-44.tar.gz
+VDOL,kineticBatchReactor_8,8052,8052,85194,1,0,0,0,1.0,1.0,optimal control problem,85194,2.602,https://sparse.tamu.edu/MM/VDOL/kineticBatchReactor_8.tar.gz
+Norris,fv1,9604,9604,85264,1,0,1,1,1.0,1.0,2D/3D problem,85264,2.604,https://sparse.tamu.edu/MM/Norris/fv1.tar.gz
+Grund,bayer04,20545,20545,85537,1,0,0,0,0.001584088708967702,0.0002104352502425851,chemical process simulation problem,159082,4.857,https://sparse.tamu.edu/MM/Grund/bayer04.tar.gz
+VDOL,kineticBatchReactor_9,8115,8115,86183,1,0,0,0,1.0,1.0,optimal control problem,86183,2.632,https://sparse.tamu.edu/MM/VDOL/kineticBatchReactor_9.tar.gz
+Norris,fv2,9801,9801,87025,1,0,1,1,1.0,1.0,2D/3D problem,87025,2.658,https://sparse.tamu.edu/MM/Norris/fv2.tar.gz
+Norris,fv3,9801,9801,87025,1,0,1,1,1.0,1.0,2D/3D problem,87025,2.658,https://sparse.tamu.edu/MM/Norris/fv3.tar.gz
+TKK,t2d_q4,9801,9801,87025,1,0,1,0,1.0,0.6937221589143272,structural problem sequence,87025,2.658,https://sparse.tamu.edu/MM/TKK/t2d_q4.tar.gz
+TKK,t2d_q9,9801,9801,87025,1,0,1,0,1.0,0.6937221589143272,structural problem sequence,87025,2.658,https://sparse.tamu.edu/MM/TKK/t2d_q9.tar.gz
+DIMACS10,cs4,22499,22499,87716,1,1,0,0,1.0,1.0,undirected graph,87716,2.679,https://sparse.tamu.edu/MM/DIMACS10/cs4.tar.gz
+GHS_indef,tuma1,22967,22967,87760,1,0,1,0,1.0,1.0,2D/3D problem,87760,2.680,https://sparse.tamu.edu/MM/GHS_indef/tuma1.tar.gz
+SNAP,p2p-Gnutella30,36682,36682,88328,1,1,0,0,0.0,0.0,directed graph,88328,2.698,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella30.tar.gz
+AG-Monien,big_dual,30269,30269,89858,1,1,1,0,1.0,1.0,2D/3D problem,89858,2.744,https://sparse.tamu.edu/MM/AG-Monien/big_dual.tar.gz
+Gaertner,big,13209,13209,91465,1,0,0,0,1.0,0.999974442854222,directed weighted graph,91465,2.793,https://sparse.tamu.edu/MM/Gaertner/big.tar.gz
+VDOL,hangGlider_3,10260,10260,92703,1,0,0,0,1.0,1.0,optimal control problem,92703,2.831,https://sparse.tamu.edu/MM/VDOL/hangGlider_3.tar.gz
+AG-Monien,stufe-10,24010,24010,92828,1,1,1,0,1.0,1.0,2D/3D problem,92828,2.835,https://sparse.tamu.edu/MM/AG-Monien/stufe-10.tar.gz
+Andrianov,fxm3_6,5026,5026,94026,1,1,0,0,1.0,1.0,optimization problem,94026,2.871,https://sparse.tamu.edu/MM/Andrianov/fxm3_6.tar.gz
+Averous,epb1,14734,14734,95053,1,0,1,0,0.7293915511896314,0.0,thermal problem,95053,2.903,https://sparse.tamu.edu/MM/Averous/epb1.tar.gz
+Newman,cond-mat,16726,16726,95188,1,0,0,0,1.0,1.0,undirected weighted graph,95188,2.907,https://sparse.tamu.edu/MM/Newman/cond-mat.tar.gz
+GHS_indef,linverse,11999,11999,95977,1,0,0,0,1.0,1.0,statistical/mathematical problem,95977,2.931,https://sparse.tamu.edu/MM/GHS_indef/linverse.tar.gz
+DIMACS10,cti,16840,16840,96464,1,1,0,0,1.0,1.0,undirected graph,96464,2.946,https://sparse.tamu.edu/MM/DIMACS10/cti.tar.gz
+Newman,as-22july06,22963,22963,96872,1,1,0,0,1.0,1.0,undirected graph,96872,2.958,https://sparse.tamu.edu/MM/Newman/as-22july06.tar.gz
+IBM_Austin,coupled,11341,11341,97193,1,0,0,0,1.0,0.7823373235828404,circuit simulation problem,98523,3.009,https://sparse.tamu.edu/MM/IBM_Austin/coupled.tar.gz
+Rajat,rajat27,20640,20640,97353,1,0,0,0,0.9645908149382882,0.3035747337767303,circuit simulation problem,99777,3.047,https://sparse.tamu.edu/MM/Rajat/rajat27.tar.gz
+DIMACS10,delaunay_n14,16384,16384,98244,1,1,0,0,1.0,1.0,undirected graph,98244,3.000,https://sparse.tamu.edu/MM/DIMACS10/delaunay_n14.tar.gz
+AG-Monien,se,32768,32768,98300,1,1,0,0,1.0,1.0,undirected graph sequence,98300,3.002,https://sparse.tamu.edu/MM/AG-Monien/se.tar.gz
+DIMACS10,fe_sphere,16386,16386,98304,1,1,0,0,1.0,1.0,undirected graph,98304,3.002,https://sparse.tamu.edu/MM/DIMACS10/fe_sphere.tar.gz
+FIDAP,ex15,6867,6867,98671,1,0,1,1,1.0,1.0,computational fluid dynamics problem,98671,3.013,https://sparse.tamu.edu/MM/FIDAP/ex15.tar.gz
+Hamm,memplus,17758,17758,99147,1,0,0,0,1.0,0.4962095614886533,circuit simulation problem,126150,3.852,https://sparse.tamu.edu/MM/Hamm/memplus.tar.gz
+Oberwolfach,LF10000,19998,19998,99982,1,0,1,1,1.0,1.0,model reduction problem,99982,3.053,https://sparse.tamu.edu/MM/Oberwolfach/LF10000.tar.gz
+GHS_psdef,ford1,18728,18728,101576,1,1,1,0,1.0,1.0,structural problem,101576,3.102,https://sparse.tamu.edu/MM/GHS_psdef/ford1.tar.gz
+Schenk_IBMNA,c-41,9769,9769,101635,1,0,0,0,1.0,1.0,optimization problem,101745,3.107,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-41.tar.gz
+CPM,cz10228,10228,10228,102876,1,0,1,0,0.4358431914342458,0.2371988602020551,2D/3D problem,102876,3.141,https://sparse.tamu.edu/MM/CPM/cz10228.tar.gz
+Nasa,shuttle_eddy,10429,10429,103599,1,1,1,0,1.0,1.0,duplicate structural problem,103599,3.164,https://sparse.tamu.edu/MM/Nasa/shuttle_eddy.tar.gz
+Pothen,shuttle_eddy,10429,10429,103599,1,1,1,0,1.0,1.0,structural problem,103599,3.164,https://sparse.tamu.edu/MM/Pothen/shuttle_eddy.tar.gz
+SNAP,wiki-Vote,8297,8297,103689,1,1,0,0,0.0564572905515532,0.0564572905515532,directed graph,103689,3.166,https://sparse.tamu.edu/MM/SNAP/wiki-Vote.tar.gz
+Rajat,rajat09,24482,24482,105573,1,1,0,0,1.0,1.0,circuit simulation problem,105573,3.224,https://sparse.tamu.edu/MM/Rajat/rajat09.tar.gz
+SNAP,as-caida,31379,31379,106762,1,0,0,0,1.0,0.07869841329311927,directed weighted graph sequence,106762,3.260,https://sparse.tamu.edu/MM/SNAP/as-caida.tar.gz
+Hollinger,mark3jac040,18289,18289,106803,1,0,0,0,0.07382338721543732,0.01389985784236298,economic problem,113435,3.464,https://sparse.tamu.edu/MM/Hollinger/mark3jac040.tar.gz
+Hollinger,mark3jac040sc,18289,18289,106803,1,0,0,0,0.07382338721543732,0.01173364623056615,economic problem,113435,3.464,https://sparse.tamu.edu/MM/Hollinger/mark3jac040sc.tar.gz
+Pothen,barth5,15606,15606,107362,1,1,1,0,1.0,1.0,structural problem,107362,3.278,https://sparse.tamu.edu/MM/Pothen/barth5.tar.gz
+Hollinger,g7jac040,11790,11790,107383,1,0,0,0,0.04830823961664447,0.0,economic problem,114671,3.501,https://sparse.tamu.edu/MM/Hollinger/g7jac040.tar.gz
+Hollinger,g7jac040sc,11790,11790,107383,1,0,0,0,0.04830823961664447,0.0,economic problem,114671,3.501,https://sparse.tamu.edu/MM/Hollinger/g7jac040sc.tar.gz
+DIMACS10,vsp_p0291_seymourl_iiasa,10498,10498,107736,1,1,0,0,1.0,1.0,random unweighted graph,107736,3.290,https://sparse.tamu.edu/MM/DIMACS10/vsp_p0291_seymourl_iiasa.tar.gz
+Grueninger,windtunnel_evap2d,8256,8256,109368,1,0,1,0,1.0,0.0,computational fluid dynamics problem,233468,7.127,https://sparse.tamu.edu/MM/Grueninger/windtunnel_evap2d.tar.gz
+GHS_indef,bloweybl,30003,30003,109999,1,0,1,0,1.0,1.0,materials problem,120000,3.664,https://sparse.tamu.edu/MM/GHS_indef/bloweybl.tar.gz
+Schenk_IBMNA,c-42,10471,10471,110285,1,0,0,0,1.0,1.0,optimization problem,110285,3.368,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-42.tar.gz
+DIMACS10,vsp_data_and_seymourl,9167,9167,111732,1,1,0,0,1.0,1.0,random unweighted graph,111732,3.412,https://sparse.tamu.edu/MM/DIMACS10/vsp_data_and_seymourl.tar.gz
+Hollinger,jan99jac060,20614,20614,111903,1,0,0,0,0.003378124765408002,0.0,economic problem,127182,3.883,https://sparse.tamu.edu/MM/Hollinger/jan99jac060.tar.gz
+Hollinger,jan99jac060sc,20614,20614,111903,1,0,0,0,0.003378124765408002,0.0,economic problem,127182,3.883,https://sparse.tamu.edu/MM/Hollinger/jan99jac060sc.tar.gz
+Bodendiek,CurlCurl_0,11083,11083,113343,1,0,1,0,1.0,1.0,model reduction problem,113343,3.461,https://sparse.tamu.edu/MM/Bodendiek/CurlCurl_0.tar.gz
+GHS_indef,cvxqp3,17500,17500,114962,1,0,0,0,1.0,1.0,optimization problem,122462,3.739,https://sparse.tamu.edu/MM/GHS_indef/cvxqp3.tar.gz
+DIMACS10,de2010,24115,24115,116056,1,0,0,0,1.0,1.0,undirected weighted graph,116056,3.544,https://sparse.tamu.edu/MM/DIMACS10/de2010.tar.gz
+Schenk_IBMNA,c-39,9271,9271,116587,1,0,0,0,1.0,1.0,optimization problem,136811,4.177,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-39.tar.gz
+Pajek,foldoc,13356,13356,120238,1,0,0,0,0.4785009730700777,0.459472047106572,directed weighted graph,120238,3.671,https://sparse.tamu.edu/MM/Pajek/foldoc.tar.gz
+Pothen,bodyy4,17546,17546,121550,1,0,1,1,1.0,1.0,structural problem,121938,3.723,https://sparse.tamu.edu/MM/Pothen/bodyy4.tar.gz
+Schenk_IBMNA,c-43,11125,11125,123659,1,0,0,0,1.0,1.0,optimization problem,123675,3.776,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-43.tar.gz
+DIMACS10,hi2010,25016,25016,124126,1,0,0,0,1.0,1.0,undirected weighted graph,124126,3.790,https://sparse.tamu.edu/MM/DIMACS10/hi2010.tar.gz
+DIMACS10,vsp_c-30_data_data,11023,11023,124368,1,1,0,0,1.0,1.0,random unweighted graph,124368,3.797,https://sparse.tamu.edu/MM/DIMACS10/vsp_c-30_data_data.tar.gz
+ML_Graph,indianpines_10NN,9144,9144,124656,1,0,0,0,1.0,1.0,undirected weighted graph,124656,3.806,https://sparse.tamu.edu/MM/ML_Graph/indianpines_10NN.tar.gz
+Okunbor,aft01,8205,8205,125567,1,0,1,1,1.0,1.0,acoustics problem,125567,3.834,https://sparse.tamu.edu/MM/Okunbor/aft01.tar.gz
+DIMACS10,ri2010,25181,25181,125750,1,0,0,0,1.0,1.0,undirected weighted graph,125750,3.840,https://sparse.tamu.edu/MM/DIMACS10/ri2010.tar.gz
+GHS_indef,aug3dcqp,35543,35543,128115,1,0,1,0,1.0,1.0,2D/3D problem,128115,3.912,https://sparse.tamu.edu/MM/GHS_indef/aug3dcqp.tar.gz
+Pothen,bodyy5,18589,18589,128853,1,0,1,1,1.0,1.0,structural problem,129281,3.947,https://sparse.tamu.edu/MM/Pothen/bodyy5.tar.gz
+Rajat,rajat10,30202,30202,130303,1,1,0,0,1.0,1.0,circuit simulation problem,130303,3.978,https://sparse.tamu.edu/MM/Rajat/rajat10.tar.gz
+Schenk_IBMNA,c-46,14913,14913,130397,1,0,0,0,1.0,1.0,optimization problem,130397,3.981,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-46.tar.gz
+Schenk_ISEI,igbt3,10938,10938,130500,1,0,1,0,1.0,0.1720279018417223,semiconductor device problem,234006,7.143,https://sparse.tamu.edu/MM/Schenk_ISEI/igbt3.tar.gz
+ML_Graph,JapaneseVowelsSmall_10NN,9961,9961,131144,1,0,0,0,1.0,1.0,undirected weighted graph,131144,4.004,https://sparse.tamu.edu/MM/ML_Graph/JapaneseVowelsSmall_10NN.tar.gz
+Pajek,Wordnet3,82670,82670,132964,1,0,0,0,0.1765463136851033,0.1741230992912098,directed weighted graph,132964,4.060,https://sparse.tamu.edu/MM/Pajek/Wordnet3.tar.gz
+Pothen,bodyy6,19366,19366,134208,1,0,1,1,1.0,1.0,structural problem,134748,4.114,https://sparse.tamu.edu/MM/Pothen/bodyy6.tar.gz
+TAMU_SmartGridCenter,ACTIVSg10K,20000,20000,135888,1,0,0,0,1.0,0.02328109899213033,power network problem,137736,4.205,https://sparse.tamu.edu/MM/TAMU_SmartGridCenter/ACTIVSg10K.tar.gz
+Oberwolfach,rail_20209,20209,20209,139233,1,0,1,0,1.0,1.0,model reduction problem,139233,4.251,https://sparse.tamu.edu/MM/Oberwolfach/rail_20209.tar.gz
+AG-Monien,cca,49152,49152,139264,1,1,0,0,1.0,1.0,undirected graph sequence,139264,4.252,https://sparse.tamu.edu/MM/AG-Monien/cca.tar.gz
+GHS_indef,stokes64,12546,12546,140034,1,0,1,0,1.0,1.0,computational fluid dynamics problem,140034,4.275,https://sparse.tamu.edu/MM/GHS_indef/stokes64.tar.gz
+GHS_indef,stokes64s,12546,12546,140034,1,0,1,0,1.0,1.0,computational fluid dynamics problem,140034,4.275,https://sparse.tamu.edu/MM/GHS_indef/stokes64s.tar.gz
+IPSO,OPF_3754,15435,15435,141478,1,0,0,0,1.0,1.0,power network problem,158273,4.832,https://sparse.tamu.edu/MM/IPSO/OPF_3754.tar.gz
+AG-Monien,shock-9,36476,36476,142580,1,1,1,0,1.0,1.0,2D/3D problem,142580,4.353,https://sparse.tamu.edu/MM/AG-Monien/shock-9.tar.gz
+Bindel,ted_B,10605,10605,144579,1,0,1,1,1.0,1.0,thermal problem,144579,4.414,https://sparse.tamu.edu/MM/Bindel/ted_B.tar.gz
+Bindel,ted_B_unscaled,10605,10605,144579,1,0,1,1,1.0,1.0,thermal problem,144579,4.414,https://sparse.tamu.edu/MM/Bindel/ted_B_unscaled.tar.gz
+Rommes,juba40k,40337,40337,144945,1,0,1,0,0.6934462083788981,0.5830536596402579,eigenvalue/model reduction problem,144945,4.425,https://sparse.tamu.edu/MM/Rommes/juba40k.tar.gz
+Rommes,bauru5727,40366,40366,145019,1,0,1,0,0.6931521565005984,0.5828064190876452,eigenvalue/model reduction problem,145019,4.428,https://sparse.tamu.edu/MM/Rommes/bauru5727.tar.gz
+Shen,shermanACb,18510,18510,145149,1,0,1,0,0.1493062958488302,0.02665845434660729,2D/3D problem,145149,4.432,https://sparse.tamu.edu/MM/Shen/shermanACb.tar.gz
+Hollinger,g7jac050sc,14760,14760,145157,1,0,0,0,0.04349647420233192,0.0,economic problem,157990,4.823,https://sparse.tamu.edu/MM/Hollinger/g7jac050sc.tar.gz
+ML_Graph,mnist_test_norm_10NN,10000,10000,145600,1,0,0,0,1.0,1.0,undirected weighted graph,145600,4.445,https://sparse.tamu.edu/MM/ML_Graph/mnist_test_norm_10NN.tar.gz
+AG-Monien,ccc,49152,49152,147456,1,1,0,0,1.0,1.0,undirected graph sequence,147456,4.502,https://sparse.tamu.edu/MM/AG-Monien/ccc.tar.gz
+SNAP,p2p-Gnutella31,62586,62586,147892,1,1,0,0,0.0,0.0,directed graph,147892,4.515,https://sparse.tamu.edu/MM/SNAP/p2p-Gnutella31.tar.gz
+QY,case9,14454,14454,147972,1,0,0,0,1.0,1.0,power network problem sequence,147972,4.518,https://sparse.tamu.edu/MM/QY/case9.tar.gz
+TSOPF,TSOPF_FS_b9_c6,14454,14454,147972,1,0,0,0,1.0,1.0,power network problem,147972,4.518,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b9_c6.tar.gz
+HB,bcsstk18,11948,11948,149090,1,0,1,1,1.0,1.0,structural problem,149090,4.552,https://sparse.tamu.edu/MM/HB/bcsstk18.tar.gz
+VDOL,hangGlider_4,15561,15561,149532,1,0,0,0,1.0,1.0,optimal control problem,149532,4.565,https://sparse.tamu.edu/MM/VDOL/hangGlider_4.tar.gz
+GHS_psdef,pds10,16558,16558,149658,1,1,0,0,1.0,1.0,optimization problem,149658,4.569,https://sparse.tamu.edu/MM/GHS_psdef/pds10.tar.gz
+GHS_indef,bloweya,30004,30004,150009,1,0,1,0,1.0,1.0,materials problem,150009,4.580,https://sparse.tamu.edu/MM/GHS_indef/bloweya.tar.gz
+vanHeukelum,cage10,11397,11397,150645,1,0,0,0,1.0,0.1743077099850626,directed weighted graph,150645,4.599,https://sparse.tamu.edu/MM/vanHeukelum/cage10.tar.gz
+DIMACS10,wing_nodal,10937,10937,150976,1,1,0,0,1.0,1.0,undirected graph,150976,4.609,https://sparse.tamu.edu/MM/DIMACS10/wing_nodal.tar.gz
+Hollinger,jan99jac080,27534,27534,151063,1,0,0,0,0.003333611134261188,0.0,economic problem,171522,5.236,https://sparse.tamu.edu/MM/Hollinger/jan99jac080.tar.gz
+Hollinger,jan99jac080sc,27534,27534,151063,1,0,0,0,0.003333611134261188,0.0,economic problem,171522,5.236,https://sparse.tamu.edu/MM/Hollinger/jan99jac080sc.tar.gz
+ML_Graph,har_10NN,10299,10299,151736,1,0,0,0,1.0,1.0,undirected weighted graph,151736,4.633,https://sparse.tamu.edu/MM/ML_Graph/har_10NN.tar.gz
+Mallya,lhr07,7337,7337,154660,1,0,0,0,0.0173680609288971,0.0,chemical process simulation problem,156508,4.778,https://sparse.tamu.edu/MM/Mallya/lhr07.tar.gz
+VDOL,hangGlider_5,16011,16011,155246,1,0,0,0,1.0,1.0,optimal control problem,155246,4.740,https://sparse.tamu.edu/MM/VDOL/hangGlider_5.tar.gz
+DIMACS10,vt2010,32580,32580,155598,1,0,0,0,1.0,1.0,undirected weighted graph,155598,4.750,https://sparse.tamu.edu/MM/DIMACS10/vt2010.tar.gz
+Mallya,lhr07c,7337,7337,156508,1,0,0,0,0.0173680609288971,0.0,chemical process simulation problem,156508,4.778,https://sparse.tamu.edu/MM/Mallya/lhr07c.tar.gz
+ML_Graph,kmnist_norm_10NN,10000,10000,156932,1,0,0,0,1.0,1.0,undirected weighted graph,156932,4.791,https://sparse.tamu.edu/MM/ML_Graph/kmnist_norm_10NN.tar.gz
+Schenk_IBMNA,c-49,21132,21132,157040,1,0,0,0,1.0,1.0,optimization problem,157042,4.794,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-49.tar.gz
+ML_Graph,Fashion_MNIST_norm_10NN,10000,10000,158304,1,0,0,0,1.0,1.0,undirected weighted graph,158304,4.833,https://sparse.tamu.edu/MM/ML_Graph/Fashion_MNIST_norm_10NN.tar.gz
+HVDC,hvdc1,24842,24842,158426,1,0,0,0,0.9817003233707516,0.09899271099935641,power network problem,159981,4.884,https://sparse.tamu.edu/MM/HVDC/hvdc1.tar.gz
+Hollinger,mark3jac060,27449,27449,160723,1,0,0,0,0.07388687991287715,0.01402730528871371,economic problem,170695,5.211,https://sparse.tamu.edu/MM/Hollinger/mark3jac060.tar.gz
+Hollinger,mark3jac060sc,27449,27449,160723,1,0,0,0,0.07388687991287715,0.0121839735039789,economic problem,170695,5.211,https://sparse.tamu.edu/MM/Hollinger/mark3jac060sc.tar.gz
+VDOL,lowThrust_4,13562,13562,160947,1,0,0,0,1.0,1.0,optimal control problem,160947,4.914,https://sparse.tamu.edu/MM/VDOL/lowThrust_4.tar.gz
+Schenk_IBMNA,c-48,18354,18354,166080,1,0,0,0,1.0,1.0,optimization problem,166080,5.070,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-48.tar.gz
+Zhao,Zhao1,33861,33861,166453,1,0,1,0,0.9224990949680222,0.0,electromagnetics problem,166453,5.082,https://sparse.tamu.edu/MM/Zhao/Zhao1.tar.gz
+Zhao,Zhao2,33861,33861,166453,1,0,1,0,0.9224990949680222,0.0,electromagnetics problem,166453,5.082,https://sparse.tamu.edu/MM/Zhao/Zhao2.tar.gz
+Simon,raefsky5,6316,6316,167178,1,0,1,0,0.0,0.0,structural problem,168658,5.149,https://sparse.tamu.edu/MM/Simon/raefsky5.tar.gz
+MathWorks,Muu,7102,7102,170134,1,0,1,1,1.0,1.0,structural problem,170134,5.194,https://sparse.tamu.edu/MM/MathWorks/Muu.tar.gz
+PARSEC,SiH4,5041,5041,171903,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,171903,5.248,https://sparse.tamu.edu/MM/PARSEC/SiH4.tar.gz
+GHS_indef,bratu3d,27792,27792,173796,1,0,1,0,1.0,1.0,2D/3D problem,173796,5.306,https://sparse.tamu.edu/MM/GHS_indef/bratu3d.tar.gz
+Schenk_IBMNA,c-45,13206,13206,174452,1,0,0,0,1.0,1.0,optimization problem,174452,5.326,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-45.tar.gz
+Averous,epb2,25228,25228,175027,1,0,1,0,0.6705385216189694,0.0,thermal problem,175027,5.343,https://sparse.tamu.edu/MM/Averous/epb2.tar.gz
+Oberwolfach,t2dah,11445,11445,176117,1,0,1,0,1.0,1.0,model reduction problem,176117,5.377,https://sparse.tamu.edu/MM/Oberwolfach/t2dah.tar.gz
+Oberwolfach,t2dah_a,11445,11445,176117,1,0,1,0,1.0,1.0,duplicate model reduction problem,176117,5.377,https://sparse.tamu.edu/MM/Oberwolfach/t2dah_a.tar.gz
+Oberwolfach,t2dah_e,11445,11445,176117,1,0,1,1,1.0,1.0,duplicate model reduction problem,176117,5.377,https://sparse.tamu.edu/MM/Oberwolfach/t2dah_e.tar.gz
+Wang,wang3,26064,26064,177168,1,0,1,0,1.0,0.9780019059720457,semiconductor device problem,177168,5.409,https://sparse.tamu.edu/MM/Wang/wang3.tar.gz
+Wang,wang4,26068,26068,177196,1,0,1,0,1.0,0.04647715843523371,semiconductor device problem,177196,5.410,https://sparse.tamu.edu/MM/Wang/wang4.tar.gz
+Pajek,dictionary28,52652,52652,178076,1,1,0,0,1.0,1.0,undirected graph,178076,5.436,https://sparse.tamu.edu/MM/Pajek/dictionary28.tar.gz
+DIMACS10,t60k,60005,60005,178880,1,1,0,0,1.0,1.0,undirected graph,178880,5.461,https://sparse.tamu.edu/MM/DIMACS10/t60k.tar.gz
+GHS_indef,brainpc2,27607,27607,179395,1,0,0,0,1.0,1.0,optimization problem,179395,5.477,https://sparse.tamu.edu/MM/GHS_indef/brainpc2.tar.gz
+Schenk_IBMNA,c-50,22401,22401,180245,1,0,0,0,1.0,1.0,optimization problem,193625,5.911,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-50.tar.gz
+Goodwin,Goodwin_023,6005,6005,182168,1,0,1,0,0.9572036973485083,0.06214380952916754,computational fluid dynamics,182168,5.561,https://sparse.tamu.edu/MM/Goodwin/Goodwin_023.tar.gz
+Hollinger,g7jac060,17730,17730,183325,1,0,0,0,0.04035864774282543,0.0,economic problem,203316,6.207,https://sparse.tamu.edu/MM/Hollinger/g7jac060.tar.gz
+Hollinger,g7jac060sc,17730,17730,183325,1,0,0,0,0.04035864774282543,0.0,economic problem,203316,6.207,https://sparse.tamu.edu/MM/Hollinger/g7jac060sc.tar.gz
+SNAP,ca-CondMat,23133,23133,186936,1,1,0,0,1.0,1.0,undirected graph,186936,5.707,https://sparse.tamu.edu/MM/SNAP/ca-CondMat.tar.gz
+SNAP,wiki-RfA,11380,11380,188077,1,0,0,0,0.07451698016852498,0.06452676823559451,directed weighted temporal multigraph,188077,5.742,https://sparse.tamu.edu/MM/SNAP/wiki-RfA.tar.gz
+Hollinger,jan99jac100,34454,34454,190224,1,0,0,0,0.003307461633445052,0.0,economic problem,215862,6.590,https://sparse.tamu.edu/MM/Hollinger/jan99jac100.tar.gz
+Hollinger,jan99jac100sc,34454,34454,190224,1,0,0,0,0.003307461633445052,0.0,economic problem,215862,6.590,https://sparse.tamu.edu/MM/Hollinger/jan99jac100sc.tar.gz
+Szczerba,Ill_Stokes,20896,20896,191368,1,0,1,0,0.9897436481194791,0.3299904380293234,computational fluid dynamics problem,191368,5.842,https://sparse.tamu.edu/MM/Szczerba/Ill_Stokes.tar.gz
+Sandia,mult_dcop_03,25187,25187,193216,1,0,0,0,0.6142197994049846,0.01294544504421048,subsequent circuit simulation problem,193216,5.898,https://sparse.tamu.edu/MM/Sandia/mult_dcop_03.tar.gz
+Sandia,mult_dcop_01,25187,25187,193276,1,0,0,0,0.6144759258929472,0.003383612629779353,circuit simulation problem sequence,193276,5.900,https://sparse.tamu.edu/MM/Sandia/mult_dcop_01.tar.gz
+Sandia,mult_dcop_02,25187,25187,193276,1,0,0,0,0.6144759258929472,0.003383612629779353,subsequent circuit simulation problem,193276,5.900,https://sparse.tamu.edu/MM/Sandia/mult_dcop_02.tar.gz
+Rajat,rajat22,39899,39899,195429,1,0,0,0,0.980070207933121,0.3342735182643515,circuit simulation problem,197264,6.022,https://sparse.tamu.edu/MM/Rajat/rajat22.tar.gz
+DIMACS10,vsp_befref_fxm_2_4_air02,14109,14109,196448,1,1,0,0,1.0,1.0,random unweighted graph,196448,5.997,https://sparse.tamu.edu/MM/DIMACS10/vsp_befref_fxm_2_4_air02.tar.gz
+Nasa,skirt,12598,12598,196520,1,1,1,0,1.0,1.0,duplicate structural problem,196520,5.999,https://sparse.tamu.edu/MM/Nasa/skirt.tar.gz
+Pothen,skirt,12598,12598,196520,1,1,1,0,1.0,1.0,structural problem,196520,5.999,https://sparse.tamu.edu/MM/Pothen/skirt.tar.gz
+DIMACS10,delaunay_n15,32768,32768,196548,1,1,0,0,1.0,1.0,undirected graph,196548,6.000,https://sparse.tamu.edu/MM/DIMACS10/delaunay_n15.tar.gz
+AG-Monien,bfly,49152,49152,196608,1,1,0,0,1.0,1.0,undirected graph sequence,196608,6.002,https://sparse.tamu.edu/MM/AG-Monien/bfly.tar.gz
+GHS_psdef,obstclae,40000,40000,197608,1,0,0,1,1.0,1.0,optimization problem,197608,6.032,https://sparse.tamu.edu/MM/GHS_psdef/obstclae.tar.gz
+GHS_psdef,torsion1,40000,40000,197608,1,0,0,1,1.0,1.0,duplicate optimization problem,197608,6.032,https://sparse.tamu.edu/MM/GHS_psdef/torsion1.tar.gz
+VDOL,lowThrust_5,16262,16262,198369,1,0,0,0,1.0,1.0,optimal control problem,198369,6.056,https://sparse.tamu.edu/MM/VDOL/lowThrust_5.tar.gz
+PARSEC,SiNa,5743,5743,198787,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,198787,6.068,https://sparse.tamu.edu/MM/PARSEC/SiNa.tar.gz
+GHS_psdef,jnlbrng1,40000,40000,199200,1,0,0,1,1.0,1.0,optimization problem,199200,6.081,https://sparse.tamu.edu/MM/GHS_psdef/jnlbrng1.tar.gz
+Watson,chem_master1,40401,40401,201201,1,0,1,0,1.0,0.0,2D/3D problem,201201,6.142,https://sparse.tamu.edu/MM/Watson/chem_master1.tar.gz
+Schenk_IBMNA,c-52,23948,23948,202708,1,0,0,0,1.0,1.0,optimization problem,202716,6.188,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-52.tar.gz
+Schenk_IBMNA,c-51,23196,23196,203048,1,0,0,0,1.0,1.0,optimization problem,203050,6.199,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-51.tar.gz
+DIMACS10,vsp_barth5_1Ksep_50in_5Kout,32212,32212,203610,1,1,0,0,1.0,1.0,random unweighted graph,203610,6.216,https://sparse.tamu.edu/MM/DIMACS10/vsp_barth5_1Ksep_50in_5Kout.tar.gz
+GHS_psdef,minsurfo,40806,40806,203622,1,0,0,1,1.0,1.0,optimization problem,203622,6.216,https://sparse.tamu.edu/MM/GHS_psdef/minsurfo.tar.gz
+GHS_indef,mario001,38434,38434,204912,1,0,1,0,1.0,1.0,2D/3D problem,206156,6.293,https://sparse.tamu.edu/MM/GHS_indef/mario001.tar.gz
+TSOPF,TSOPF_RS_b162_c1,5374,5374,205399,1,0,0,0,0.02981942459702805,0.002418331351367556,power network problem,205399,6.270,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b162_c1.tar.gz
+CPM,cz20468,20468,20468,206076,1,0,1,0,0.4354769190983147,0.2377052713245119,2D/3D problem,206076,6.291,https://sparse.tamu.edu/MM/CPM/cz20468.tar.gz
+Schenk_IBMSDS,2D_27628_bjtcai,27628,27628,206670,1,0,1,0,0.9995761793531919,0.2185967538342959,semiconductor device problem,442898,13.518,https://sparse.tamu.edu/MM/Schenk_IBMSDS/2D_27628_bjtcai.tar.gz
+Cylshell,s3rmt3m3,5357,5357,207123,1,0,1,1,1.0,1.0,structural problem,207695,6.340,https://sparse.tamu.edu/MM/Cylshell/s3rmt3m3.tar.gz
+Pajek,internet,124651,124651,207214,1,0,0,0,0.01444913320583093,0.002245819852432203,directed weighted graph,207214,6.326,https://sparse.tamu.edu/MM/Pajek/internet.tar.gz
+Brethour,coater2,9540,9540,207308,1,0,1,0,0.5941884735804569,0.1280874338061923,computational fluid dynamics problem,207308,6.328,https://sparse.tamu.edu/MM/Brethour/coater2.tar.gz
+VDOL,lowThrust_6,16928,16928,207349,1,0,0,0,1.0,1.0,optimal control problem,207349,6.330,https://sparse.tamu.edu/MM/VDOL/lowThrust_6.tar.gz
+TKK,g3rmt3m3,5357,5357,207695,1,1,1,0,1.0,1.0,structural problem,207695,6.340,https://sparse.tamu.edu/MM/TKK/g3rmt3m3.tar.gz
+GHS_psdef,copter1,17222,17222,211064,1,1,1,0,1.0,1.0,computational fluid dynamics problem,211064,6.443,https://sparse.tamu.edu/MM/GHS_psdef/copter1.tar.gz
+Schenk_IBMNA,c-47,15343,15343,211401,1,0,0,0,1.0,1.0,optimization problem,211401,6.453,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-47.tar.gz
+VDOL,lowThrust_7,17378,17378,211561,1,0,0,0,1.0,1.0,optimal control problem,211561,6.458,https://sparse.tamu.edu/MM/VDOL/lowThrust_7.tar.gz
+Hollinger,mark3jac080,36609,36609,214643,1,0,0,0,0.07391845139171971,0.01409066941898426,economic problem,227955,6.959,https://sparse.tamu.edu/MM/Hollinger/mark3jac080.tar.gz
+Hollinger,mark3jac080sc,36609,36609,214643,1,0,0,0,0.07391845139171971,0.0125985842018466,economic problem,227955,6.959,https://sparse.tamu.edu/MM/Hollinger/mark3jac080sc.tar.gz
+VDOL,lowThrust_8,17702,17702,216445,1,0,0,0,1.0,1.0,optimal control problem,216445,6.607,https://sparse.tamu.edu/MM/VDOL/lowThrust_8.tar.gz
+DIMACS10,ak2010,45292,45292,217098,1,0,0,0,1.0,1.0,undirected weighted graph,217098,6.627,https://sparse.tamu.edu/MM/DIMACS10/ak2010.tar.gz
+Cylshell,s1rmt3m1,5489,5489,217651,1,0,1,1,1.0,1.0,structural problem,219521,6.701,https://sparse.tamu.edu/MM/Cylshell/s1rmt3m1.tar.gz
+Cylshell,s3rmt3m1,5489,5489,217669,1,0,1,1,1.0,1.0,structural problem,219521,6.701,https://sparse.tamu.edu/MM/Cylshell/s3rmt3m1.tar.gz
+Cylshell,s2rmt3m1,5489,5489,217681,1,0,1,1,1.0,1.0,structural problem,219521,6.701,https://sparse.tamu.edu/MM/Cylshell/s2rmt3m1.tar.gz
+Puri,ABACUS_shell_ud,23412,23412,218484,1,0,1,0,1.0,0.9753731955380578,model reduction problem,218484,6.670,https://sparse.tamu.edu/MM/Puri/ABACUS_shell_ud.tar.gz
+VDOL,lowThrust_9,18044,18044,219589,1,0,0,0,1.0,1.0,optimal control problem,219589,6.703,https://sparse.tamu.edu/MM/VDOL/lowThrust_9.tar.gz
+VDOL,lowThrust_10,18260,18260,222005,1,0,0,0,1.0,1.0,optimal control problem,222005,6.777,https://sparse.tamu.edu/MM/VDOL/lowThrust_10.tar.gz
+ATandT,onetone2,36057,36057,222596,1,0,0,0,0.1128682425939654,0.06622764699821082,frequency-domain circuit simulation problem,227628,6.949,https://sparse.tamu.edu/MM/ATandT/onetone2.tar.gz
+VDOL,lowThrust_11,18368,18368,223801,1,0,0,0,1.0,1.0,optimal control problem,223801,6.832,https://sparse.tamu.edu/MM/VDOL/lowThrust_11.tar.gz
+VDOL,lowThrust_12,18458,18458,224593,1,0,0,0,1.0,1.0,optimal control problem,224593,6.856,https://sparse.tamu.edu/MM/VDOL/lowThrust_12.tar.gz
+VDOL,lowThrust_13,18476,18476,224897,1,0,0,0,1.0,1.0,optimal control problem,224897,6.865,https://sparse.tamu.edu/MM/VDOL/lowThrust_13.tar.gz
+HB,man_5976,5976,5976,225046,1,1,1,0,1.0,1.0,structural problem,225046,6.870,https://sparse.tamu.edu/MM/HB/man_5976.tar.gz
+FIDAP,ex35,19716,19716,227872,1,0,1,0,1.0,0.4608754972232364,computational fluid dynamics problem,228208,6.966,https://sparse.tamu.edu/MM/FIDAP/ex35.tar.gz
+Mallya,lhr10,10672,10672,228395,1,0,0,0,0.008791586915847653,1.752395305332977e-05,chemical process simulation problem,232633,7.101,https://sparse.tamu.edu/MM/Mallya/lhr10.tar.gz
+Hollinger,jan99jac120,41374,41374,229385,1,0,0,0,0.003290255360374358,0.0,economic problem,260202,7.943,https://sparse.tamu.edu/MM/Hollinger/jan99jac120.tar.gz
+Hollinger,jan99jac120sc,41374,41374,229385,1,0,0,0,0.003290255360374358,0.0,economic problem,260202,7.943,https://sparse.tamu.edu/MM/Hollinger/jan99jac120sc.tar.gz
+GHS_indef,spmsrtls,29995,29995,229947,1,0,0,0,1.0,1.0,statistical/mathematical problem,229947,7.019,https://sparse.tamu.edu/MM/GHS_indef/spmsrtls.tar.gz
+Mallya,lhr11,10964,10964,231806,1,0,0,0,0.00820058037510379,3.452591601570929e-05,chemical process simulation problem,233741,7.135,https://sparse.tamu.edu/MM/Mallya/lhr11.tar.gz
+Mallya,lhr10c,10672,10672,232633,1,0,0,0,0.008791586915847653,1.720467106819501e-05,chemical process simulation problem,232633,7.101,https://sparse.tamu.edu/MM/Mallya/lhr10c.tar.gz
+Mallya,lhr11c,10964,10964,233741,1,0,0,0,0.00820058037510379,4.280052387841227e-05,chemical process simulation problem,233741,7.135,https://sparse.tamu.edu/MM/Mallya/lhr11c.tar.gz
+DIMACS10,nh2010,48837,48837,234550,1,0,0,0,1.0,1.0,undirected weighted graph,234550,7.160,https://sparse.tamu.edu/MM/DIMACS10/nh2010.tar.gz
+SNAP,ca-HepPh,12008,12008,237010,1,1,0,0,1.0,1.0,undirected graph,237010,7.235,https://sparse.tamu.edu/MM/SNAP/ca-HepPh.tar.gz
+Schenk_ISEI,nmos3,18588,18588,237130,1,0,1,0,1.0,0.1670891636390259,semiconductor device problem,386594,11.800,https://sparse.tamu.edu/MM/Schenk_ISEI/nmos3.tar.gz
+TAMU_SmartGridCenter,ACTIVSg70K,69999,69999,238627,1,0,0,0,1.0,1.0,power network problem,238627,7.284,https://sparse.tamu.edu/MM/TAMU_SmartGridCenter/ACTIVSg70K.tar.gz
+DIMACS10,luxembourg_osm,114599,114599,239332,1,1,0,0,1.0,1.0,undirected graph,239332,7.306,https://sparse.tamu.edu/MM/DIMACS10/luxembourg_osm.tar.gz
+SNAP,sx-mathoverflow,24818,24818,239978,1,0,0,0,0.3509349053252102,0.1609975832379348,directed temporal multigraph,239978,7.326,https://sparse.tamu.edu/MM/SNAP/sx-mathoverflow.tar.gz
+Newman,cond-mat-2003,31163,31163,240058,1,0,0,0,1.0,1.0,undirected weighted graph,240058,7.328,https://sparse.tamu.edu/MM/Newman/cond-mat-2003.tar.gz
+ML_Graph,worms20_10NN,20055,20055,240826,1,0,0,0,1.0,1.0,undirected weighted graph,240826,7.351,https://sparse.tamu.edu/MM/ML_Graph/worms20_10NN.tar.gz
+Newman,astro-ph,16706,16706,242502,1,0,0,0,1.0,1.0,undirected weighted graph,242502,7.403,https://sparse.tamu.edu/MM/Newman/astro-ph.tar.gz
+PARSEC,benzene,8219,8219,242669,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,242669,7.408,https://sparse.tamu.edu/MM/PARSEC/benzene.tar.gz
+DIMACS10,wing,62032,62032,243088,1,1,0,0,1.0,1.0,undirected graph,243088,7.420,https://sparse.tamu.edu/MM/DIMACS10/wing.tar.gz
+Rajat,rajat26,51032,51032,247528,1,0,0,0,0.9853537517311467,0.3271800826884766,circuit simulation problem,249302,7.610,https://sparse.tamu.edu/MM/Rajat/rajat26.tar.gz
+HB,bcsstk25,15439,15439,252241,1,0,1,1,1.0,1.0,structural problem,252241,7.700,https://sparse.tamu.edu/MM/HB/bcsstk25.tar.gz
+TSOPF,TSOPF_RS_b39_c7,14098,14098,252446,1,0,0,0,0.05962284731399325,0.0003524007299729407,power network problem,252446,7.706,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b39_c7.tar.gz
+UTEP,Dubcova1,16129,16129,253009,1,0,1,1,1.0,1.0,2D/3D problem,253009,7.723,https://sparse.tamu.edu/MM/UTEP/Dubcova1.tar.gz
+Pothen,tandem_vtx,18454,18454,253350,1,1,1,0,1.0,1.0,structural problem,253350,7.734,https://sparse.tamu.edu/MM/Pothen/tandem_vtx.tar.gz
+GHS_indef,a5esindl,60008,60008,255004,1,0,0,0,1.0,1.0,optimization problem,255004,7.784,https://sparse.tamu.edu/MM/GHS_indef/a5esindl.tar.gz
+FIDAP,ex19,12005,12005,259577,1,0,1,0,1.0,0.4284006268883396,computational fluid dynamics problem,259879,7.933,https://sparse.tamu.edu/MM/FIDAP/ex19.tar.gz
+Hollinger,g7jac080,23670,23670,259648,1,0,0,0,0.03703210435580416,0.0,economic problem,293976,8.973,https://sparse.tamu.edu/MM/Hollinger/g7jac080.tar.gz
+Hollinger,g7jac080sc,23670,23670,259648,1,0,0,0,0.03703210435580416,0.0,economic problem,293976,8.973,https://sparse.tamu.edu/MM/Hollinger/g7jac080sc.tar.gz
+Engwirda,airfoil_2d,14214,14214,259688,1,0,1,0,0.981668119637925,0.0,computational fluid dynamics problem,259688,7.927,https://sparse.tamu.edu/MM/Engwirda/airfoil_2d.tar.gz
+Cylshell,s1rmq4m1,5489,5489,262411,1,0,1,1,1.0,1.0,structural problem,281111,8.581,https://sparse.tamu.edu/MM/Cylshell/s1rmq4m1.tar.gz
+Cylshell,s3rmq4m1,5489,5489,262943,1,0,1,1,1.0,1.0,structural problem,281111,8.581,https://sparse.tamu.edu/MM/Cylshell/s3rmq4m1.tar.gz
+Cylshell,s2rmq4m1,5489,5489,263351,1,0,1,1,1.0,1.0,structural problem,281111,8.581,https://sparse.tamu.edu/MM/Cylshell/s2rmq4m1.tar.gz
+Hollinger,mark3jac100,45769,45769,268563,1,0,0,0,0.07393733869014309,0.01412857360574466,economic problem,285215,8.706,https://sparse.tamu.edu/MM/Hollinger/mark3jac100.tar.gz
+Hollinger,mark3jac100sc,45769,45769,268563,1,0,0,0,0.07393733869014309,0.01261351717213372,economic problem,285215,8.706,https://sparse.tamu.edu/MM/Hollinger/mark3jac100sc.tar.gz
+IPSO,OPF_6000,29902,29902,274697,1,0,0,0,1.0,1.0,power network problem,302418,9.231,https://sparse.tamu.edu/MM/IPSO/OPF_6000.tar.gz
+Grund,bayer01,57735,57735,275094,1,0,0,0,0.0002304047924196823,2.908118011428904e-05,chemical process simulation problem,277774,8.479,https://sparse.tamu.edu/MM/Grund/bayer01.tar.gz
+LAW,enron,69244,69244,276143,1,1,0,0,0.1468201946046729,0.1468201946046729,directed graph,276143,8.429,https://sparse.tamu.edu/MM/LAW/enron.tar.gz
+Oberwolfach,chipcool0,20082,20082,281150,1,0,1,0,1.0,0.8688617524936032,model reduction problem,281150,8.582,https://sparse.tamu.edu/MM/Oberwolfach/chipcool0.tar.gz
+Oberwolfach,chipcool1,20082,20082,281150,1,0,1,0,1.0,0.08556391438245974,model reduction problem,281150,8.582,https://sparse.tamu.edu/MM/Oberwolfach/chipcool1.tar.gz
+DIMACS10,vsp_sctap1-2b_and_seymourl,40174,40174,281662,1,1,0,0,1.0,1.0,random unweighted graph,281662,8.598,https://sparse.tamu.edu/MM/DIMACS10/vsp_sctap1-2b_and_seymourl.tar.gz
+Hohn,sinc12,7500,7500,283992,1,0,1,0,0.01755337541442645,0.0,materials problem,294986,9.004,https://sparse.tamu.edu/MM/Hohn/sinc12.tar.gz
+Schenk_IBMSDS,3D_28984_Tetra,28984,28984,285092,1,0,1,0,0.9874041102377119,0.3613007012666531,semiconductor device problem,599170,18.287,https://sparse.tamu.edu/MM/Schenk_IBMSDS/3D_28984_Tetra.tar.gz
+TKK,t520,5563,5563,286341,1,0,1,0,1.0,1.0,structural problem,286341,8.740,https://sparse.tamu.edu/MM/TKK/t520.tar.gz
+JGD_SPG,EX5,6545,6545,295680,1,1,0,0,1.0,1.0,combinatorial problem,295680,9.025,https://sparse.tamu.edu/MM/JGD_SPG/EX5.tar.gz
+JGD_SPG,EX6,6545,6545,295680,1,1,0,0,1.0,1.0,combinatorial problem,295680,9.025,https://sparse.tamu.edu/MM/JGD_SPG/EX6.tar.gz
+Pajek,Reuters911,13332,13332,296076,1,0,0,0,1.0,1.0,undirected weighted graph sequence,296076,9.037,https://sparse.tamu.edu/MM/Pajek/Reuters911.tar.gz
+GHS_psdef,finance256,37376,37376,298496,1,1,0,0,1.0,1.0,optimization problem,298496,9.111,https://sparse.tamu.edu/MM/GHS_psdef/finance256.tar.gz
+Schenk_IBMNA,c-60,43640,43640,298570,1,0,0,0,1.0,1.0,optimization problem,298578,9.114,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-60.tar.gz
+GHS_indef,dixmaanl,60000,60000,299998,1,0,0,0,1.0,1.0,optimization problem,299998,9.157,https://sparse.tamu.edu/MM/GHS_indef/dixmaanl.tar.gz
+Cote,vibrobox,12328,12328,301700,1,0,1,0,1.0,1.0,acoustics problem,342828,10.464,https://sparse.tamu.edu/MM/Cote/vibrobox.tar.gz
+PARSEC,Na5,5832,5832,305630,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,305630,9.329,https://sparse.tamu.edu/MM/PARSEC/Na5.tar.gz
+Mallya,lhr14,14270,14270,305750,1,0,0,0,0.006622946983926842,0.0,chemical process simulation problem,307858,9.397,https://sparse.tamu.edu/MM/Mallya/lhr14.tar.gz
+Bomhof,circuit_4,80209,80209,307604,1,0,0,0,0.8292028705104302,0.3635452210926232,circuit simulation problem,307604,9.389,https://sparse.tamu.edu/MM/Bomhof/circuit_4.tar.gz
+Mallya,lhr14c,14270,14270,307858,1,0,0,0,0.006622946983926842,0.0,chemical process simulation problem,307858,9.397,https://sparse.tamu.edu/MM/Mallya/lhr14c.tar.gz
+Schenk_IBMNA,c-61,43618,43618,310016,1,0,0,0,1.0,1.0,optimization problem,310016,9.463,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-61.tar.gz
+Goodwin,Goodwin_030,10142,10142,312814,1,0,1,0,0.966280360610536,0.06332624905442888,computational fluid dynamics,312814,9.548,https://sparse.tamu.edu/MM/Goodwin/Goodwin_030.tar.gz
+DIMACS10,rgg_n_2_15_s0,32768,32768,320480,1,1,0,0,1.0,1.0,undirected random graph,320480,9.782,https://sparse.tamu.edu/MM/DIMACS10/rgg_n_2_15_s0.tar.gz
+Boeing,bcsstm36,23052,23052,320606,1,0,1,0,1.0,1.0,structural problem,320606,9.786,https://sparse.tamu.edu/MM/Boeing/bcsstm36.tar.gz
+Hollinger,mark3jac120,54929,54929,322483,1,0,0,0,0.07394990714529154,0.01415379562098285,economic problem,342475,10.453,https://sparse.tamu.edu/MM/Hollinger/mark3jac120.tar.gz
+Hollinger,mark3jac120sc,54929,54929,322483,1,0,0,0,0.07394990714529154,0.01276529035436745,economic problem,342475,10.453,https://sparse.tamu.edu/MM/Hollinger/mark3jac120sc.tar.gz
+Boeing,crystm02,13965,13965,322905,1,0,1,1,1.0,1.0,materials problem,322905,9.856,https://sparse.tamu.edu/MM/Boeing/crystm02.tar.gz
+Gleich,usroads-48,126146,126146,323900,1,1,0,0,1.0,1.0,undirected graph,323900,9.887,https://sparse.tamu.edu/MM/Gleich/usroads-48.tar.gz
+Goodwin,goodwin,7320,7320,324772,1,0,1,0,0.6353114022282706,0.001199255331506196,computational fluid dynamics problem,324784,9.914,https://sparse.tamu.edu/MM/Goodwin/goodwin.tar.gz
+Pajek,EAT_SR,23219,23219,325589,1,0,0,0,0.1236274132759018,0.03102530574571187,directed weighted graph,325589,9.938,https://sparse.tamu.edu/MM/Pajek/EAT_SR.tar.gz
+Pajek,EAT_RS,23219,23219,325592,1,0,0,0,0.1236262721980876,0.03102501938294547,directed weighted graph,325592,9.938,https://sparse.tamu.edu/MM/Pajek/EAT_RS.tar.gz
+GHS_psdef,pwt,36519,36519,326107,1,1,1,0,1.0,1.0,duplicate structural problem,326107,9.954,https://sparse.tamu.edu/MM/GHS_psdef/pwt.tar.gz
+Nasa,pwt,36519,36519,326107,1,1,1,0,1.0,1.0,duplicate structural problem,326107,9.954,https://sparse.tamu.edu/MM/Nasa/pwt.tar.gz
+Pothen,pwt,36519,36519,326107,1,1,1,0,1.0,1.0,structural problem,326107,9.954,https://sparse.tamu.edu/MM/Pothen/pwt.tar.gz
+DIMACS10,fe_body,45087,45087,327468,1,1,0,0,1.0,1.0,undirected graph,327468,9.995,https://sparse.tamu.edu/MM/DIMACS10/fe_body.tar.gz
+MaxPlanck,shallow_water1,81920,81920,327680,1,0,1,1,1.0,1.0,computational fluid dynamics problem,327680,10.002,https://sparse.tamu.edu/MM/MaxPlanck/shallow_water1.tar.gz
+MaxPlanck,shallow_water2,81920,81920,327680,1,0,1,1,1.0,1.0,computational fluid dynamics problem,327680,10.002,https://sparse.tamu.edu/MM/MaxPlanck/shallow_water2.tar.gz
+Andrianov,lpl1,32460,32460,328036,1,1,0,0,1.0,1.0,optimization problem,328036,10.013,https://sparse.tamu.edu/MM/Andrianov/lpl1.tar.gz
+Oberwolfach,inlet,11730,11730,328323,1,0,1,0,0.6083330964361183,9.475888601453601e-05,model reduction problem,328323,10.022,https://sparse.tamu.edu/MM/Oberwolfach/inlet.tar.gz
+Shyy,shyy161,76480,76480,329762,1,0,1,0,0.7263358696509635,0.1824427535660244,computational fluid dynamics problem,329762,10.065,https://sparse.tamu.edu/MM/Shyy/shyy161.tar.gz
+Gleich,usroads,129164,129164,330870,1,1,0,0,1.0,1.0,undirected graph,330870,10.099,https://sparse.tamu.edu/MM/Gleich/usroads.tar.gz
+IBM_EDA,ckt11752_tr_0,49702,49702,332807,1,0,0,0,0.9838102263462359,0.7360237367761078,circuit simulation problem,333029,10.165,https://sparse.tamu.edu/MM/IBM_EDA/ckt11752_tr_0.tar.gz
+IBM_EDA,ckt11752_dc_1,49702,49702,333029,1,0,0,0,0.9838102263462359,0.7355387943965807,circuit simulation problem,333029,10.165,https://sparse.tamu.edu/MM/IBM_EDA/ckt11752_dc_1.tar.gz
+Graham,graham1,9035,9035,335472,1,0,1,0,0.718197839525901,0.0004322586733311619,computational fluid dynamics problem,335504,10.241,https://sparse.tamu.edu/MM/Graham/graham1.tar.gz
+DIMACS10,me2010,69518,69518,335476,1,0,0,0,1.0,1.0,undirected weighted graph,335476,10.240,https://sparse.tamu.edu/MM/DIMACS10/me2010.tar.gz
+ATandT,onetone1,36057,36057,335552,1,0,0,0,0.0742956282869174,0.04331285111284008,frequency-domain circuit simulation problem,341088,10.411,https://sparse.tamu.edu/MM/ATandT/onetone1.tar.gz
+Hollinger,g7jac100,29610,29610,335972,1,0,0,0,0.03529318979455026,0.0,economic problem,384636,11.740,https://sparse.tamu.edu/MM/Hollinger/g7jac100.tar.gz
+Hollinger,g7jac100sc,29610,29610,335972,1,0,0,0,0.03529318979455026,0.0,economic problem,384636,11.740,https://sparse.tamu.edu/MM/Hollinger/g7jac100sc.tar.gz
+DIMACS10,ct2010,67578,67578,336352,1,0,0,0,1.0,1.0,undirected weighted graph,336352,10.267,https://sparse.tamu.edu/MM/DIMACS10/ct2010.tar.gz
+MathWorks,Kuu,7102,7102,340200,1,0,1,1,1.0,1.0,structural problem,340200,10.384,https://sparse.tamu.edu/MM/MathWorks/Kuu.tar.gz
+Oberwolfach,gyro_m,17361,17361,340431,1,0,1,1,1.0,1.0,duplicate model reduction problem,340431,10.391,https://sparse.tamu.edu/MM/Oberwolfach/gyro_m.tar.gz
+Pajek,HEP-th,27240,27240,342437,1,1,0,0,0.002774548916757691,0.002774548916757691,directed graph,342437,10.452,https://sparse.tamu.edu/MM/Pajek/HEP-th.tar.gz
+GHS_indef,a2nnsnsl,80016,80016,347222,1,0,0,0,1.0,1.0,optimization problem,347222,10.598,https://sparse.tamu.edu/MM/GHS_indef/a2nnsnsl.tar.gz
+GHS_indef,ncvxbqp1,50000,50000,349968,1,0,0,0,1.0,1.0,optimization problem,349968,10.682,https://sparse.tamu.edu/MM/GHS_indef/ncvxbqp1.tar.gz
+GHS_psdef,cvxbqp1,50000,50000,349968,1,0,0,1,1.0,1.0,optimization problem,349968,10.682,https://sparse.tamu.edu/MM/GHS_psdef/cvxbqp1.tar.gz
+Newman,cond-mat-2005,40421,40421,351382,1,0,0,0,1.0,1.0,undirected weighted graph,351386,10.725,https://sparse.tamu.edu/MM/Newman/cond-mat-2005.tar.gz
+FEMLAB,poisson3Da,13514,13514,352762,1,0,1,0,1.0,0.0,computational fluid dynamics problem,352762,10.767,https://sparse.tamu.edu/MM/FEMLAB/poisson3Da.tar.gz
+Pajek,HEP-th-new,27770,27770,352807,1,1,0,0,0.002738343613933237,0.002738343613933237,directed graph,352807,10.769,https://sparse.tamu.edu/MM/Pajek/HEP-th-new.tar.gz
+SNAP,cit-HepTh,27770,27770,352807,1,1,0,0,0.002738343613933237,0.002738343613933237,directed graph,352807,10.769,https://sparse.tamu.edu/MM/SNAP/cit-HepTh.tar.gz
+GHS_indef,a0nsdsil,80016,80016,355034,1,0,0,0,1.0,1.0,optimization problem,355034,10.837,https://sparse.tamu.edu/MM/GHS_indef/a0nsdsil.tar.gz
+Schenk_IBMNA,c-53,30235,30235,355139,1,0,0,0,1.0,1.0,optimization problem,372213,11.361,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-53.tar.gz
+Boeing,bcsstk38,8032,8032,355460,1,0,1,1,1.0,1.0,structural problem,355460,10.850,https://sparse.tamu.edu/MM/Boeing/bcsstk38.tar.gz
+Schenk_IBMNA,c-65,48066,48066,360428,1,0,0,0,1.0,1.0,optimization problem,360528,11.004,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-65.tar.gz
+SNAP,email-Enron,36692,36692,367662,1,1,0,0,1.0,1.0,directed graph,367662,11.222,https://sparse.tamu.edu/MM/SNAP/email-Enron.tar.gz
+Garon,garon2,13535,13535,373235,1,0,1,0,1.0,0.6726819817326322,computational fluid dynamics problem,390607,11.922,https://sparse.tamu.edu/MM/Garon/garon2.tar.gz
+Hamm,bcircuit,68902,68902,375558,1,0,0,0,1.0,0.9084315976207868,circuit simulation problem,375558,11.463,https://sparse.tamu.edu/MM/Hamm/bcircuit.tar.gz
+Hollinger,mark3jac140,64089,64089,376395,1,0,0,0,0.07395887333678935,0.01417215070061332,economic problem,399735,12.201,https://sparse.tamu.edu/MM/Hollinger/mark3jac140.tar.gz
+Hollinger,mark3jac140sc,64089,64089,376395,1,0,0,0,0.07395887333678935,0.0128291219789848,economic problem,399735,12.201,https://sparse.tamu.edu/MM/Hollinger/mark3jac140sc.tar.gz
+Cunningham,k3plates,11107,11107,378927,1,0,1,0,1.0,0.999260507857104,acoustics problem,378927,11.566,https://sparse.tamu.edu/MM/Cunningham/k3plates.tar.gz
+Mallya,lhr17,17576,17576,379761,1,0,0,0,0.001513390098553639,0.0001527473453564807,chemical process simulation problem,381975,11.659,https://sparse.tamu.edu/MM/Mallya/lhr17.tar.gz
+DIMACS10,vsp_south31_slptsk,39668,39668,379828,1,1,0,0,1.0,1.0,random unweighted graph,379828,11.593,https://sparse.tamu.edu/MM/DIMACS10/vsp_south31_slptsk.tar.gz
+DIMACS10,vsp_model1_crew1_cr42_south31,45101,45101,379952,1,1,0,0,1.0,1.0,random unweighted graph,379952,11.597,https://sparse.tamu.edu/MM/DIMACS10/vsp_model1_crew1_cr42_south31.tar.gz
+Schenk_IBMNA,c-56,35910,35910,380240,1,0,0,0,1.0,1.0,optimization problem,380900,11.626,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-56.tar.gz
+Sanghavi,ecl32,51993,51993,380415,1,0,1,0,0.9219175329301935,0.6030290297239527,semiconductor device problem,380415,11.611,https://sparse.tamu.edu/MM/Sanghavi/ecl32.tar.gz
+Quaglino,viscoplastic2,32769,32769,381326,1,0,1,0,0.5699899872904575,0.0,materials problem,381326,11.639,https://sparse.tamu.edu/MM/Quaglino/viscoplastic2.tar.gz
+Mallya,lhr17c,17576,17576,381975,1,0,0,0,0.001513390098553639,5.236643939631969e-06,chemical process simulation problem,381975,11.659,https://sparse.tamu.edu/MM/Mallya/lhr17c.tar.gz
+Schenk_IBMNA,c-54,31793,31793,385987,1,0,0,0,1.0,1.0,optimization problem,391693,11.955,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-54.tar.gz
+DIMACS10,delaunay_n16,65536,65536,393150,1,1,0,0,1.0,1.0,undirected graph,393150,12.000,https://sparse.tamu.edu/MM/DIMACS10/delaunay_n16.tar.gz
+Nemeth,nemeth02,9506,9506,394808,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,394808,12.051,https://sparse.tamu.edu/MM/Nemeth/nemeth02.tar.gz
+Nemeth,nemeth03,9506,9506,394808,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,394808,12.051,https://sparse.tamu.edu/MM/Nemeth/nemeth03.tar.gz
+Nemeth,nemeth04,9506,9506,394808,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,394808,12.051,https://sparse.tamu.edu/MM/Nemeth/nemeth04.tar.gz
+Nemeth,nemeth05,9506,9506,394808,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,394808,12.051,https://sparse.tamu.edu/MM/Nemeth/nemeth05.tar.gz
+Nemeth,nemeth06,9506,9506,394808,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,394808,12.051,https://sparse.tamu.edu/MM/Nemeth/nemeth06.tar.gz
+Nemeth,nemeth07,9506,9506,394812,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,394812,12.051,https://sparse.tamu.edu/MM/Nemeth/nemeth07.tar.gz
+Nemeth,nemeth08,9506,9506,394816,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,394816,12.051,https://sparse.tamu.edu/MM/Nemeth/nemeth08.tar.gz
+Nemeth,nemeth09,9506,9506,395506,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,395506,12.072,https://sparse.tamu.edu/MM/Nemeth/nemeth09.tar.gz
+SNAP,ca-AstroPh,18772,18772,396160,1,1,0,0,1.0,1.0,undirected graph,396160,12.092,https://sparse.tamu.edu/MM/SNAP/ca-AstroPh.tar.gz
+Andrianov,net25,9520,9520,401200,1,1,0,0,1.0,1.0,optimization problem,401200,12.246,https://sparse.tamu.edu/MM/Andrianov/net25.tar.gz
+Nemeth,nemeth10,9506,9506,401448,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,401448,12.253,https://sparse.tamu.edu/MM/Nemeth/nemeth10.tar.gz
+Schenk_IBMNA,c-57,37833,37833,403373,1,0,0,0,1.0,1.0,optimization problem,405197,12.368,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-57.tar.gz
+GHS_indef,c-55,32780,32780,403450,1,0,0,0,1.0,1.0,optimization problem,403450,12.314,https://sparse.tamu.edu/MM/GHS_indef/c-55.tar.gz
+Nemeth,nemeth11,9506,9506,408264,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,408264,12.461,https://sparse.tamu.edu/MM/Nemeth/nemeth11.tar.gz
+DIMACS10,sd2010,88360,88360,410722,1,0,0,0,1.0,1.0,undirected weighted graph,410722,12.536,https://sparse.tamu.edu/MM/DIMACS10/sd2010.tar.gz
+CPM,cz40948,40948,40948,412148,1,0,1,0,0.4349030172413793,0.2372683189655172,2D/3D problem,412148,12.580,https://sparse.tamu.edu/MM/CPM/cz40948.tar.gz
+Hollinger,g7jac120,35550,35550,412306,1,0,0,0,0.0342243022108217,0.0,economic problem,475296,14.507,https://sparse.tamu.edu/MM/Hollinger/g7jac120.tar.gz
+Hollinger,g7jac120sc,35550,35550,412306,1,0,0,0,0.0342243022108217,0.0,economic problem,475296,14.507,https://sparse.tamu.edu/MM/Hollinger/g7jac120sc.tar.gz
+DIMACS10,nv2010,84538,84538,416998,1,0,0,0,1.0,1.0,undirected weighted graph,416998,12.728,https://sparse.tamu.edu/MM/DIMACS10/nv2010.tar.gz
+Pothen,onera_dual,85567,85567,419201,1,1,1,0,1.0,1.0,structural problem,419201,12.795,https://sparse.tamu.edu/MM/Pothen/onera_dual.tar.gz
+SNAP,email-EuAll,265214,265214,420045,1,1,0,0,0.2600511748250413,0.2600511748250413,directed graph,420045,12.821,https://sparse.tamu.edu/MM/SNAP/email-EuAll.tar.gz
+SNAP,cit-HepPh,34546,34546,421578,1,1,0,0,0.003117186276789061,0.003117186276789061,directed graph,421578,12.867,https://sparse.tamu.edu/MM/SNAP/cit-HepPh.tar.gz
+Bindel,ted_A,10605,10605,424587,1,0,1,0,0.5657922767749357,0.1057079149564699,thermal problem,424587,12.959,https://sparse.tamu.edu/MM/Bindel/ted_A.tar.gz
+Bindel,ted_A_unscaled,10605,10605,424587,1,0,1,0,0.5657922767749357,0.1057079149564699,thermal problem,424587,12.959,https://sparse.tamu.edu/MM/Bindel/ted_A_unscaled.tar.gz
+GHS_indef,ncvxqp5,62500,62500,424966,1,0,0,0,1.0,1.0,optimization problem,424966,12.971,https://sparse.tamu.edu/MM/GHS_indef/ncvxqp5.tar.gz
+IPSO,OPF_10000,43887,43887,426898,1,0,0,0,1.0,1.0,power network problem,467711,14.275,https://sparse.tamu.edu/MM/IPSO/OPF_10000.tar.gz
+DIMACS10,wy2010,86204,86204,427586,1,0,0,0,1.0,1.0,undirected weighted graph,427586,13.051,https://sparse.tamu.edu/MM/DIMACS10/wy2010.tar.gz
+SNAP,loc-Brightkite,58228,58228,428156,1,1,0,0,1.0,1.0,undirected graph,428156,13.068,https://sparse.tamu.edu/MM/SNAP/loc-Brightkite.tar.gz
+GHS_indef,helm3d01,32226,32226,428444,1,0,1,0,1.0,1.0,2D/3D problem,428444,13.077,https://sparse.tamu.edu/MM/GHS_indef/helm3d01.tar.gz
+HB,bcsstk17,10974,10974,428650,1,0,1,1,1.0,1.0,structural problem,428650,13.083,https://sparse.tamu.edu/MM/HB/bcsstk17.tar.gz
+Botonakis,FEM_3D_thermal1,17880,17880,430740,1,0,1,0,1.0,0.950733904955675,thermal problem,430740,13.147,https://sparse.tamu.edu/MM/Botonakis/FEM_3D_thermal1.tar.gz
+Fluorem,GT01R,7980,7980,430909,1,0,1,0,0.8811455350661695,9.457852263618717e-06,computational fluid dynamics problem,430909,13.152,https://sparse.tamu.edu/MM/Fluorem/GT01R.tar.gz
+GHS_indef,c-63,44234,44234,434704,1,0,0,0,1.0,1.0,optimization problem,434704,13.268,https://sparse.tamu.edu/MM/GHS_indef/c-63.tar.gz
+GHS_indef,cont-201,80595,80595,438795,1,0,0,0,1.0,1.0,optimization problem,438795,13.393,https://sparse.tamu.edu/MM/GHS_indef/cont-201.tar.gz
+Guettel,TEM27623,27623,27623,439469,1,0,1,0,1.0,1.0,electromagnetics problem,439469,13.413,https://sparse.tamu.edu/MM/Guettel/TEM27623.tar.gz
+Rajat,rajat15,37261,37261,443573,1,0,0,0,1.0,0.943060217954145,circuit simulation problem,443573,13.539,https://sparse.tamu.edu/MM/Rajat/rajat15.tar.gz
+Schenk_IBMNA,c-66b,49989,49989,444851,1,0,0,0,1.0,1.0,subsequent optimization problem,499007,15.230,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-66b.tar.gz
+Schenk_IBMNA,c-66,49989,49989,444853,1,0,0,0,1.0,1.0,optimization problem sequence,499007,15.230,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-66.tar.gz
+Nemeth,nemeth12,9506,9506,446818,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,446818,13.638,https://sparse.tamu.edu/MM/Nemeth/nemeth12.tar.gz
+FIDAP,ex40,7740,7740,456188,1,0,1,0,1.0,0.7709917560940942,computational fluid dynamics problem,458012,13.979,https://sparse.tamu.edu/MM/FIDAP/ex40.tar.gz
+Pothen,tandem_dual,94069,94069,460493,1,1,1,0,1.0,1.0,structural problem,460493,14.055,https://sparse.tamu.edu/MM/Pothen/tandem_dual.tar.gz
+Bai,af23560,23560,23560,460598,1,0,1,0,0.9973084203031934,0.0,computational fluid dynamics problem,484256,14.780,https://sparse.tamu.edu/MM/Bai/af23560.tar.gz
+Averous,epb3,84617,84617,463625,1,0,1,0,0.6674107142857143,0.03155606214116852,thermal problem,463625,14.151,https://sparse.tamu.edu/MM/Averous/epb3.tar.gz
+GHS_psdef,wathen100,30401,30401,471601,1,0,1,1,1.0,1.0,random 2D/3D problem,471601,14.394,https://sparse.tamu.edu/MM/GHS_psdef/wathen100.tar.gz
+Nemeth,nemeth13,9506,9506,474472,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,474472,14.482,https://sparse.tamu.edu/MM/Nemeth/nemeth13.tar.gz
+Rajat,rajat16,94294,94294,476766,1,0,0,0,0.9900237892855388,0.6363336955309653,circuit simulation problem,641159,19.569,https://sparse.tamu.edu/MM/Rajat/rajat16.tar.gz
+Rajat,rajat18,94294,94294,479151,1,0,0,0,0.626033640830624,0.2849580148146621,circuit simulation problem,485143,14.807,https://sparse.tamu.edu/MM/Rajat/rajat18.tar.gz
+Rajat,rajat17,94294,94294,479246,1,0,0,0,0.9900237892855388,0.2705152684049277,circuit simulation problem,641159,19.569,https://sparse.tamu.edu/MM/Rajat/rajat17.tar.gz
+GHS_indef,c-59,41282,41282,480536,1,0,0,0,1.0,1.0,optimization problem,480536,14.667,https://sparse.tamu.edu/MM/GHS_indef/c-59.tar.gz
+DIMACS10,vsp_c-60_data_cti_cs4,85830,85830,482160,1,1,0,0,1.0,1.0,random unweighted graph,482160,14.716,https://sparse.tamu.edu/MM/DIMACS10/vsp_c-60_data_cti_cs4.tar.gz
+Schenk_IBMSDS,2D_54019_highK,54019,54019,486129,1,0,1,0,0.998088911762053,0.189734095484946,semiconductor device problem,996414,30.410,https://sparse.tamu.edu/MM/Schenk_IBMSDS/2D_54019_highK.tar.gz
+Hollinger,g7jac140,41490,41490,488633,1,0,0,0,0.03350074170680273,0.0,economic problem,565956,17.274,https://sparse.tamu.edu/MM/Hollinger/g7jac140.tar.gz
+Hollinger,g7jac140sc,41490,41490,488633,1,0,0,0,0.03350074170680273,0.0,economic problem,565956,17.274,https://sparse.tamu.edu/MM/Hollinger/g7jac140sc.tar.gz
+Norris,lung2,109460,109460,492564,1,0,1,0,0.5714270798529903,0.0,computational fluid dynamics problem,492564,15.034,https://sparse.tamu.edu/MM/Norris/lung2.tar.gz
+Nemeth,nemeth14,9506,9506,496144,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,496144,15.143,https://sparse.tamu.edu/MM/Nemeth/nemeth14.tar.gz
+Andrianov,fxm4_6,18892,18892,497844,1,1,0,0,1.0,1.0,optimization problem,497844,15.195,https://sparse.tamu.edu/MM/Andrianov/fxm4_6.tar.gz
+VanVelzen,std1_Jac2_db,21982,21982,498771,1,0,0,0,0.3261820218167785,8.389455293641422e-06,chemical process simulation problem,498771,15.223,https://sparse.tamu.edu/MM/VanVelzen/std1_Jac2_db.tar.gz
+FlowIPM22,uni_chimera_i3,100000,100000,499696,1,0,0,0,1.0,1.0,undirected weighted graph,499696,15.251,https://sparse.tamu.edu/MM/FlowIPM22/uni_chimera_i3.tar.gz
+GHS_indef,ncvxqp3,75000,75000,499964,1,0,0,0,1.0,1.0,optimization problem,499964,15.260,https://sparse.tamu.edu/MM/GHS_indef/ncvxqp3.tar.gz
+FlowIPM22,uni_chimera_i5,100000,100000,499982,1,0,0,1,1.0,1.0,undirected weighted graph,499982,15.260,https://sparse.tamu.edu/MM/FlowIPM22/uni_chimera_i5.tar.gz
+SNAP,soc-Epinions1,75888,75888,508837,1,1,0,0,0.405226035056413,0.405226035056413,directed graph,508837,15.530,https://sparse.tamu.edu/MM/SNAP/soc-Epinions1.tar.gz
+Oberwolfach,t3dl,20360,20360,509866,1,0,1,0,1.0,1.0,model reduction problem,509866,15.562,https://sparse.tamu.edu/MM/Oberwolfach/t3dl.tar.gz
+Oberwolfach,t3dl_a,20360,20360,509866,1,0,1,0,1.0,1.0,duplicate model reduction problem,509866,15.562,https://sparse.tamu.edu/MM/Oberwolfach/t3dl_a.tar.gz
+GHS_psdef,gridgena,48962,48962,512084,1,0,0,1,1.0,1.0,optimization problem,512084,15.630,https://sparse.tamu.edu/MM/GHS_psdef/gridgena.tar.gz
+Hamm,hcircuit,105676,105676,513072,1,0,0,0,0.9999410961997232,0.1951139297670355,circuit simulation problem,513072,15.660,https://sparse.tamu.edu/MM/Hamm/hcircuit.tar.gz
+SNAP,soc-sign-Slashdot081106,77357,77357,516575,1,0,0,0,0.1859207278710739,0.1786110438948846,directed weighted graph,516575,15.767,https://sparse.tamu.edu/MM/SNAP/soc-sign-Slashdot081106.tar.gz
+Schenk_IBMNA,c-67,57975,57975,530229,1,0,0,0,1.0,1.0,optimization problem sequence,531935,16.235,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-67.tar.gz
+Schenk_IBMNA,c-67b,57975,57975,530583,1,0,0,0,1.0,1.0,subsequent optimization problem,531935,16.235,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-67b.tar.gz
+VanVelzen,std1_Jac3_db,21982,21982,531826,1,0,0,0,0.3593020610225873,7.84553706623987e-06,chemical process simulation problem,531826,16.232,https://sparse.tamu.edu/MM/VanVelzen/std1_Jac3_db.tar.gz
+Schenk_IBMSDS,3D_51448_3D,51448,51448,537038,1,0,1,0,0.9920908271502504,0.1870343293725159,semiconductor device problem,1056610,32.247,https://sparse.tamu.edu/MM/Schenk_IBMSDS/3D_51448_3D.tar.gz
+Schenk_IBMSDS,ibm_matrix_2,51448,51448,537038,1,0,1,0,0.9920908271502504,0.185666920653226,semiconductor device problem,1056610,32.247,https://sparse.tamu.edu/MM/Schenk_IBMSDS/ibm_matrix_2.tar.gz
+Nemeth,nemeth15,9506,9506,539802,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,539802,16.475,https://sparse.tamu.edu/MM/Nemeth/nemeth15.tar.gz
+GHS_psdef,apache1,80800,80800,542184,1,0,1,1,1.0,1.0,structural problem,542184,16.548,https://sparse.tamu.edu/MM/GHS_psdef/apache1.tar.gz
+GHS_psdef,ford2,100196,100196,544688,1,1,1,0,1.0,1.0,structural problem,544688,16.625,https://sparse.tamu.edu/MM/GHS_psdef/ford2.tar.gz
+SNAP,soc-sign-Slashdot090216,81871,81871,545671,1,0,0,0,0.175926519826049,0.168574104176326,directed weighted graph,545671,16.655,https://sparse.tamu.edu/MM/SNAP/soc-sign-Slashdot090216.tar.gz
+SNAP,soc-sign-Slashdot090221,82144,82144,549202,1,0,0,0,0.1774246998372184,0.1703271291801559,directed weighted graph,549202,16.762,https://sparse.tamu.edu/MM/SNAP/soc-sign-Slashdot090221.tar.gz
+Hohn,sinc15,11532,11532,551184,1,0,1,0,0.01378652867239141,0.0,materials problem,568526,17.352,https://sparse.tamu.edu/MM/Hohn/sinc15.tar.gz
+GHS_indef,c-58,37595,37595,552551,1,0,0,0,1.0,1.0,optimization problem,552557,16.865,https://sparse.tamu.edu/MM/GHS_indef/c-58.tar.gz
+Shen,e40r0100,17281,17281,553562,1,0,1,0,0.3079877899832364,0.001965387548691824,2D/3D problem,553562,16.895,https://sparse.tamu.edu/MM/Shen/e40r0100.tar.gz
+Oberwolfach,rail_79841,79841,79841,553921,1,0,1,0,1.0,1.0,model reduction problem,553921,16.906,https://sparse.tamu.edu/MM/Oberwolfach/rail_79841.tar.gz
+JGD_Trefethen,Trefethen_20000b,19999,19999,554435,1,0,0,1,1.0,1.0,combinatorial problem,554435,16.922,https://sparse.tamu.edu/MM/JGD_Trefethen/Trefethen_20000b.tar.gz
+JGD_Trefethen,Trefethen_20000,20000,20000,554466,1,0,0,1,1.0,1.0,combinatorial problem,554466,16.923,https://sparse.tamu.edu/MM/JGD_Trefethen/Trefethen_20000.tar.gz
+Rajat,rajat23,110355,110355,555441,1,0,0,0,0.9891581094231137,0.3324988529606978,circuit simulation problem,556938,16.998,https://sparse.tamu.edu/MM/Rajat/rajat23.tar.gz
+GHS_indef,stokes128,49666,49666,558594,1,0,1,0,1.0,1.0,computational fluid dynamics problem,558594,17.049,https://sparse.tamu.edu/MM/GHS_indef/stokes128.tar.gz
+GHS_indef,c-62ghs,41731,41731,559339,1,0,0,0,1.0,1.0,subsequent optimization problem,559343,17.072,https://sparse.tamu.edu/MM/GHS_indef/c-62ghs.tar.gz
+Schenk_IBMNA,c-62,41731,41731,559341,1,0,0,0,1.0,1.0,optimization problem sequence,559343,17.072,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-62.tar.gz
+vanHeukelum,cage11,39082,39082,559722,1,0,0,0,1.0,0.1821988322065151,directed weighted graph,559722,17.083,https://sparse.tamu.edu/MM/vanHeukelum/cage11.tar.gz
+GHS_indef,k1_san,67759,67759,559774,1,0,1,0,1.0,1.0,2D/3D problem,559774,17.085,https://sparse.tamu.edu/MM/GHS_indef/k1_san.tar.gz
+Pajek,patents_main,240547,240547,560943,1,0,0,0,0.0,0.0,directed weighted graph,560943,17.121,https://sparse.tamu.edu/MM/Pajek/patents_main.tar.gz
+Goodwin,Goodwin_040,17922,17922,561677,1,0,1,0,0.9746314856878265,0.06442027585251406,computational fluid dynamics,561677,17.143,https://sparse.tamu.edu/MM/Goodwin/Goodwin_040.tar.gz
+Hollinger,g7jac160,47430,47430,564952,1,0,0,0,0.03297843351620031,0.0,economic problem,656616,20.040,https://sparse.tamu.edu/MM/Hollinger/g7jac160.tar.gz
+Hollinger,g7jac160sc,47430,47430,564952,1,0,0,0,0.03297843351620031,0.0,economic problem,656616,20.040,https://sparse.tamu.edu/MM/Hollinger/g7jac160sc.tar.gz
+GHS_psdef,wathen120,36441,36441,565761,1,0,1,1,1.0,1.0,random 2D/3D problem,565761,17.268,https://sparse.tamu.edu/MM/GHS_psdef/wathen120.tar.gz
+GHS_indef,c-68,64810,64810,565996,1,0,0,0,1.0,1.0,optimization problem,566006,17.275,https://sparse.tamu.edu/MM/GHS_indef/c-68.tar.gz
+DIMACS10,ut2010,115406,115406,572066,1,0,0,0,1.0,1.0,undirected weighted graph,572066,17.460,https://sparse.tamu.edu/MM/DIMACS10/ut2010.tar.gz
+Schmid,thermal1,82654,82654,574458,1,0,1,1,1.0,1.0,thermal problem,574458,17.533,https://sparse.tamu.edu/MM/Schmid/thermal1.tar.gz
+GHS_indef,ncvxqp7,87500,87500,574962,1,0,0,0,1.0,1.0,optimization problem,574962,17.548,https://sparse.tamu.edu/MM/GHS_indef/ncvxqp7.tar.gz
+Sandia,ASIC_100ks,99190,99190,578890,1,0,0,0,1.0,0.0007546383156139254,circuit simulation problem,578890,17.668,https://sparse.tamu.edu/MM/Sandia/ASIC_100ks.tar.gz
+Boeing,crystm03,24696,24696,583770,1,0,1,1,1.0,1.0,materials problem,583770,17.817,https://sparse.tamu.edu/MM/Boeing/crystm03.tar.gz
+Nemeth,nemeth16,9506,9506,587012,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,587012,17.916,https://sparse.tamu.edu/MM/Nemeth/nemeth16.tar.gz
+HB,bcsstk33,8738,8738,591904,1,1,1,0,1.0,1.0,structural problem,591904,18.065,https://sparse.tamu.edu/MM/HB/bcsstk33.tar.gz
+LeGresley,LeGresley_87936,87936,87936,593276,1,0,0,0,0.9792020608292309,0.03427471928313486,power network problem,593276,18.107,https://sparse.tamu.edu/MM/LeGresley/LeGresley_87936.tar.gz
+SNAP,sx-askubuntu,159316,159316,596933,1,0,0,0,0.3265757288095759,0.1849102403322678,directed temporal multigraph,596933,18.219,https://sparse.tamu.edu/MM/SNAP/sx-askubuntu.tar.gz
+Mulvey,finan512,74752,74752,596992,1,0,0,1,1.0,1.0,economic problem,596992,18.221,https://sparse.tamu.edu/MM/Mulvey/finan512.tar.gz
+Mulvey,pfinan512,74752,74752,596992,1,1,0,0,1.0,1.0,duplicate economic problem,596992,18.221,https://sparse.tamu.edu/MM/Mulvey/pfinan512.tar.gz
+DIMACS10,vsp_bump2_e18_aa01_model1_crew1,56438,56438,601602,1,1,0,0,1.0,1.0,random unweighted graph,601602,18.361,https://sparse.tamu.edu/MM/DIMACS10/vsp_bump2_e18_aa01_model1_crew1.tar.gz
+Rajat,rajat20,86916,86916,604299,1,0,0,0,0.9906228863063395,0.1122042623922186,circuit simulation problem,605045,18.466,https://sparse.tamu.edu/MM/Rajat/rajat20.tar.gz
+Rajat,rajat25,87190,87190,606489,1,0,0,0,0.9906572831072957,0.1118151951820715,circuit simulation problem,607235,18.533,https://sparse.tamu.edu/MM/Rajat/rajat25.tar.gz
+Rajat,rajat28,87190,87190,606489,1,0,0,0,0.9906572831072957,0.1072533437604223,circuit simulation problem,607235,18.533,https://sparse.tamu.edu/MM/Rajat/rajat28.tar.gz
+TSOPF,TSOPF_FS_b162_c1,10798,10798,608540,1,0,0,0,1.0,1.0,power network problem,608540,18.573,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b162_c1.tar.gz
+TSOPF,TSOPF_RS_b162_c3,15374,15374,610299,1,0,0,0,0.02683526094131803,0.0008133934303355415,power network problem,610299,18.627,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b162_c3.tar.gz
+ML_Graph,k49_norm_10NN,38547,38547,618158,1,0,0,0,1.0,1.0,undirected weighted graph,618158,18.867,https://sparse.tamu.edu/MM/ML_Graph/k49_norm_10NN.tar.gz
+HB,bcsstk29,13992,13992,619488,1,1,1,0,1.0,1.0,structural problem,619488,18.907,https://sparse.tamu.edu/MM/HB/bcsstk29.tar.gz
+GHS_indef,c-69,67458,67458,623914,1,0,0,0,1.0,1.0,optimization problem,623970,19.044,https://sparse.tamu.edu/MM/GHS_indef/c-69.tar.gz
+DIMACS10,nd2010,133769,133769,625946,1,0,0,0,1.0,1.0,undirected weighted graph,625946,19.104,https://sparse.tamu.edu/MM/DIMACS10/nd2010.tar.gz
+Nemeth,nemeth17,9506,9506,629620,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,629620,19.216,https://sparse.tamu.edu/MM/Nemeth/nemeth17.tar.gz
+DIMACS10,mt2010,132288,132288,638668,1,0,0,0,1.0,1.0,undirected weighted graph,638668,19.493,https://sparse.tamu.edu/MM/DIMACS10/mt2010.tar.gz
+GHS_indef,blockqp1,60012,60012,640033,1,0,0,0,1.0,1.0,optimization problem,640033,19.534,https://sparse.tamu.edu/MM/GHS_indef/blockqp1.tar.gz
+Hollinger,g7jac180,53370,53370,641290,1,0,0,0,0.03258366406977314,0.0,economic problem,747276,22.807,https://sparse.tamu.edu/MM/Hollinger/g7jac180.tar.gz
+Hollinger,g7jac180sc,53370,53370,641290,1,0,0,0,0.03258366406977314,0.0,economic problem,747276,22.807,https://sparse.tamu.edu/MM/Hollinger/g7jac180sc.tar.gz
+GHS_indef,c-70,68924,68924,658986,1,0,0,0,1.0,1.0,optimization problem,658986,20.113,https://sparse.tamu.edu/MM/GHS_indef/c-70.tar.gz
+DIMACS10,wv2010,135218,135218,662922,1,0,0,0,1.0,1.0,undirected weighted graph,662922,20.233,https://sparse.tamu.edu/MM/DIMACS10/wv2010.tar.gz
+VanVelzen,Zd_Jac6_db,22835,22835,663643,1,0,0,0,0.3245527521504101,3.121059662176502e-06,chemical process simulation problem,663643,20.255,https://sparse.tamu.edu/MM/VanVelzen/Zd_Jac6_db.tar.gz
+VanVelzen,Zd_Jac2_db,22835,22835,676439,1,0,0,0,0.3038965489807284,3.059956793410077e-06,chemical process simulation problem,676439,20.645,https://sparse.tamu.edu/MM/VanVelzen/Zd_Jac2_db.tar.gz
+TKK,cbuckle,13681,13681,676515,1,0,1,1,1.0,1.0,structural problem,676515,20.648,https://sparse.tamu.edu/MM/TKK/cbuckle.tar.gz
+Andrianov,ex3sta1,16782,16782,678998,1,1,0,0,1.0,1.0,optimization problem,678998,20.723,https://sparse.tamu.edu/MM/Andrianov/ex3sta1.tar.gz
+TSOPF,TSOPF_RS_b39_c19,38098,38098,684206,1,0,0,0,0.05914025923776359,0.0001300058038305281,power network problem,684206,20.882,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b39_c19.tar.gz
+DIMACS10,rgg_n_2_16_s0,65536,65536,684254,1,1,0,0,1.0,1.0,undirected random graph,684254,20.884,https://sparse.tamu.edu/MM/DIMACS10/rgg_n_2_16_s0.tar.gz
+Nemeth,nemeth18,9506,9506,695234,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,695234,21.219,https://sparse.tamu.edu/MM/Nemeth/nemeth18.tar.gz
+DIMACS10,md2010,145247,145247,700378,1,0,0,0,1.0,1.0,undirected weighted graph,700378,21.376,https://sparse.tamu.edu/MM/DIMACS10/md2010.tar.gz
+GHS_indef,c-72,84064,84064,707546,1,0,0,0,1.0,1.0,optimization problem,707558,21.595,https://sparse.tamu.edu/MM/GHS_indef/c-72.tar.gz
+Schenk_IBMNA,c-64b,51035,51035,707601,1,0,0,0,1.0,1.0,subsequent optimization problem,717841,21.909,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-64b.tar.gz
+Schenk_IBMNA,c-64,51035,51035,707985,1,0,0,0,1.0,1.0,optimization problem sequence,717841,21.909,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-64.tar.gz
+Botonakis,thermomech_TC,102158,102158,711558,1,0,1,1,1.0,1.0,thermal problem,711558,21.717,https://sparse.tamu.edu/MM/Botonakis/thermomech_TC.tar.gz
+Botonakis,thermomech_TK,102158,102158,711558,1,0,1,1,1.0,1.0,thermal problem,711558,21.717,https://sparse.tamu.edu/MM/Botonakis/thermomech_TK.tar.gz
+VanVelzen,Zd_Jac3_db,22835,22835,713907,1,0,0,0,0.3299540424152621,2.894054454528616e-06,chemical process simulation problem,713907,21.789,https://sparse.tamu.edu/MM/VanVelzen/Zd_Jac3_db.tar.gz
+TKK,cyl6,13681,13681,714241,1,0,1,0,1.0,1.0,structural problem,714241,21.799,https://sparse.tamu.edu/MM/TKK/cyl6.tar.gz
+ACUSIM,Pres_Poisson,14822,14822,715804,1,0,1,1,1.0,1.0,computational fluid dynamics problem,715804,21.847,https://sparse.tamu.edu/MM/ACUSIM/Pres_Poisson.tar.gz
+Hollinger,g7jac200,59310,59310,717620,1,0,0,0,0.03227480202305086,0.0,economic problem,837936,25.574,https://sparse.tamu.edu/MM/Hollinger/g7jac200.tar.gz
+Hollinger,g7jac200sc,59310,59310,717620,1,0,0,0,0.03227480202305086,0.0,economic problem,837936,25.574,https://sparse.tamu.edu/MM/Hollinger/g7jac200sc.tar.gz
+Nemeth,nemeth01,9506,9506,725054,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem sequence,725054,22.129,https://sparse.tamu.edu/MM/Nemeth/nemeth01.tar.gz
+Andrianov,pf2177,9728,9728,725144,1,1,0,0,1.0,1.0,optimization problem,725144,22.132,https://sparse.tamu.edu/MM/Andrianov/pf2177.tar.gz
+AMD,G2_circuit,150102,150102,726674,1,0,0,1,1.0,1.0,circuit simulation problem,726674,22.178,https://sparse.tamu.edu/MM/AMD/G2_circuit.tar.gz
+DIMACS10,id2010,149842,149842,728264,1,0,0,0,1.0,1.0,undirected weighted graph,728264,22.227,https://sparse.tamu.edu/MM/DIMACS10/id2010.tar.gz
+TSOPF,TSOPF_FS_b39_c7,28216,28216,730080,1,0,0,0,1.0,1.0,power network problem,730080,22.282,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b39_c7.tar.gz
+AG-Monien,brack2,62631,62631,733118,1,1,1,0,1.0,1.0,2D/3D problem,733118,22.375,https://sparse.tamu.edu/MM/AG-Monien/brack2.tar.gz
+PARSEC,Si5H12,19896,19896,738598,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,738598,22.542,https://sparse.tamu.edu/MM/PARSEC/Si5H12.tar.gz
+GHS_indef,olesnik0,88263,88263,744216,1,0,1,0,1.0,1.0,2D/3D problem,744216,22.714,https://sparse.tamu.edu/MM/GHS_indef/olesnik0.tar.gz
+Mallya,lhr34,35152,35152,746972,1,0,0,0,0.00151326330781556,0.0001553140154832006,chemical process simulation problem,764014,23.318,https://sparse.tamu.edu/MM/Mallya/lhr34.tar.gz
+Watson,Baumann,112211,112211,748331,1,0,1,0,1.0,0.0,2D/3D problem,760631,23.215,https://sparse.tamu.edu/MM/Watson/Baumann.tar.gz
+IBM_EDA,trans4,116835,116835,749800,1,0,0,0,0.8542477149952045,0.3020988522272163,circuit simulation problem sequence,766396,23.391,https://sparse.tamu.edu/MM/IBM_EDA/trans4.tar.gz
+IBM_EDA,trans5,116835,116835,749800,1,0,0,0,0.8542477149952045,0.3018997890878642,subsequent circuit simulation problem,766396,23.391,https://sparse.tamu.edu/MM/IBM_EDA/trans5.tar.gz
+GHS_indef,copter2,55476,55476,759952,1,0,1,0,1.0,1.0,computational fluid dynamics problem,759952,23.194,https://sparse.tamu.edu/MM/GHS_indef/copter2.tar.gz
+GHS_psdef,copter2,55476,55476,759952,1,1,1,0,1.0,1.0,duplicate computational fluid dynamics problem,759952,23.194,https://sparse.tamu.edu/MM/GHS_psdef/copter2.tar.gz
+Andrews,Andrews,60000,60000,760154,1,0,1,1,1.0,1.0,computer graphics/vision problem,760154,23.200,https://sparse.tamu.edu/MM/Andrews/Andrews.tar.gz
+IPSO,HTC_336_9129,226340,226340,762969,1,0,0,0,1.0,1.0,power network problem,883422,26.962,https://sparse.tamu.edu/MM/IPSO/HTC_336_9129.tar.gz
+Mallya,lhr34c,35152,35152,764014,1,0,0,0,0.00151326330781556,5.236205217354879e-06,chemical process simulation problem,764014,23.318,https://sparse.tamu.edu/MM/Mallya/lhr34c.tar.gz
+IBM_EDA,dc1,116835,116835,766396,1,0,0,0,0.8542477149952045,0.2426284829292399,circuit simulation problem sequence,766396,23.391,https://sparse.tamu.edu/MM/IBM_EDA/dc1.tar.gz
+IBM_EDA,dc2,116835,116835,766396,1,0,0,0,0.8542477149952045,0.2426284829292399,subsequent circuit simulation problem,766396,23.391,https://sparse.tamu.edu/MM/IBM_EDA/dc2.tar.gz
+IBM_EDA,dc3,116835,116835,766396,1,0,0,0,0.8542477149952045,0.2426407989395915,subsequent circuit simulation problem,766396,23.391,https://sparse.tamu.edu/MM/IBM_EDA/dc3.tar.gz
+Lourakis,bundle1,10581,10581,770811,1,0,1,1,1.0,1.0,computer graphics/vision problem,770901,23.528,https://sparse.tamu.edu/MM/Lourakis/bundle1.tar.gz
+DIMACS10,ma2010,157508,157508,776610,1,0,0,0,1.0,1.0,undirected weighted graph,776610,23.702,https://sparse.tamu.edu/MM/DIMACS10/ma2010.tar.gz
+DIMACS10,vsp_mod2_pgp2_slptsk,101364,101364,778736,1,1,0,0,1.0,1.0,random unweighted graph,778736,23.767,https://sparse.tamu.edu/MM/DIMACS10/vsp_mod2_pgp2_slptsk.tar.gz
+IPSO,HTC_336_4438,226340,226340,783496,1,0,0,0,1.0,1.0,power network problem,904522,27.606,https://sparse.tamu.edu/MM/IPSO/HTC_336_4438.tar.gz
+DIMACS10,delaunay_n17,131072,131072,786352,1,1,0,0,1.0,1.0,undirected graph,786352,24.000,https://sparse.tamu.edu/MM/DIMACS10/delaunay_n17.tar.gz
+DIMACS10,ky2010,161672,161672,787778,1,0,0,0,1.0,1.0,undirected weighted graph,787778,24.043,https://sparse.tamu.edu/MM/DIMACS10/ky2010.tar.gz
+FlowIPM22,uni_chimera_i2,100000,100000,797974,1,0,0,1,1.0,1.0,undirected weighted graph,797974,24.354,https://sparse.tamu.edu/MM/FlowIPM22/uni_chimera_i2.tar.gz
+JGD_Homology,m133-b3,200200,200200,800800,1,0,0,0,4.495504495504496e-05,2.747252747252747e-05,combinatorial problem,800800,24.440,https://sparse.tamu.edu/MM/JGD_Homology/m133-b3.tar.gz
+JGD_Homology,shar_te2-b3,200200,200200,800800,1,0,0,0,7.492516848797264e-05,2.997006739518906e-05,combinatorial problem,800800,24.440,https://sparse.tamu.edu/MM/JGD_Homology/shar_te2-b3.tar.gz
+Grueninger,windtunnel_evap3d,40816,40816,803978,1,0,1,0,1.0,0.0,computational fluid dynamics problem,2730600,83.333,https://sparse.tamu.edu/MM/Grueninger/windtunnel_evap3d.tar.gz
+PowerSystem,power197k,197156,197156,805839,1,0,0,0,0.2139400937122758,0.02415229830828888,power network problem,3698357,112.867,https://sparse.tamu.edu/MM/PowerSystem/power197k.tar.gz
+Chen,pkustk02,10800,10800,810000,1,1,1,0,1.0,1.0,structural problem,810000,24.721,https://sparse.tamu.edu/MM/Chen/pkustk02.tar.gz
+TSOPF,TSOPF_RS_b162_c4,20374,20374,812749,1,0,0,0,0.02645844479664045,0.0006107347997698388,power network problem,812749,24.805,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b162_c4.tar.gz
+FlowIPM22,uni_chimera_i4,100000,100000,814436,1,0,0,0,1.0,1.0,undirected weighted graph,814436,24.857,https://sparse.tamu.edu/MM/FlowIPM22/uni_chimera_i4.tar.gz
+Nemeth,nemeth19,9506,9506,818302,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,818302,24.975,https://sparse.tamu.edu/MM/Nemeth/nemeth19.tar.gz
+DIMACS10,fe_ocean,143437,143437,819186,1,1,0,0,1.0,1.0,undirected graph,819186,25.002,https://sparse.tamu.edu/MM/DIMACS10/fe_ocean.tar.gz
+IPSO,TSC_OPF_300,9774,9774,820783,1,0,0,0,1.0,1.0,power network problem,820804,25.051,https://sparse.tamu.edu/MM/IPSO/TSC_OPF_300.tar.gz
+DIMACS10,nj2010,169588,169588,829912,1,0,0,0,1.0,1.0,undirected weighted graph,829912,25.329,https://sparse.tamu.edu/MM/DIMACS10/nj2010.tar.gz
+DIMACS10,nm2010,168609,168609,830970,1,0,0,0,1.0,1.0,undirected weighted graph,830970,25.361,https://sparse.tamu.edu/MM/DIMACS10/nm2010.tar.gz
+MKS,fp,7548,7548,834222,1,0,1,0,0.7575174939506899,0.002912877385765126,electromagnetics problem,848553,25.898,https://sparse.tamu.edu/MM/MKS/fp.tar.gz
+DIMACS10,ms2010,171778,171778,839980,1,0,0,0,1.0,1.0,undirected weighted graph,839980,25.636,https://sparse.tamu.edu/MM/DIMACS10/ms2010.tar.gz
+SNAP,soc-sign-epinions,131828,131828,841372,1,0,0,0,0.3082520316984202,0.3018224331855771,directed weighted graph,841372,25.679,https://sparse.tamu.edu/MM/SNAP/soc-sign-epinions.tar.gz
+VLSI,ss1,205282,205282,845089,1,0,1,0,0.9936840328411537,0.04200954350296261,semiconductor process problem,845089,25.792,https://sparse.tamu.edu/MM/VLSI/ss1.tar.gz
+JGD_Homology,ch7-8-b5,141120,141120,846720,1,0,0,0,0.0003732057190233348,0.0002054993516141147,combinatorial problem,846720,25.842,https://sparse.tamu.edu/MM/JGD_Homology/ch7-8-b5.tar.gz
+GHS_indef,c-71,76638,76638,859520,1,0,0,0,1.0,1.0,optimization problem,859554,26.233,https://sparse.tamu.edu/MM/GHS_indef/c-71.tar.gz
+DIMACS10,vsp_vibrobox_scagr7-2c_rlfddd,77328,77328,871172,1,1,0,0,1.0,1.0,random unweighted graph,871172,26.588,https://sparse.tamu.edu/MM/DIMACS10/vsp_vibrobox_scagr7-2c_rlfddd.tar.gz
+FEMLAB,sme3Da,12504,12504,874887,1,0,1,0,0.9999710105602732,0.4370888572710733,structural problem,874887,26.701,https://sparse.tamu.edu/MM/FEMLAB/sme3Da.tar.gz
+PARSEC,Si10H16,17077,17077,875923,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,875923,26.733,https://sparse.tamu.edu/MM/PARSEC/Si10H16.tar.gz
+DIMACS10,sc2010,181908,181908,893160,1,0,0,0,1.0,1.0,undirected weighted graph,893160,27.259,https://sparse.tamu.edu/MM/DIMACS10/sc2010.tar.gz
+Schenk_IBMSDS,matrix-new_3,125329,125329,893984,1,0,1,0,0.9871118002084263,0.2826079320371298,semiconductor device problem,2678750,81.751,https://sparse.tamu.edu/MM/Schenk_IBMSDS/matrix-new_3.tar.gz
+TKK,tube1,21498,21498,897056,1,1,1,0,1.0,1.0,structural problem,897056,27.378,https://sparse.tamu.edu/MM/TKK/tube1.tar.gz
+TKK,tube2,21498,21498,897056,1,0,1,0,1.0,1.0,structural problem,897056,27.378,https://sparse.tamu.edu/MM/TKK/tube2.tar.gz
+DIMACS10,ar2010,186211,186211,904310,1,0,0,0,1.0,1.0,undirected weighted graph,904310,27.599,https://sparse.tamu.edu/MM/DIMACS10/ar2010.tar.gz
+DIMACS10,fe_tooth,78136,78136,905182,1,1,0,0,1.0,1.0,undirected graph,905182,27.626,https://sparse.tamu.edu/MM/DIMACS10/fe_tooth.tar.gz
+SNAP,soc-Slashdot0811,77360,77360,905468,1,1,0,0,0.8669352939826918,0.8669352939826918,directed graph,905468,27.635,https://sparse.tamu.edu/MM/SNAP/soc-Slashdot0811.tar.gz
+DIMACS10,ne2010,193352,193352,913854,1,0,0,0,1.0,1.0,undirected weighted graph,913854,27.891,https://sparse.tamu.edu/MM/DIMACS10/ne2010.tar.gz
+SNAP,sx-superuser,194085,194085,924886,1,0,0,0,0.3272723867800749,0.197851768013418,directed temporal multigraph,924886,28.227,https://sparse.tamu.edu/MM/SNAP/sx-superuser.tar.gz
+Barabasi,NotreDame_www,325729,325729,929849,1,1,0,0,0.3315875213545298,0.3315875213545298,directed graph,929849,28.379,https://sparse.tamu.edu/MM/Barabasi/NotreDame_www.tar.gz
+Sandia,ASIC_100k,99340,99340,940621,1,0,0,0,1.0,0.002631466347182405,circuit simulation problem,954163,29.121,https://sparse.tamu.edu/MM/Sandia/ASIC_100k.tar.gz
+Andrianov,net50,16320,16320,945200,1,1,0,0,1.0,1.0,optimization problem,945200,28.847,https://sparse.tamu.edu/MM/Andrianov/net50.tar.gz
+DIMACS10,wa2010,195574,195574,947432,1,0,0,0,1.0,1.0,undirected weighted graph,947432,28.915,https://sparse.tamu.edu/MM/DIMACS10/wa2010.tar.gz
+SNAP,soc-Slashdot0902,82168,82168,948464,1,1,0,0,0.8410650442849082,0.8410650442849082,directed graph,948464,28.947,https://sparse.tamu.edu/MM/SNAP/soc-Slashdot0902.tar.gz
+Hohn,sinc18,16428,16428,948696,1,0,1,0,0.01157085557378834,0.0,materials problem,973826,29.721,https://sparse.tamu.edu/MM/Hohn/sinc18.tar.gz
+Hamm,scircuit,170998,170998,958936,1,0,0,0,0.9999467019956295,0.8008355096685118,circuit simulation problem,958936,29.266,https://sparse.tamu.edu/MM/Hamm/scircuit.tar.gz
+DNVS,crplat2,18010,18010,960946,1,1,1,0,1.0,1.0,structural problem,960946,29.328,https://sparse.tamu.edu/MM/DNVS/crplat2.tar.gz
+Freescale,transient,178866,178866,961368,1,0,0,0,0.9996742983044353,0.243597788123496,circuit simulation problem,961790,29.353,https://sparse.tamu.edu/MM/Freescale/transient.tar.gz
+Boeing,crystk02,13965,13965,968583,1,0,1,0,1.0,1.0,materials problem,968583,29.561,https://sparse.tamu.edu/MM/Boeing/crystk02.tar.gz
+Boeing,pcrystk02,13965,13965,968583,1,1,1,0,1.0,1.0,duplicate materials problem,968583,29.561,https://sparse.tamu.edu/MM/Boeing/pcrystk02.tar.gz
+Nemeth,nemeth20,9506,9506,971870,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,971870,29.661,https://sparse.tamu.edu/MM/Nemeth/nemeth20.tar.gz
+DIMACS10,co2010,201062,201062,974574,1,0,0,0,1.0,1.0,undirected weighted graph,974574,29.744,https://sparse.tamu.edu/MM/DIMACS10/co2010.tar.gz
+Chen,pkustk01,22044,22044,979380,1,1,1,0,1.0,1.0,structural problem,979380,29.890,https://sparse.tamu.edu/MM/Chen/pkustk01.tar.gz
+DIMACS10,or2010,196621,196621,979512,1,0,0,0,1.0,1.0,undirected weighted graph,979512,29.894,https://sparse.tamu.edu/MM/DIMACS10/or2010.tar.gz
+DIMACS10,la2010,204447,204447,980634,1,0,0,0,1.0,1.0,undirected weighted graph,980634,29.929,https://sparse.tamu.edu/MM/DIMACS10/la2010.tar.gz
+GHS_indef,cont-300,180895,180895,988195,1,0,0,0,1.0,1.0,optimization problem,988195,30.159,https://sparse.tamu.edu/MM/GHS_indef/cont-300.tar.gz
+DIMACS10,preferentialAttachment,100000,100000,999970,1,1,0,0,1.0,1.0,random undirected graph,999970,30.519,https://sparse.tamu.edu/MM/DIMACS10/preferentialAttachment.tar.gz
+DIMACS10,smallworld,100000,100000,999996,1,1,0,0,1.0,1.0,random undirected graph,999996,30.519,https://sparse.tamu.edu/MM/DIMACS10/smallworld.tar.gz
+DIMACS10,G_n_pin_pout,100000,100000,1002396,1,1,0,0,1.0,1.0,random undirected graph,1002396,30.593,https://sparse.tamu.edu/MM/DIMACS10/G_n_pin_pout.tar.gz
+GHS_indef,dawson5,51537,51537,1010777,1,0,1,0,1.0,1.0,structural problem,1010777,30.848,https://sparse.tamu.edu/MM/GHS_indef/dawson5.tar.gz
+VLSI,mosfet2,46994,46994,1013062,1,0,1,0,1.0,0.1797368301196189,semiconductor device problem,1499460,45.762,https://sparse.tamu.edu/MM/VLSI/mosfet2.tar.gz
+Goodwin,rim,22560,22560,1014951,1,0,1,0,0.6390640220938991,0.0,computational fluid dynamics problem,1014951,30.976,https://sparse.tamu.edu/MM/Goodwin/rim.tar.gz
+Simon,olafu,16146,16146,1015156,1,0,1,1,1.0,1.0,structural problem,1015156,30.982,https://sparse.tamu.edu/MM/Simon/olafu.tar.gz
+Oberwolfach,gyro,17361,17361,1021159,1,0,1,1,1.0,1.0,model reduction problem,1021159,31.165,https://sparse.tamu.edu/MM/Oberwolfach/gyro.tar.gz
+Oberwolfach,gyro_k,17361,17361,1021159,1,0,1,1,1.0,1.0,duplicate model reduction problem,1021159,31.165,https://sparse.tamu.edu/MM/Oberwolfach/gyro_k.tar.gz
+DIMACS10,ia2010,216007,216007,1021170,1,0,0,0,1.0,1.0,undirected weighted graph,1021170,31.166,https://sparse.tamu.edu/MM/DIMACS10/ia2010.tar.gz
+FlowIPM22,Spielman_k100,338402,338402,1025404,1,0,0,1,1.0,1.0,undirected weighted graph,1025404,31.295,https://sparse.tamu.edu/MM/FlowIPM22/Spielman_k100.tar.gz
+UTEP,Dubcova2,65025,65025,1030225,1,0,1,1,1.0,1.0,2D/3D problem,1030225,31.442,https://sparse.tamu.edu/MM/UTEP/Dubcova2.tar.gz
+Goodwin,Goodwin_054,32510,32510,1030878,1,0,1,0,0.9804679703906704,0.06537882962720246,computational fluid dynamics,1030878,31.462,https://sparse.tamu.edu/MM/Goodwin/Goodwin_054.tar.gz
+Norris,torso2,115967,115967,1033473,1,0,1,0,0.9916360219987662,0.0,2D/3D problem,1033473,31.541,https://sparse.tamu.edu/MM/Norris/torso2.tar.gz
+QY,case39,40216,40216,1042160,1,0,0,0,1.0,1.0,power network problem sequence,1042160,31.806,https://sparse.tamu.edu/MM/QY/case39.tar.gz
+TSOPF,TSOPF_RS_b39_c30,60098,60098,1079986,1,0,0,0,0.05903687108113011,8.236061201778597e-05,power network problem,1079986,32.961,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b39_c30.tar.gz
+FIDAP,ex11,16614,16614,1096948,1,0,1,0,1.0,0.9999981487206734,computational fluid dynamics problem,1096948,33.478,https://sparse.tamu.edu/MM/FIDAP/ex11.tar.gz
+FlowIPM22,uni_chimera_i1,100000,100000,1100592,1,0,0,1,1.0,1.0,undirected weighted graph,1100592,33.589,https://sparse.tamu.edu/MM/FlowIPM22/uni_chimera_i1.tar.gz
+DIMACS10,vsp_finan512_scagr7-2c_rlfddd,139752,139752,1104040,1,1,0,0,1.0,1.0,random unweighted graph,1104040,33.695,https://sparse.tamu.edu/MM/DIMACS10/vsp_finan512_scagr7-2c_rlfddd.tar.gz
+DIMACS10,ks2010,238600,238600,1121798,1,0,0,0,1.0,1.0,undirected weighted graph,1121798,34.237,https://sparse.tamu.edu/MM/DIMACS10/ks2010.tar.gz
+Mancktelow,viscorocks,37762,37762,1133641,1,0,1,0,1.0,0.279507135368047,materials problem,1162244,35.471,https://sparse.tamu.edu/MM/Mancktelow/viscorocks.tar.gz
+Boeing,bcsstk37,25503,25503,1140977,1,0,1,0,1.0,1.0,structural problem,1140977,34.822,https://sparse.tamu.edu/MM/Boeing/bcsstk37.tar.gz
+Boeing,msc23052,23052,23052,1142686,1,0,1,1,1.0,1.0,structural problem,1154814,35.244,https://sparse.tamu.edu/MM/Boeing/msc23052.tar.gz
+Boeing,bcsstk36,23052,23052,1143140,1,0,1,1,1.0,1.0,structural problem,1143140,34.888,https://sparse.tamu.edu/MM/Boeing/bcsstk36.tar.gz
+Castrillon,denormal,89400,89400,1156224,1,0,0,1,1.0,1.0,counter-example problem,1156224,35.287,https://sparse.tamu.edu/MM/Castrillon/denormal.tar.gz
+Rothberg,struct3,53570,53570,1173694,1,1,1,0,1.0,1.0,structural problem,1173694,35.820,https://sparse.tamu.edu/MM/Rothberg/struct3.tar.gz
+Nemeth,nemeth21,9506,9506,1173746,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,1173746,35.822,https://sparse.tamu.edu/MM/Nemeth/nemeth21.tar.gz
+Ronis,xenon1,48600,48600,1181120,1,0,1,0,1.0,0.775813230671423,materials problem,1181120,36.047,https://sparse.tamu.edu/MM/Ronis/xenon1.tar.gz
+HB,bcsstk31,35588,35588,1181416,1,1,1,0,1.0,1.0,structural problem,1181416,36.056,https://sparse.tamu.edu/MM/HB/bcsstk31.tar.gz
+DIMACS10,tn2010,240116,240116,1193966,1,0,0,0,1.0,1.0,undirected weighted graph,1193966,36.439,https://sparse.tamu.edu/MM/DIMACS10/tn2010.tar.gz
+DIMACS10,az2010,241666,241666,1196094,1,0,0,0,1.0,1.0,undirected weighted graph,1196094,36.504,https://sparse.tamu.edu/MM/DIMACS10/az2010.tar.gz
+Schenk_IBMSDS,matrix_9,103430,103430,1205518,1,0,1,0,0.9966503478484926,0.1744833443427385,semiconductor device problem,2121550,64.747,https://sparse.tamu.edu/MM/Schenk_IBMSDS/matrix_9.tar.gz
+ATandT,twotone,120750,120750,1206265,1,0,0,0,0.2445668624008717,0.1058542372000797,frequency-domain circuit simulation problem,1224224,37.362,https://sparse.tamu.edu/MM/ATandT/twotone.tar.gz
+Sorensen,Linux_call_graph,324085,324085,1208908,1,0,0,0,0.0006324084497715383,0.0006125422157473015,directed weighted graph,1208908,36.895,https://sparse.tamu.edu/MM/Sorensen/Linux_call_graph.tar.gz
+DIMACS10,wi2010,253096,253096,1209404,1,0,0,0,1.0,1.0,undirected weighted graph,1209404,36.910,https://sparse.tamu.edu/MM/DIMACS10/wi2010.tar.gz
+GHS_indef,boyd1,93279,93279,1211231,1,0,0,0,1.0,1.0,optimization problem,1211231,36.966,https://sparse.tamu.edu/MM/GHS_indef/boyd1.tar.gz
+Li,li,22695,22695,1215181,1,0,1,0,1.0,0.8685670104303111,electromagnetics problem,1350309,41.210,https://sparse.tamu.edu/MM/Li/li.tar.gz
+Tromble,language,399130,399130,1216334,1,0,0,0,0.05790231080611451,0.0,directed weighted graph,1216334,37.122,https://sparse.tamu.edu/MM/Tromble/language.tar.gz
+DIMACS10,caidaRouterLevel,192244,192244,1218132,1,1,0,0,1.0,1.0,undirected graph,1218132,37.176,https://sparse.tamu.edu/MM/DIMACS10/caidaRouterLevel.tar.gz
+DIMACS10,mn2010,259777,259777,1227102,1,0,0,0,1.0,1.0,undirected weighted graph,1227102,37.450,https://sparse.tamu.edu/MM/DIMACS10/mn2010.tar.gz
+Mycielski,mycielskian13,6143,6143,1227742,1,1,0,0,1.0,1.0,undirected graph,1227742,37.470,https://sparse.tamu.edu/MM/Mycielski/mycielskian13.tar.gz
+Boeing,msc10848,10848,10848,1229776,1,0,1,1,1.0,1.0,structural problem,1229778,37.532,https://sparse.tamu.edu/MM/Boeing/msc10848.tar.gz
+DIMACS10,al2010,252266,252266,1230482,1,0,0,0,1.0,1.0,undirected weighted graph,1230482,37.553,https://sparse.tamu.edu/MM/DIMACS10/al2010.tar.gz
+SNAP,amazon0302,262111,262111,1234877,1,1,0,0,0.5427018237443891,0.5427018237443891,directed graph,1234877,37.687,https://sparse.tamu.edu/MM/SNAP/amazon0302.tar.gz
+VanVelzen,std1_Jac2,21982,21982,1248213,1,0,0,0,1.441471454060305e-05,0.0,chemical process simulation problem,1248731,38.110,https://sparse.tamu.edu/MM/VanVelzen/std1_Jac2.tar.gz
+Williams,mac_econ_fwd500,206500,206500,1273389,1,0,0,0,0.05995735832675801,0.005599217836274841,economic problem,1273389,38.863,https://sparse.tamu.edu/MM/Williams/mac_econ_fwd500.tar.gz
+DIMACS10,ok2010,269118,269118,1274148,1,0,0,0,1.0,1.0,undirected weighted graph,1274148,38.886,https://sparse.tamu.edu/MM/DIMACS10/ok2010.tar.gz
+Schenk_IBMNA,c-73,169422,169422,1279274,1,0,0,0,1.0,1.0,optimization problem sequence,1279274,39.042,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-73.tar.gz
+Schenk_IBMNA,c-73b,169422,169422,1279274,1,0,0,0,1.0,1.0,subsequent optimization problem,1279274,39.042,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-73b.tar.gz
+DIMACS10,in2010,267071,267071,1281716,1,0,0,0,1.0,1.0,undirected weighted graph,1281716,39.117,https://sparse.tamu.edu/MM/DIMACS10/in2010.tar.gz
+Rajat,Raj1,263743,263743,1300261,1,0,0,0,0.998585875116119,0.5762090211971218,circuit simulation problem,1302464,39.750,https://sparse.tamu.edu/MM/Rajat/Raj1.tar.gz
+Sandia,ASIC_320ks,321671,321671,1316085,1,0,0,0,1.0,0.2891089626654492,circuit simulation problem,1827807,55.782,https://sparse.tamu.edu/MM/Sandia/ASIC_320ks.tar.gz
+Simon,raefsky4,19779,19779,1316789,1,0,1,1,1.0,1.0,structural problem,1328611,40.548,https://sparse.tamu.edu/MM/Simon/raefsky4.tar.gz
+PARSEC,SiO,33401,33401,1317655,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,1317655,40.214,https://sparse.tamu.edu/MM/PARSEC/SiO.tar.gz
+DIMACS10,fe_rotor,99617,99617,1324862,1,1,0,0,1.0,1.0,undirected graph,1324862,40.434,https://sparse.tamu.edu/MM/DIMACS10/fe_rotor.tar.gz
+HVDC,hvdc2,189860,189860,1339638,1,0,0,0,0.9885955341075688,0.06323365458033522,power network problem,1347273,41.117,https://sparse.tamu.edu/MM/HVDC/hvdc2.tar.gz
+Li,pli,22695,22695,1350309,1,1,1,0,1.0,1.0,duplicate electromagnetics problem,1350309,41.210,https://sparse.tamu.edu/MM/Li/pli.tar.gz
+Nemeth,nemeth22,9506,9506,1358832,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,1358832,41.470,https://sparse.tamu.edu/MM/Nemeth/nemeth22.tar.gz
+DIMACS10,va2010,285762,285762,1402128,1,0,0,0,1.0,1.0,undirected weighted graph,1402128,42.792,https://sparse.tamu.edu/MM/DIMACS10/va2010.tar.gz
+DIMACS10,nc2010,288987,288987,1416620,1,0,0,0,1.0,1.0,undirected weighted graph,1416620,43.234,https://sparse.tamu.edu/MM/DIMACS10/nc2010.tar.gz
+DIMACS10,ga2010,291086,291086,1418056,1,0,0,0,1.0,1.0,undirected weighted graph,1418056,43.278,https://sparse.tamu.edu/MM/DIMACS10/ga2010.tar.gz
+Botonakis,thermomech_dM,204316,204316,1423116,1,0,1,1,1.0,1.0,thermal problem,1423116,43.432,https://sparse.tamu.edu/MM/Botonakis/thermomech_dM.tar.gz
+VLSI,imagesensor,118758,118758,1446396,1,0,1,0,1.0,0.2826177015120085,semiconductor device problem,1893170,57.777,https://sparse.tamu.edu/MM/VLSI/imagesensor.tar.gz
+Boeing,bcsstk35,30237,30237,1450163,1,0,1,0,1.0,1.0,structural problem,1450163,44.257,https://sparse.tamu.edu/MM/Boeing/bcsstk35.tar.gz
+VanVelzen,std1_Jac3,21982,21982,1455374,1,0,0,0,1.37377639453759e-05,0.0,chemical process simulation problem,1455848,44.431,https://sparse.tamu.edu/MM/VanVelzen/std1_Jac3.tar.gz
+DIMACS10,rgg_n_2_17_s0,131072,131072,1457506,1,1,0,0,1.0,1.0,undirected random graph,1457506,44.482,https://sparse.tamu.edu/MM/DIMACS10/rgg_n_2_17_s0.tar.gz
+TSOPF,TSOPF_RS_b300_c1,14538,14538,1474325,1,0,0,0,0.01034334678703541,0.0003506683588241378,power network problem,1474325,44.995,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b300_c1.tar.gz
+DIMACS10,598a,110971,110971,1483868,1,1,0,0,1.0,1.0,undirected graph,1483868,45.286,https://sparse.tamu.edu/MM/DIMACS10/598a.tar.gz
+Simon,raefsky3,21200,21200,1488768,1,0,1,0,1.0,0.4763745189320018,computational fluid dynamics problem,1488768,45.436,https://sparse.tamu.edu/MM/Simon/raefsky3.tar.gz
+Andrianov,net75,23120,23120,1489200,1,1,0,0,1.0,1.0,optimization problem,1489200,45.449,https://sparse.tamu.edu/MM/Andrianov/net75.tar.gz
+Mallya,lhr71,70304,70304,1494006,1,0,0,0,0.001513199920413014,0.0001553075692357127,chemical process simulation problem,1528092,46.636,https://sparse.tamu.edu/MM/Mallya/lhr71.tar.gz
+SNAP,web-NotreDame,325729,325729,1497134,1,1,0,0,0.5165359238309862,0.5165359238309862,directed graph,1497134,45.691,https://sparse.tamu.edu/MM/SNAP/web-NotreDame.tar.gz
+GHS_indef,boyd2,466316,466316,1500397,1,0,0,0,1.0,1.0,optimization problem,1500397,45.790,https://sparse.tamu.edu/MM/GHS_indef/boyd2.tar.gz
+Nemeth,nemeth24,9506,9506,1506550,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,1506550,45.978,https://sparse.tamu.edu/MM/Nemeth/nemeth24.tar.gz
+Nemeth,nemeth23,9506,9506,1506810,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,1506810,45.986,https://sparse.tamu.edu/MM/Nemeth/nemeth23.tar.gz
+Nemeth,nemeth25,9506,9506,1511758,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,1511758,46.137,https://sparse.tamu.edu/MM/Nemeth/nemeth25.tar.gz
+Nemeth,nemeth26,9506,9506,1511760,1,0,0,0,1.0,1.0,subsequent theoretical/quantum chemistry problem,1511760,46.137,https://sparse.tamu.edu/MM/Nemeth/nemeth26.tar.gz
+Mallya,lhr71c,70304,70304,1528092,1,0,0,0,0.001513199920413014,5.235985883782057e-06,chemical process simulation problem,1528092,46.636,https://sparse.tamu.edu/MM/Mallya/lhr71c.tar.gz
+GHS_indef,sparsine,50000,50000,1548988,1,0,1,0,1.0,1.0,structural problem,1548988,47.273,https://sparse.tamu.edu/MM/GHS_indef/sparsine.tar.gz
+DIMACS10,delaunay_n18,262144,262144,1572792,1,1,0,0,1.0,1.0,undirected graph,1572792,48.000,https://sparse.tamu.edu/MM/DIMACS10/delaunay_n18.tar.gz
+DIMACS10,mi2010,329885,329885,1578090,1,0,0,0,1.0,1.0,undirected weighted graph,1578090,48.161,https://sparse.tamu.edu/MM/DIMACS10/mi2010.tar.gz
+Chen,pkustk09,33960,33960,1583640,1,1,1,0,1.0,1.0,structural problem,1583640,48.331,https://sparse.tamu.edu/MM/Chen/pkustk09.tar.gz
+LAW,dblp-2010,326186,326186,1615400,1,1,0,0,1.0,1.0,undirected graph,1615400,49.300,https://sparse.tamu.edu/MM/LAW/dblp-2010.tar.gz
+DIMACS10,coAuthorsCiteseer,227320,227320,1628268,1,1,0,0,1.0,1.0,undirected graph,1628268,49.693,https://sparse.tamu.edu/MM/DIMACS10/coAuthorsCiteseer.tar.gz
+VLSI,nv1,75468,75468,1635003,1,0,1,0,1.0,0.2136393219773843,semiconductor device problem,2449194,74.745,https://sparse.tamu.edu/MM/VLSI/nv1.tar.gz
+GHS_indef,d_pretok,182730,182730,1641672,1,0,1,0,1.0,1.0,2D/3D problem,1641672,50.102,https://sparse.tamu.edu/MM/GHS_indef/d_pretok.tar.gz
+VanVelzen,Zd_Jac2,22835,22835,1642407,1,0,0,0,0.000249569948369456,0.0,chemical process simulation problem,1642833,50.137,https://sparse.tamu.edu/MM/VanVelzen/Zd_Jac2.tar.gz
+Andrianov,lp1,534388,534388,1643420,1,1,0,0,1.0,1.0,optimization problem,1643420,50.155,https://sparse.tamu.edu/MM/Andrianov/lp1.tar.gz
+Um,2cubes_sphere,101492,101492,1647264,1,0,1,1,1.0,1.0,electromagnetics problem,1647264,50.272,https://sparse.tamu.edu/MM/Um/2cubes_sphere.tar.gz
+DIMACS10,mo2010,343565,343565,1656568,1,0,0,0,1.0,1.0,undirected weighted graph,1656568,50.556,https://sparse.tamu.edu/MM/DIMACS10/mo2010.tar.gz
+Cunningham,qa8fk,66127,66127,1660579,1,0,1,0,1.0,1.0,acoustics problem,1660579,50.679,https://sparse.tamu.edu/MM/Cunningham/qa8fk.tar.gz
+Cunningham,qa8fm,66127,66127,1660579,1,0,1,1,1.0,1.0,acoustics problem,1660579,50.679,https://sparse.tamu.edu/MM/Cunningham/qa8fm.tar.gz
+FEMLAB,ns3Da,20414,20414,1679599,1,0,1,0,0.9999825339398674,0.0,computational fluid dynamics problem,1679599,51.259,https://sparse.tamu.edu/MM/FEMLAB/ns3Da.tar.gz
+Vavasis,av41092,41092,41092,1683902,1,0,1,0,0.0009359570219938022,0.0,2D/3D problem,1683902,51.391,https://sparse.tamu.edu/MM/Vavasis/av41092.tar.gz
+GHS_indef,turon_m,189924,189924,1690876,1,0,1,0,1.0,1.0,2D/3D problem,1690876,51.603,https://sparse.tamu.edu/MM/GHS_indef/turon_m.tar.gz
+Sandia,ASIC_680ks,682712,682712,1693767,1,0,0,0,1.0,0.005801860432914134,circuit simulation problem,2329176,71.083,https://sparse.tamu.edu/MM/Sandia/ASIC_680ks.tar.gz
+Oberwolfach,gas_sensor,66917,66917,1703365,1,0,1,0,1.0,1.0,model reduction problem,1703365,51.985,https://sparse.tamu.edu/MM/Oberwolfach/gas_sensor.tar.gz
+DIMACS10,ny2010,350169,350169,1709544,1,0,0,0,1.0,1.0,undirected weighted graph,1709544,52.173,https://sparse.tamu.edu/MM/DIMACS10/ny2010.tar.gz
+VanVelzen,Zd_Jac6,22835,22835,1711557,1,0,0,0,0.0002161245251101651,0.0,chemical process simulation problem,1711983,52.248,https://sparse.tamu.edu/MM/VanVelzen/Zd_Jac6.tar.gz
+Simon,venkat25,62424,62424,1717763,1,0,1,0,1.0,0.05539650790563141,subsequent computational fluid dynamics problem,1717792,52.425,https://sparse.tamu.edu/MM/Simon/venkat25.tar.gz
+Simon,venkat50,62424,62424,1717777,1,0,1,0,1.0,0.05539603939461855,subsequent computational fluid dynamics problem,1717792,52.425,https://sparse.tamu.edu/MM/Simon/venkat50.tar.gz
+Simon,venkat01,62424,62424,1717792,1,0,1,0,1.0,0.05542936676316082,computational fluid dynamics problem sequence,1717792,52.425,https://sparse.tamu.edu/MM/Simon/venkat01.tar.gz
+QLi,crashbasis,160000,160000,1750416,1,0,0,0,0.5503013048158469,0.0002439613283568576,optimization problem,1750416,53.420,https://sparse.tamu.edu/MM/QLi/crashbasis.tar.gz
+QLi,majorbasis,160000,160000,1750416,1,0,0,0,0.5503013048158469,0.0002376736652548767,optimization problem,1750416,53.420,https://sparse.tamu.edu/MM/QLi/majorbasis.tar.gz
+Boeing,crystk03,24696,24696,1751178,1,0,1,0,1.0,1.0,materials problem,1751178,53.444,https://sparse.tamu.edu/MM/Boeing/crystk03.tar.gz
+Boeing,pcrystk03,24696,24696,1751178,1,1,1,0,1.0,1.0,duplicate materials problem,1751178,53.444,https://sparse.tamu.edu/MM/Boeing/pcrystk03.tar.gz
+Lin,Lin,256000,256000,1766400,1,0,1,0,1.0,1.0,structural problem,1766400,53.908,https://sparse.tamu.edu/MM/Lin/Lin.tar.gz
+DIMACS10,oh2010,365344,365344,1768240,1,0,0,0,1.0,1.0,undirected weighted graph,1768240,53.964,https://sparse.tamu.edu/MM/DIMACS10/oh2010.tar.gz
+Simon,bbmat,38744,38744,1771722,1,0,1,0,0.5295358625441292,0.0005851199495896658,computational fluid dynamics problem,1771722,54.071,https://sparse.tamu.edu/MM/Simon/bbmat.tar.gz
+POLYFLOW,invextr1_new,30412,30412,1793881,1,0,1,0,0.971442083756505,0.7213486599424203,computational fluid dynamics problem,1793881,54.747,https://sparse.tamu.edu/MM/POLYFLOW/invextr1_new.tar.gz
+Goodwin,Goodwin_071,56021,56021,1797934,1,0,1,0,0.9849308636424431,0.06556841497181332,computational fluid dynamics,1797934,54.871,https://sparse.tamu.edu/MM/Goodwin/Goodwin_071.tar.gz
+TSOPF,TSOPF_FS_b162_c3,30798,30798,1801300,1,0,0,0,1.0,1.0,power network problem,1801300,54.973,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b162_c3.tar.gz
+Rothberg,cfd1,70656,70656,1825580,1,0,1,1,1.0,1.0,computational fluid dynamics problem,1828364,55.799,https://sparse.tamu.edu/MM/Rothberg/cfd1.tar.gz
+SNAP,com-Amazon,334863,334863,1851744,1,1,0,0,1.0,1.0,undirected graph with communities,1851744,56.513,https://sparse.tamu.edu/MM/SNAP/com-Amazon.tar.gz
+Simon,appu,14000,14000,1853104,1,0,0,0,1.0,0.9429754924136972,directed weighted random graph,1853104,56.554,https://sparse.tamu.edu/MM/Simon/appu.tar.gz
+Rajat,rajat21,411676,411676,1876011,1,0,0,0,0.7647530446640561,0.6145057622905241,circuit simulation problem,1893370,57.783,https://sparse.tamu.edu/MM/Rajat/rajat21.tar.gz
+VLSI,power9,155376,155376,1887730,1,0,1,0,1.0,0.3018551635520223,semiconductor device problem,2512300,76.671,https://sparse.tamu.edu/MM/VLSI/power9.tar.gz
+SNAP,loc-Gowalla,196591,196591,1900654,1,1,0,0,1.0,1.0,undirected graph,1900654,58.005,https://sparse.tamu.edu/MM/SNAP/loc-Gowalla.tar.gz
+VanVelzen,Zd_Jac3,22835,22835,1915726,1,0,0,0,0.0002609405864378739,0.0,chemical process simulation problem,1916152,58.478,https://sparse.tamu.edu/MM/VanVelzen/Zd_Jac3.tar.gz
+GHS_psdef,opt1,15449,15449,1930655,1,1,1,0,1.0,1.0,structural problem,1930655,58.921,https://sparse.tamu.edu/MM/GHS_psdef/opt1.tar.gz
+Sandia,ASIC_320k,321821,321821,1931828,1,0,0,0,1.0,0.3578041366837217,circuit simulation problem,2635364,80.427,https://sparse.tamu.edu/MM/Sandia/ASIC_320k.tar.gz
+DNVS,trdheim,22098,22098,1935324,1,1,1,0,1.0,1.0,structural problem,1935324,59.063,https://sparse.tamu.edu/MM/DNVS/trdheim.tar.gz
+Rajat,rajat24,358172,358172,1946979,1,0,0,0,0.996935347128458,0.2716106951495262,circuit simulation problem,1948235,59.457,https://sparse.tamu.edu/MM/Rajat/rajat24.tar.gz
+DIMACS10,coAuthorsDBLP,299067,299067,1955352,1,1,0,0,1.0,1.0,undirected graph,1955352,59.675,https://sparse.tamu.edu/MM/DIMACS10/coAuthorsDBLP.tar.gz
+TSOPF,TSOPF_FS_b39_c19,76216,76216,1977600,1,0,0,0,1.0,1.0,power network problem,1977600,60.354,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b39_c19.tar.gz
+POLYFLOW,mixtank_new,29957,29957,1990919,1,0,1,0,1.0,0.9890905426943581,computational fluid dynamics problem,1995041,60.886,https://sparse.tamu.edu/MM/POLYFLOW/mixtank_new.tar.gz
+Precima,analytics,303813,303813,2006126,1,0,0,0,1.0,1.0,data analytics problem,2006126,61.224,https://sparse.tamu.edu/MM/Precima/analytics.tar.gz
+IPSO,TSC_OPF_1047,8140,8140,2012833,1,0,0,0,1.0,1.0,power network problem,2016902,61.553,https://sparse.tamu.edu/MM/IPSO/TSC_OPF_1047.tar.gz
+HB,bcsstk32,44609,44609,2014701,1,1,1,0,1.0,1.0,structural problem,2014701,61.486,https://sparse.tamu.edu/MM/HB/bcsstk32.tar.gz
+vanHeukelum,cage12,130228,130228,2032536,1,0,0,0,1.0,0.1935123018985359,directed weighted graph,2032536,62.030,https://sparse.tamu.edu/MM/vanHeukelum/cage12.tar.gz
+Andrianov,net100,29920,29920,2033200,1,1,0,0,1.0,1.0,optimization problem,2033200,62.050,https://sparse.tamu.edu/MM/Andrianov/net100.tar.gz
+Rudnyi,water_tank,60740,60740,2035281,1,0,1,0,0.9691204183655847,0.9180067671423384,computational fluid dynamics problem,2035281,62.114,https://sparse.tamu.edu/MM/Rudnyi/water_tank.tar.gz
+HB,bcsstk30,28924,28924,2043492,1,1,1,0,1.0,1.0,structural problem,2043492,62.364,https://sparse.tamu.edu/MM/HB/bcsstk30.tar.gz
+DIMACS10,pa2010,421545,421545,2058462,1,0,0,0,1.0,1.0,undirected weighted graph,2058462,62.821,https://sparse.tamu.edu/MM/DIMACS10/pa2010.tar.gz
+Boeing,bcsstk39,46772,46772,2060662,1,0,1,0,1.0,1.0,structural problem,2089294,63.762,https://sparse.tamu.edu/MM/Boeing/bcsstk39.tar.gz
+FEMLAB,sme3Db,29067,29067,2081063,1,0,1,0,0.999978557463075,0.4406373111838425,structural problem,2081063,63.511,https://sparse.tamu.edu/MM/FEMLAB/sme3Db.tar.gz
+Schenk_ISEI,para-10,155924,155924,2094873,1,0,1,0,1.0,0.1980866954210761,subsequent semiconductor device problem,5416358,165.296,https://sparse.tamu.edu/MM/Schenk_ISEI/para-10.tar.gz
+Schenk_ISEI,para-5,155924,155924,2094873,1,0,1,0,1.0,0.3692588097985042,semiconductor device problem sequence,5416358,165.296,https://sparse.tamu.edu/MM/Schenk_ISEI/para-5.tar.gz
+Schenk_ISEI,para-6,155924,155924,2094873,1,0,1,0,1.0,0.3692588097985042,subsequent semiconductor device problem,5416358,165.296,https://sparse.tamu.edu/MM/Schenk_ISEI/para-6.tar.gz
+Schenk_ISEI,para-7,155924,155924,2094873,1,0,1,0,1.0,0.3692588097985042,subsequent semiconductor device problem,5416358,165.296,https://sparse.tamu.edu/MM/Schenk_ISEI/para-7.tar.gz
+Schenk_ISEI,para-8,155924,155924,2094873,1,0,1,0,1.0,0.1779654854253516,subsequent semiconductor device problem,5416358,165.296,https://sparse.tamu.edu/MM/Schenk_ISEI/para-8.tar.gz
+Schenk_ISEI,para-9,155924,155924,2094873,1,0,1,0,1.0,0.1810599453621524,subsequent semiconductor device problem,5416358,165.296,https://sparse.tamu.edu/MM/Schenk_ISEI/para-9.tar.gz
+GHS_indef,darcy003,389874,389874,2097566,1,0,1,0,1.0,1.0,2D/3D problem,2101242,64.127,https://sparse.tamu.edu/MM/GHS_indef/darcy003.tar.gz
+GHS_indef,mario002,389874,389874,2097566,1,0,1,0,1.0,1.0,duplicate 2D/3D problem,2101242,64.127,https://sparse.tamu.edu/MM/GHS_indef/mario002.tar.gz
+SNAP,com-DBLP,317080,317080,2099732,1,1,0,0,1.0,1.0,undirected graph with communities,2099732,64.081,https://sparse.tamu.edu/MM/SNAP/com-DBLP.tar.gz
+Williams,mc2depi,525825,525825,2100225,1,0,1,0,0.0,0.0,2D/3D problem,2100225,64.096,https://sparse.tamu.edu/MM/Williams/mc2depi.tar.gz
+AG-Monien,wave,156317,156317,2118662,1,1,1,0,1.0,1.0,2D/3D problem,2118662,64.658,https://sparse.tamu.edu/MM/AG-Monien/wave.tar.gz
+Schenk_ISEI,barrier2-1,113076,113076,2129496,1,0,1,0,1.0,0.1972208170916773,semiconductor device problem sequence,3805068,116.123,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-1.tar.gz
+Schenk_ISEI,barrier2-2,113076,113076,2129496,1,0,1,0,1.0,0.1971642812509299,subsequent semiconductor device problem,3805068,116.123,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-2.tar.gz
+Schenk_ISEI,barrier2-3,113076,113076,2129496,1,0,1,0,1.0,0.1980361234266671,subsequent semiconductor device problem,3805068,116.123,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-3.tar.gz
+Schenk_ISEI,barrier2-4,113076,113076,2129496,1,0,1,0,1.0,0.189249263546285,subsequent semiconductor device problem,3805068,116.123,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-4.tar.gz
+GHS_psdef,oilpan,73752,73752,2148558,1,0,1,1,1.0,1.0,structural problem,3597188,109.779,https://sparse.tamu.edu/MM/GHS_psdef/oilpan.tar.gz
+DIMACS10,144,144649,144649,2148786,1,1,0,0,1.0,1.0,undirected graph,2148786,65.578,https://sparse.tamu.edu/MM/DIMACS10/144.tar.gz
+Schenk_ISEI,barrier2-10,115625,115625,2158759,1,0,1,0,1.0,0.1989334147759642,subsequent semiconductor device problem,3897557,118.946,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-10.tar.gz
+Schenk_ISEI,barrier2-11,115625,115625,2158759,1,0,1,0,1.0,0.1988805553760946,subsequent semiconductor device problem,3897557,118.946,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-11.tar.gz
+Schenk_ISEI,barrier2-12,115625,115625,2158759,1,0,1,0,1.0,0.1983617501551521,subsequent semiconductor device problem,3897557,118.946,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-12.tar.gz
+Schenk_ISEI,barrier2-9,115625,115625,2158759,1,0,1,0,1.0,0.2036036406422221,semiconductor device problem sequence,3897557,118.946,https://sparse.tamu.edu/MM/Schenk_ISEI/barrier2-9.tar.gz
+Gupta,gupta1,31802,31802,2164210,1,1,0,0,1.0,1.0,optimization problem,2164210,66.048,https://sparse.tamu.edu/MM/Gupta/gupta1.tar.gz
+DIMACS10,il2010,451554,451554,2164464,1,0,0,0,1.0,1.0,undirected weighted graph,2164464,66.056,https://sparse.tamu.edu/MM/DIMACS10/il2010.tar.gz
+Chen,pkustk05,37164,37164,2205144,1,1,1,0,1.0,1.0,structural problem,2205144,67.298,https://sparse.tamu.edu/MM/Chen/pkustk05.tar.gz
+PARSEC,H2O,67024,67024,2216736,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,2216736,67.651,https://sparse.tamu.edu/MM/PARSEC/H2O.tar.gz
+GHS_indef,exdata_1,6001,6001,2269500,1,0,0,0,1.0,1.0,optimization problem,2269501,69.262,https://sparse.tamu.edu/MM/GHS_indef/exdata_1.tar.gz
+Kamvar,Stanford,281903,281903,2312497,1,1,0,0,0.2766368994208425,0.2766368994208425,directed graph,2312497,70.574,https://sparse.tamu.edu/MM/Kamvar/Stanford.tar.gz
+SNAP,web-Stanford,281903,281903,2312497,1,1,0,0,0.2766368994208425,0.2766368994208425,directed graph,2312497,70.574,https://sparse.tamu.edu/MM/SNAP/web-Stanford.tar.gz
+DIMACS10,citationCiteseer,268495,268495,2313294,1,1,0,0,1.0,1.0,undirected graph,2313294,70.598,https://sparse.tamu.edu/MM/DIMACS10/citationCiteseer.tar.gz
+GHS_psdef,vanbody,47072,47072,2329056,1,0,1,1,1.0,1.0,structural problem,2336898,71.318,https://sparse.tamu.edu/MM/GHS_psdef/vanbody.tar.gz
+Bova,rma10,46835,46835,2329092,1,0,1,0,1.0,0.2355549300354827,computational fluid dynamics problem,2374001,72.451,https://sparse.tamu.edu/MM/Bova/rma10.tar.gz
+Schenk_IBMNA,c-big,345241,345241,2340859,1,0,0,0,1.0,1.0,optimization problem,2341011,71.444,https://sparse.tamu.edu/MM/Schenk_IBMNA/c-big.tar.gz
+DIMACS10,fl2010,484481,484481,2346294,1,0,0,0,1.0,1.0,undirected weighted graph,2346294,71.605,https://sparse.tamu.edu/MM/DIMACS10/fl2010.tar.gz
+FEMLAB,poisson3Db,85623,85623,2374949,1,0,1,0,1.0,0.0,computational fluid dynamics problem,2374949,72.480,https://sparse.tamu.edu/MM/FEMLAB/poisson3Db.tar.gz
+TSOPF,TSOPF_FS_b162_c4,40798,40798,2398220,1,0,0,0,1.0,1.0,power network problem,2398220,73.190,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b162_c4.tar.gz
+Chen,pkustk07,16860,16860,2418804,1,1,1,0,1.0,1.0,structural problem,2418804,73.818,https://sparse.tamu.edu/MM/Chen/pkustk07.tar.gz
+Andrianov,net4-1,88343,88343,2441727,1,1,0,0,1.0,1.0,optimization problem,2441727,74.518,https://sparse.tamu.edu/MM/Andrianov/net4-1.tar.gz
+DIMACS10,vsp_msc10848_300sep_100in_1Kout,21996,21996,2442056,1,1,0,0,1.0,1.0,random unweighted graph,2442056,74.528,https://sparse.tamu.edu/MM/DIMACS10/vsp_msc10848_300sep_100in_1Kout.tar.gz
+DNVS,tsyl201,20685,20685,2454957,1,1,1,0,1.0,1.0,structural problem,2454957,74.921,https://sparse.tamu.edu/MM/DNVS/tsyl201.tar.gz
+Bodendiek,CurlCurl_1,226451,226451,2472071,1,0,1,0,1.0,1.0,model reduction problem,2472071,75.444,https://sparse.tamu.edu/MM/Bodendiek/CurlCurl_1.tar.gz
+Chen,pkustk06,43164,43164,2571768,1,1,1,0,1.0,1.0,structural problem,2571768,78.486,https://sparse.tamu.edu/MM/Chen/pkustk06.tar.gz
+Andrianov,net125,36720,36720,2577200,1,1,0,0,1.0,1.0,optimization problem,2577200,78.652,https://sparse.tamu.edu/MM/Andrianov/net125.tar.gz
+Boeing,ct20stif,52329,52329,2600295,1,0,1,1,1.0,1.0,structural problem,2698463,82.353,https://sparse.tamu.edu/MM/Boeing/ct20stif.tar.gz
+Williams,cop20k_A,121192,121192,2624331,1,0,1,0,1.0,1.0,2D/3D problem,2624331,80.090,https://sparse.tamu.edu/MM/Williams/cop20k_A.tar.gz
+Sandia,ASIC_680k,682862,682862,2638997,1,0,0,0,1.0,0.004444308126428144,circuit simulation problem,3871773,118.159,https://sparse.tamu.edu/MM/Sandia/ASIC_680k.tar.gz
+Freescale,nxp1,414604,414604,2655880,1,0,0,0,0.9998398784682034,0.8220579996645768,circuit simulation problem,2656177,81.062,https://sparse.tamu.edu/MM/Freescale/nxp1.tar.gz
+Nasa,nasasrb,54870,54870,2677324,1,0,1,1,1.0,1.0,structural problem,2677324,81.707,https://sparse.tamu.edu/MM/Nasa/nasasrb.tar.gz
+Boeing,pct20stif,52329,52329,2698463,1,1,1,0,1.0,1.0,structural problem,2698463,82.353,https://sparse.tamu.edu/MM/Boeing/pct20stif.tar.gz
+Oberwolfach,filter3D,106437,106437,2707179,1,0,1,0,1.0,1.0,model reduction problem,2707179,82.618,https://sparse.tamu.edu/MM/Oberwolfach/filter3D.tar.gz
+GHS_indef,helm2d03,392257,392257,2741935,1,0,1,0,1.0,1.0,2D/3D problem,2741935,83.679,https://sparse.tamu.edu/MM/GHS_indef/helm2d03.tar.gz
+Andrianov,ins2,309412,309412,2751484,1,1,0,0,1.0,1.0,optimization problem,2751484,83.971,https://sparse.tamu.edu/MM/Andrianov/ins2.tar.gz
+Botonakis,thermomech_dK,204316,204316,2846228,1,0,1,0,1.0,0.6652727267221619,thermal problem,2846228,86.862,https://sparse.tamu.edu/MM/Botonakis/thermomech_dK.tar.gz
+GHS_psdef,ramage02,16830,16830,2866352,1,1,1,0,1.0,1.0,computational fluid dynamics problem,2866352,87.476,https://sparse.tamu.edu/MM/GHS_psdef/ramage02.tar.gz
+Schenk_ISEI,para-4,153226,153226,2930882,1,0,1,0,1.0,0.2900222345747638,semiconductor device problem,5326228,162.546,https://sparse.tamu.edu/MM/Schenk_ISEI/para-4.tar.gz
+TSOPF,TSOPF_RS_b300_c2,28338,28338,2943887,1,0,0,0,0.00991209710027776,0.0001755931670937033,power network problem,2943887,89.842,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b300_c2.tar.gz
+GHS_psdef,srb1,54924,54924,2962152,1,1,1,0,1.0,1.0,structural problem,2962152,90.400,https://sparse.tamu.edu/MM/GHS_psdef/srb1.tar.gz
+Norris,stomach,213360,213360,3021648,1,0,1,0,0.8474914253808726,0.0,2D/3D problem,3021648,92.215,https://sparse.tamu.edu/MM/Norris/stomach.tar.gz
+Rothberg,cfd2,123440,123440,3085406,1,0,1,1,1.0,1.0,computational fluid dynamics problem,3087898,94.237,https://sparse.tamu.edu/MM/Rothberg/cfd2.tar.gz
+DIMACS10,rgg_n_2_18_s0,262144,262144,3094566,1,1,0,0,1.0,1.0,undirected random graph,3094566,94.441,https://sparse.tamu.edu/MM/DIMACS10/rgg_n_2_18_s0.tar.gz
+TSOPF,TSOPF_FS_b39_c30,120216,120216,3121160,1,0,0,0,1.0,1.0,power network problem,3121160,95.252,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b39_c30.tar.gz
+Andrianov,net150,43520,43520,3121200,1,1,0,0,1.0,1.0,optimization problem,3121200,95.253,https://sparse.tamu.edu/MM/Andrianov/net150.tar.gz
+Chen,pkustk03,63336,63336,3130416,1,1,1,0,1.0,1.0,structural problem,3130416,95.535,https://sparse.tamu.edu/MM/Chen/pkustk03.tar.gz
+DIMACS10,delaunay_n19,524288,524288,3145646,1,1,0,0,1.0,1.0,undirected graph,3145646,95.999,https://sparse.tamu.edu/MM/DIMACS10/delaunay_n19.tar.gz
+FEMLAB,sme3Dc,42930,42930,3148656,1,0,1,0,0.9999793929020139,0.4391179389295772,structural problem,3148656,96.091,https://sparse.tamu.edu/MM/FEMLAB/sme3Dc.tar.gz
+SNAP,amazon0312,400727,400727,3200440,1,1,0,0,0.5315337891039982,0.5315337891039982,directed graph,3200440,97.672,https://sparse.tamu.edu/MM/SNAP/amazon0312.tar.gz
+Rothberg,3dtube,45330,45330,3213618,1,1,1,0,1.0,1.0,computational fluid dynamics problem,3213618,98.074,https://sparse.tamu.edu/MM/Rothberg/3dtube.tar.gz
+LAW,cnr-2000,325557,325557,3216152,1,1,0,0,0.2491384628169437,0.2491384628169437,directed graph,3216152,98.151,https://sparse.tamu.edu/MM/LAW/cnr-2000.tar.gz
+Goodwin,Goodwin_095,100037,100037,3226066,1,0,1,0,0.9880933163299772,0.06443620776105316,computational fluid dynamics,3226066,98.454,https://sparse.tamu.edu/MM/Goodwin/Goodwin_095.tar.gz
+Chen,pkustk08,22209,22209,3226671,1,1,1,0,1.0,1.0,structural problem,3226671,98.472,https://sparse.tamu.edu/MM/Chen/pkustk08.tar.gz
+ND,nd3k,9000,9000,3279690,1,0,1,1,1.0,1.0,2D/3D problem,3279690,100.090,https://sparse.tamu.edu/MM/ND/nd3k.tar.gz
+DNVS,shipsec8,114919,114919,3303553,1,0,1,1,1.0,1.0,structural problem,6653399,203.048,https://sparse.tamu.edu/MM/DNVS/shipsec8.tar.gz
+SNAP,amazon0505,410236,410236,3356824,1,1,0,0,0.5465803390347542,0.5465803390347542,directed graph,3356824,102.444,https://sparse.tamu.edu/MM/SNAP/amazon0505.tar.gz
+DIMACS10,m14b,214765,214765,3358036,1,1,0,0,1.0,1.0,undirected graph,3358036,102.481,https://sparse.tamu.edu/MM/DIMACS10/m14b.tar.gz
+PARSEC,GaAsH6,61349,61349,3381809,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,3381809,103.207,https://sparse.tamu.edu/MM/PARSEC/GaAsH6.tar.gz
+SNAP,amazon0601,403394,403394,3387388,1,1,0,0,0.5573497928197183,0.5573497928197183,directed graph,3387388,103.377,https://sparse.tamu.edu/MM/SNAP/amazon0601.tar.gz
+Botonakis,FEM_3D_thermal2,147900,147900,3489300,1,0,1,0,1.0,0.9502082959238642,thermal problem,3489300,106.487,https://sparse.tamu.edu/MM/Botonakis/FEM_3D_thermal2.tar.gz
+DIMACS10,ca2010,710145,710145,3489366,1,0,0,0,1.0,1.0,undirected weighted graph,3489366,106.489,https://sparse.tamu.edu/MM/DIMACS10/ca2010.tar.gz
+DNVS,shipsec1,140874,140874,3568176,1,0,1,1,1.0,1.0,structural problem,7813404,238.448,https://sparse.tamu.edu/MM/DNVS/shipsec1.tar.gz
+Embree,ifiss_mat,96307,96307,3599932,1,0,1,0,1.0,0.2845118352876235,computational fluid dynamics,3599932,109.863,https://sparse.tamu.edu/MM/Embree/ifiss_mat.tar.gz
+UTEP,Dubcova3,146689,146689,3636643,1,0,1,1,1.0,1.0,2D/3D problem,3636649,110.984,https://sparse.tamu.edu/MM/UTEP/Dubcova3.tar.gz
+Wissgott,parabolic_fem,525825,525825,3674625,1,0,1,1,1.0,1.0,computational fluid dynamics problem,3674625,112.143,https://sparse.tamu.edu/MM/Wissgott/parabolic_fem.tar.gz
+GHS_psdef,s3dkt3m2,90449,90449,3686223,1,0,1,1,1.0,1.0,structural problem,3753461,114.548,https://sparse.tamu.edu/MM/GHS_psdef/s3dkt3m2.tar.gz
+Mycielski,mycielskian14,12287,12287,3695512,1,1,0,0,1.0,1.0,undirected graph,3695512,112.780,https://sparse.tamu.edu/MM/Mycielski/mycielskian14.tar.gz
+TKK,smt,25710,25710,3749582,1,0,1,1,1.0,1.0,structural problem,3753184,114.540,https://sparse.tamu.edu/MM/TKK/smt.tar.gz
+TKK,s4dkt3m2,90449,90449,3753461,1,1,1,0,1.0,1.0,structural problem,3753461,114.548,https://sparse.tamu.edu/MM/TKK/s4dkt3m2.tar.gz
+Rajat,rajat29,643994,643994,3760246,1,0,0,0,0.6856406275660725,0.6910598008173955,circuit simulation problem,4866270,148.509,https://sparse.tamu.edu/MM/Rajat/rajat29.tar.gz
+DNVS,ship_003,121728,121728,3777036,1,0,1,1,1.0,1.0,structural problem,8086034,246.768,https://sparse.tamu.edu/MM/DNVS/ship_003.tar.gz
+Raju,laminar_duct3D,67173,67173,3788857,1,0,1,0,0.9022908019592145,0.5518386226500883,computational fluid dynamics problem,3833077,116.978,https://sparse.tamu.edu/MM/Raju/laminar_duct3D.tar.gz
+Ronis,xenon2,157464,157464,3866688,1,0,1,0,1.0,0.7756792256277864,materials problem,3866688,118.004,https://sparse.tamu.edu/MM/Ronis/xenon2.tar.gz
+DNVS,ship_001,34920,34920,3896496,1,0,1,1,1.0,1.0,structural problem,4644230,141.733,https://sparse.tamu.edu/MM/DNVS/ship_001.tar.gz
+Williams,cant,62451,62451,4007383,1,0,1,1,1.0,1.0,2D/3D problem,4007383,122.298,https://sparse.tamu.edu/MM/Williams/cant.tar.gz
+DIMACS10,vsp_bcsstk30_500sep_10in_1Kout,58348,58348,4033156,1,1,0,0,1.0,1.0,random unweighted graph,4033156,123.084,https://sparse.tamu.edu/MM/DIMACS10/vsp_bcsstk30_500sep_10in_1Kout.tar.gz
+Chen,pkustk04,55590,55590,4218660,1,1,1,0,1.0,1.0,structural problem,4218660,128.745,https://sparse.tamu.edu/MM/Chen/pkustk04.tar.gz
+Um,offshore,259789,259789,4242673,1,0,1,1,1.0,1.0,electromagnetics problem,4242673,129.478,https://sparse.tamu.edu/MM/Um/offshore.tar.gz
+Gupta,gupta2,62064,62064,4248286,1,1,0,0,1.0,1.0,optimization problem,4248286,129.649,https://sparse.tamu.edu/MM/Gupta/gupta2.tar.gz
+Chen,pkustk10,80676,80676,4308984,1,1,1,0,1.0,1.0,structural problem,4308984,131.502,https://sparse.tamu.edu/MM/Chen/pkustk10.tar.gz
+Williams,pdb1HYS,36417,36417,4344765,1,0,0,1,1.0,1.0,weighted undirected graph,4344765,132.594,https://sparse.tamu.edu/MM/Williams/pdb1HYS.tar.gz
+Oberwolfach,t3dh,79171,79171,4352105,1,0,1,0,1.0,1.0,model reduction problem,4352105,132.818,https://sparse.tamu.edu/MM/Oberwolfach/t3dh.tar.gz
+Oberwolfach,t3dh_a,79171,79171,4352105,1,0,1,0,1.0,1.0,duplicate model reduction problem,4352105,132.818,https://sparse.tamu.edu/MM/Oberwolfach/t3dh_a.tar.gz
+Oberwolfach,t3dh_e,79171,79171,4352105,1,0,1,0,1.0,1.0,duplicate model reduction problem,4352105,132.818,https://sparse.tamu.edu/MM/Oberwolfach/t3dh_e.tar.gz
+TSOPF,TSOPF_RS_b678_c1,18696,18696,4396289,1,0,0,0,0.004448301852317109,0.0003256971884064591,power network problem,4396289,134.166,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b678_c1.tar.gz
+TSOPF,TSOPF_FS_b300,29214,29214,4400122,1,0,0,0,1.0,1.0,power network problem,4400122,134.283,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b300.tar.gz
+TSOPF,TSOPF_FS_b300_c1,29214,29214,4400122,1,0,0,0,1.0,1.0,power network problem,4400122,134.283,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b300_c1.tar.gz
+TSOPF,TSOPF_RS_b300_c3,42138,42138,4413449,1,0,0,0,0.009768063952888569,0.0001171197776188222,power network problem,4413449,134.690,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b300_c3.tar.gz
+GHS_psdef,s3dkq4m2,90449,90449,4427725,1,0,1,1,1.0,1.0,structural problem,4820891,147.124,https://sparse.tamu.edu/MM/GHS_psdef/s3dkq4m2.tar.gz
+Norris,torso3,259156,259156,4429042,1,0,1,0,0.9513722917125312,0.0,2D/3D problem,4429042,135.166,https://sparse.tamu.edu/MM/Norris/torso3.tar.gz
+DNVS,thread,29736,29736,4444880,1,0,1,1,1.0,1.0,structural problem,4470048,136.417,https://sparse.tamu.edu/MM/DNVS/thread.tar.gz
+DIMACS10,tx2010,914231,914231,4456272,1,0,0,0,1.0,1.0,undirected weighted graph,4456272,135.997,https://sparse.tamu.edu/MM/DIMACS10/tx2010.tar.gz
+CEMW,tmt_unsym,917825,917825,4584801,1,0,1,0,1.0,0.0,electromagnetics problem,4584801,139.919,https://sparse.tamu.edu/MM/CEMW/tmt_unsym.tar.gz
+CEMW,t2em,921632,921632,4590832,1,0,1,0,0.9988182710127548,0.9988182710127548,electromagnetics problem,4590832,140.103,https://sparse.tamu.edu/MM/CEMW/t2em.tar.gz
+DNVS,shipsec5,179860,179860,4598604,1,0,1,1,1.0,1.0,structural problem,10113096,308.629,https://sparse.tamu.edu/MM/DNVS/shipsec5.tar.gz
+TKK,engine,143571,143571,4706073,1,0,1,0,1.0,1.0,structural problem,4706073,143.620,https://sparse.tamu.edu/MM/TKK/engine.tar.gz
+GHS_psdef,apache2,715176,715176,4817870,1,0,1,1,1.0,1.0,structural problem,4817870,147.032,https://sparse.tamu.edu/MM/GHS_psdef/apache2.tar.gz
+DIMACS10,kron_g500-logn16,65536,65536,4912469,1,0,0,0,1.0,1.0,undirected multigraph,4912469,149.919,https://sparse.tamu.edu/MM/DIMACS10/kron_g500-logn16.tar.gz
+McRae,ecology2,999999,999999,4995991,1,0,1,1,1.0,1.0,2D/3D problem,4995991,152.467,https://sparse.tamu.edu/MM/McRae/ecology2.tar.gz
+McRae,ecology1,1000000,1000000,4996000,1,0,1,0,1.0,1.0,2D/3D problem,4996000,152.468,https://sparse.tamu.edu/MM/McRae/ecology1.tar.gz
+CEMW,tmt_sym,726713,726713,5080961,1,0,1,1,1.0,1.0,electromagnetics problem,5080961,155.061,https://sparse.tamu.edu/MM/CEMW/tmt_sym.tar.gz
+SNAP,web-Google,916428,916428,5105039,1,1,0,0,0.3067510355944391,0.3067510355944391,directed graph,5105039,155.795,https://sparse.tamu.edu/MM/SNAP/web-Google.tar.gz
+PARSEC,Si34H36,97569,97569,5156379,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,5156379,157.362,https://sparse.tamu.edu/MM/PARSEC/Si34H36.tar.gz
+LAW,amazon-2008,735323,735323,5158388,1,1,0,0,0.6338864001699756,0.6338864001699756,directed graph,5158388,157.423,https://sparse.tamu.edu/MM/LAW/amazon-2008.tar.gz
+Chen,pkustk11,87804,87804,5217912,1,1,1,0,1.0,1.0,structural problem,5217912,159.240,https://sparse.tamu.edu/MM/Chen/pkustk11.tar.gz
+QLi,largebasis,440020,440020,5240084,1,0,0,0,1.0,0.0,optimization problem,5560100,169.683,https://sparse.tamu.edu/MM/QLi/largebasis.tar.gz
+Koutsovasilis,F2,71505,71505,5294285,1,0,1,0,1.0,1.0,structural problem,5294285,161.571,https://sparse.tamu.edu/MM/Koutsovasilis/F2.tar.gz
+Muite,Chebyshev4,68121,68121,5377761,1,0,1,0,0.3020408163265306,0.0002369275506437348,structural problem,5377761,164.118,https://sparse.tamu.edu/MM/Muite/Chebyshev4.tar.gz
+Oberwolfach,boneS01,127224,127224,5516602,1,0,1,1,1.0,1.0,model reduction problem,6715152,204.932,https://sparse.tamu.edu/MM/Oberwolfach/boneS01.tar.gz
+VLSI,radiation,223104,223104,5526637,1,0,1,0,1.0,0.1890109856957617,semiconductor device problem,7637688,233.086,https://sparse.tamu.edu/MM/VLSI/radiation.tar.gz
+Goodwin,Goodwin_127,178437,178437,5778545,1,0,1,0,0.9902002197399873,0.06589012929818107,computational fluid dynamics,5778545,176.349,https://sparse.tamu.edu/MM/Goodwin/Goodwin_127.tar.gz
+ATandT,pre2,659033,659033,5834044,1,0,0,0,0.3317760910564062,0.06536187196755584,frequency-domain circuit simulation problem,5959282,181.865,https://sparse.tamu.edu/MM/ATandT/pre2.tar.gz
+PARSEC,Ga3As3H12,61349,61349,5970947,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,5970947,182.221,https://sparse.tamu.edu/MM/PARSEC/Ga3As3H12.tar.gz
+Williams,consph,83334,83334,6010480,1,0,1,1,1.0,1.0,2D/3D problem,6010480,183.427,https://sparse.tamu.edu/MM/Williams/consph.tar.gz
+PARSEC,Ga10As10H30,113081,113081,6115633,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,6115633,186.636,https://sparse.tamu.edu/MM/PARSEC/Ga10As10H30.tar.gz
+Rajat,rajat30,643994,643994,6175244,1,0,0,0,0.9945912407336421,0.009194565053000587,circuit simulation problem,6175377,188.460,https://sparse.tamu.edu/MM/Rajat/rajat30.tar.gz
+Martin,marine1,400320,400320,6226538,1,0,0,0,0.922267240944297,0.0,chemical oceanography problem,6226538,190.021,https://sparse.tamu.edu/MM/Martin/marine1.tar.gz
+Guettel,TEM152078,152078,152078,6459326,1,0,1,0,1.0,1.0,electromagnetics problem,6459326,197.125,https://sparse.tamu.edu/MM/Guettel/TEM152078.tar.gz
+DIMACS10,rgg_n_2_19_s0,524288,524288,6539532,1,1,0,0,1.0,1.0,undirected random graph,6539532,199.573,https://sparse.tamu.edu/MM/DIMACS10/rgg_n_2_19_s0.tar.gz
+Chen,pkustk13,94893,94893,6616827,1,1,1,0,1.0,1.0,structural problem,6616827,201.931,https://sparse.tamu.edu/MM/Chen/pkustk13.tar.gz
+DIMACS10,auto,448695,448695,6629222,1,1,0,0,1.0,1.0,undirected graph,6629222,202.310,https://sparse.tamu.edu/MM/DIMACS10/auto.tar.gz
+TSOPF,TSOPF_RS_b2052_c1,25626,25626,6761100,1,0,0,0,0.003886561090908282,0.0002050869579089441,power network problem,6761100,206.334,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b2052_c1.tar.gz
+Schenk_ISEI,ohne2,181343,181343,6869939,1,0,1,0,1.0,0.09493801090692276,semiconductor device problem,11063545,337.635,https://sparse.tamu.edu/MM/Schenk_ISEI/ohne2.tar.gz
+ND,nd6k,18000,18000,6897316,1,0,1,1,1.0,1.0,2D/3D problem,6897316,210.491,https://sparse.tamu.edu/MM/ND/nd6k.tar.gz
+GHS_psdef,bmw7st_1,141347,141347,7318399,1,0,1,1,1.0,1.0,structural problem,7339667,223.991,https://sparse.tamu.edu/MM/GHS_psdef/bmw7st_1.tar.gz
+vanHeukelum,cage13,445315,445315,7479343,1,0,0,0,1.0,0.2004785878020389,directed weighted graph,7479343,228.253,https://sparse.tamu.edu/MM/vanHeukelum/cage13.tar.gz
+Chen,pkustk12,94653,94653,7512317,1,1,1,0,1.0,1.0,structural problem,7512317,229.260,https://sparse.tamu.edu/MM/Chen/pkustk12.tar.gz
+Kamvar,Stanford_Berkeley,683446,683446,7583376,1,1,0,0,0.2502051856587356,0.2502051856587356,directed graph,7583376,231.428,https://sparse.tamu.edu/MM/Kamvar/Stanford_Berkeley.tar.gz
+SNAP,web-BerkStan,685230,685230,7600595,1,1,0,0,0.2502764586193581,0.2502764586193581,directed graph,7600595,231.954,https://sparse.tamu.edu/MM/SNAP/web-BerkStan.tar.gz
+PARSEC,CO,221119,221119,7666057,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,7666057,233.951,https://sparse.tamu.edu/MM/PARSEC/CO.tar.gz
+Guettel,TEM181302,181302,181302,7839010,1,0,1,0,1.0,1.0,electromagnetics problem,7839010,239.230,https://sparse.tamu.edu/MM/Guettel/TEM181302.tar.gz
+PARSEC,Ge87H76,112985,112985,7892195,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,7892195,240.853,https://sparse.tamu.edu/MM/PARSEC/Ge87H76.tar.gz
+Fluorem,PR02R,161070,161070,8185136,1,0,1,0,0.9476492341912441,0.0001697393815055858,computational fluid dynamics problem,8185136,249.792,https://sparse.tamu.edu/MM/Fluorem/PR02R.tar.gz
+PARSEC,Ge99H100,112985,112985,8451395,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,8451395,257.918,https://sparse.tamu.edu/MM/PARSEC/Ge99H100.tar.gz
+Norris,torso1,116158,116158,8516500,1,0,1,0,0.4243874832715144,0.0,2D/3D problem,8516500,259.905,https://sparse.tamu.edu/MM/Norris/torso1.tar.gz
+DNVS,x104,108384,108384,8713602,1,0,1,1,1.0,1.0,structural problem,10167624,310.293,https://sparse.tamu.edu/MM/DNVS/x104.tar.gz
+TSOPF,TSOPF_FS_b300_c2,56814,56814,8767466,1,0,0,0,1.0,1.0,power network problem,8767466,267.564,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b300_c2.tar.gz
+TSOPF,TSOPF_RS_b678_c2,35696,35696,8781949,1,0,0,0,0.004170134538170976,0.0001630280691806068,power network problem,8781949,268.006,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b678_c2.tar.gz
+PARSEC,Ga19As19H42,133123,133123,8884839,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,8884839,271.146,https://sparse.tamu.edu/MM/PARSEC/Ga19As19H42.tar.gz
+Bodendiek,CurlCurl_2,806529,806529,8921789,1,0,1,0,1.0,1.0,model reduction problem,8921789,272.273,https://sparse.tamu.edu/MM/Bodendiek/CurlCurl_2.tar.gz
+Rothberg,gearbox,153746,153746,9080404,1,1,1,0,1.0,1.0,structural problem,9080404,277.114,https://sparse.tamu.edu/MM/Rothberg/gearbox.tar.gz
+Gupta,gupta3,16783,16783,9323427,1,1,0,0,1.0,1.0,optimization problem,9323427,284.530,https://sparse.tamu.edu/MM/Gupta/gupta3.tar.gz
+Andrianov,pattern1,19242,19242,9323432,1,1,0,0,1.0,1.0,optimization problem,9323432,284.531,https://sparse.tamu.edu/MM/Andrianov/pattern1.tar.gz
+VLSI,test1,392908,392908,9447535,1,0,1,0,1.0,0.2651539373184561,semiconductor device problem,12968200,395.760,https://sparse.tamu.edu/MM/VLSI/test1.tar.gz
+DNVS,m_t1,97578,97578,9753570,1,0,1,1,1.0,1.0,structural problem,9753570,297.657,https://sparse.tamu.edu/MM/DNVS/m_t1.tar.gz
+Gleich,flickr,820878,820878,9837214,1,1,0,0,0.653017002578169,0.653017002578169,directed graph,9837214,300.210,https://sparse.tamu.edu/MM/Gleich/flickr.tar.gz
+GHS_psdef,hood,220542,220542,9895422,1,0,1,1,1.0,1.0,structural problem,10768436,328.629,https://sparse.tamu.edu/MM/GHS_psdef/hood.tar.gz
+DIMACS10,kron_g500-logn17,131072,131072,10228360,1,0,0,0,1.0,1.0,undirected multigraph,10228360,312.147,https://sparse.tamu.edu/MM/DIMACS10/kron_g500-logn17.tar.gz
+Andrianov,mip1,66463,66463,10352819,1,1,0,0,1.0,1.0,optimization problem,10352819,315.945,https://sparse.tamu.edu/MM/Andrianov/mip1.tar.gz
+GHS_psdef,crankseg_1,52804,52804,10614210,1,0,1,1,1.0,1.0,structural problem,10614210,323.922,https://sparse.tamu.edu/MM/GHS_psdef/crankseg_1.tar.gz
+GHS_psdef,bmwcra_1,148770,148770,10641602,1,0,1,1,1.0,1.0,structural problem,10644002,324.831,https://sparse.tamu.edu/MM/GHS_psdef/bmwcra_1.tar.gz
+PARSEC,Si87H76,240369,240369,10661631,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,10661631,325.369,https://sparse.tamu.edu/MM/PARSEC/Si87H76.tar.gz
+Mycielski,mycielskian15,24575,24575,11111110,1,1,0,0,1.0,1.0,undirected graph,11111110,339.086,https://sparse.tamu.edu/MM/Mycielski/mycielskian15.tar.gz
+PARSEC,SiO2,155331,155331,11283503,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,11283503,344.347,https://sparse.tamu.edu/MM/PARSEC/SiO2.tar.gz
+GHS_indef,bmw3_2,227362,227362,11288630,1,0,1,0,1.0,1.0,structural problem,11288630,344.504,https://sparse.tamu.edu/MM/GHS_indef/bmw3_2.tar.gz
+DNVS,fcondp2,201822,201822,11294316,1,1,1,0,1.0,1.0,structural problem,11294316,344.677,https://sparse.tamu.edu/MM/DNVS/fcondp2.tar.gz
+Boeing,pwtk,217918,217918,11524432,1,0,1,1,1.0,1.0,structural problem,11634424,355.056,https://sparse.tamu.edu/MM/Boeing/pwtk.tar.gz
+DNVS,fullb,199187,199187,11708077,1,1,1,0,1.0,1.0,structural problem,11708077,357.304,https://sparse.tamu.edu/MM/DNVS/fullb.tar.gz
+DNVS,troll,213453,213453,11985111,1,1,1,0,1.0,1.0,structural problem,11985111,365.759,https://sparse.tamu.edu/MM/DNVS/troll.tar.gz
+Hardesty,Hardesty1,938905,938905,12143314,1,0,1,0,1.0,1.0,computer graphics/vision problem,12143314,370.586,https://sparse.tamu.edu/MM/Hardesty/Hardesty1.tar.gz
+DNVS,halfb,224617,224617,12387821,1,1,1,0,1.0,1.0,structural problem,12387821,378.048,https://sparse.tamu.edu/MM/DNVS/halfb.tar.gz
+TSOPF,TSOPF_FS_b300_c3,84414,84414,13135930,1,0,0,0,1.0,1.0,power network problem,13135930,400.879,https://sparse.tamu.edu/MM/TSOPF/TSOPF_FS_b300_c3.tar.gz
+BenElechi,BenElechi1,245874,245874,13150496,1,0,1,1,1.0,1.0,2D/3D problem,13150496,401.323,https://sparse.tamu.edu/MM/BenElechi/BenElechi1.tar.gz
+GHS_psdef,crankseg_2,63838,63838,14148858,1,0,1,1,1.0,1.0,structural problem,14148858,431.791,https://sparse.tamu.edu/MM/GHS_psdef/crankseg_2.tar.gz
+ND,nd12k,36000,36000,14220946,1,0,1,1,1.0,1.0,2D/3D problem,14220946,433.991,https://sparse.tamu.edu/MM/ND/nd12k.tar.gz
+Chen,pkustk14,151926,151926,14836504,1,1,1,0,1.0,1.0,structural problem,14836504,452.776,https://sparse.tamu.edu/MM/Chen/pkustk14.tar.gz
+SNAP,higgs-twitter,456626,456626,14855842,1,1,0,0,0.3160251211999823,0.3160251211999823,directed temporal multigraph,14855842,453.366,https://sparse.tamu.edu/MM/SNAP/higgs-twitter.tar.gz
+PARSEC,Si41Ge41H72,185639,185639,15011265,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,15011265,458.109,https://sparse.tamu.edu/MM/PARSEC/Si41Ge41H72.tar.gz
+TSOPF,TSOPF_RS_b2383,38120,38120,16171169,1,0,0,0,0.002485718029041526,0.0003350401831305099,power network problem,16171169,493.507,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b2383.tar.gz
+TSOPF,TSOPF_RS_b2383_c1,38120,38120,16171169,1,0,0,0,0.002485718029041526,0.0003350401831305099,power network problem,16171169,493.507,https://sparse.tamu.edu/MM/TSOPF/TSOPF_RS_b2383_c1.tar.gz
+Janna,CoupCons3D,416800,416800,17277420,1,0,1,0,1.0,0.008881642549324996,structural problem,22322336,681.226,https://sparse.tamu.edu/MM/Janna/CoupCons3D.tar.gz
+Schenk_AFE,af_0_k101,503625,503625,17550675,1,0,1,1,1.0,1.0,structural problem,17550675,535.606,https://sparse.tamu.edu/MM/Schenk_AFE/af_0_k101.tar.gz
+Schenk_AFE,af_1_k101,503625,503625,17550675,1,0,1,1,1.0,1.0,structural problem,17550675,535.606,https://sparse.tamu.edu/MM/Schenk_AFE/af_1_k101.tar.gz
+Schenk_AFE,af_2_k101,503625,503625,17550675,1,0,1,1,1.0,1.0,structural problem,17550675,535.606,https://sparse.tamu.edu/MM/Schenk_AFE/af_2_k101.tar.gz
+Schenk_AFE,af_3_k101,503625,503625,17550675,1,0,1,1,1.0,1.0,structural problem,17550675,535.606,https://sparse.tamu.edu/MM/Schenk_AFE/af_3_k101.tar.gz
+Schenk_AFE,af_4_k101,503625,503625,17550675,1,0,1,1,1.0,1.0,structural problem,17550675,535.606,https://sparse.tamu.edu/MM/Schenk_AFE/af_4_k101.tar.gz
+Schenk_AFE,af_5_k101,503625,503625,17550675,1,0,1,1,1.0,1.0,structural problem,17550675,535.606,https://sparse.tamu.edu/MM/Schenk_AFE/af_5_k101.tar.gz
+Schenk_AFE,af_shell1,504855,504855,17562051,1,0,1,0,1.0,1.0,structural problem sequence,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell1.tar.gz
+Schenk_AFE,af_shell2,504855,504855,17562051,1,0,1,0,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell2.tar.gz
+Schenk_AFE,af_shell3,504855,504855,17562051,1,0,1,1,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell3.tar.gz
+Schenk_AFE,af_shell4,504855,504855,17562051,1,0,1,1,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell4.tar.gz
+Schenk_AFE,af_shell5,504855,504855,17579155,1,0,1,0,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell5.tar.gz
+Schenk_AFE,af_shell6,504855,504855,17579155,1,0,1,0,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell6.tar.gz
+Schenk_AFE,af_shell7,504855,504855,17579155,1,0,1,1,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell7.tar.gz
+Schenk_AFE,af_shell8,504855,504855,17579155,1,0,1,1,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell8.tar.gz
+Schenk_AFE,af_shell9,504855,504855,17588845,1,0,1,0,1.0,1.0,subsequent structural problem,17588875,536.772,https://sparse.tamu.edu/MM/Schenk_AFE/af_shell9.tar.gz
+Belcastro,human_gene2,14340,14340,18068388,1,0,0,0,1.0,1.0,undirected weighted graph,18068388,551.405,https://sparse.tamu.edu/MM/Belcastro/human_gene2.tar.gz
+PARSEC,Ga41As41H72,268096,268096,18488476,1,0,0,0,1.0,1.0,theoretical/quantum chemistry problem,18488476,564.225,https://sparse.tamu.edu/MM/PARSEC/Ga41As41H72.tar.gz
+INPRO,msdoor,415863,415863,19173163,1,0,1,1,1.0,1.0,structural problem,20240935,617.706,https://sparse.tamu.edu/MM/INPRO/msdoor.tar.gz
+LAW,eu-2005,862664,862664,19235140,1,1,0,0,0.277066804642518,0.277066804642518,directed graph,19235140,587.012,https://sparse.tamu.edu/MM/LAW/eu-2005.tar.gz
+Mazaheri,bundle_adj,513351,513351,20207907,1,0,1,1,1.0,1.0,computer vision problem,20208051,616.703,https://sparse.tamu.edu/MM/Mazaheri/bundle_adj.tar.gz
+DIMACS10,kron_g500-logn18,262144,262144,21165908,1,0,0,0,1.0,1.0,undirected multigraph,21165908,645.934,https://sparse.tamu.edu/MM/DIMACS10/kron_g500-logn18.tar.gz
+Dziekonski,gsm_106857,589446,589446,21758924,1,0,1,0,1.0,1.0,electromagnetics problem,21758924,664.032,https://sparse.tamu.edu/MM/Dziekonski/gsm_106857.tar.gz
+Belcastro,human_gene1,22283,22283,24669643,1,0,0,0,1.0,1.0,undirected weighted graph,24669643,752.860,https://sparse.tamu.edu/MM/Belcastro/human_gene1.tar.gz
+Koutsovasilis,F1,343791,343791,26837113,1,0,1,0,1.0,1.0,structural problem,26837113,819.006,https://sparse.tamu.edu/MM/Koutsovasilis/F1.tar.gz
+Janna,Fault_639,638802,638802,27245944,1,0,1,1,1.0,1.0,structural problem,28614564,873.249,https://sparse.tamu.edu/MM/Janna/Fault_639.tar.gz
+Janna,ML_Laplace,377002,377002,27582698,1,0,1,0,1.0,7.351401706466176e-08,structural problem,27689972,845.033,https://sparse.tamu.edu/MM/Janna/ML_Laplace.tar.gz
+ND,nd24k,72000,72000,28715634,1,0,1,1,1.0,1.0,2D/3D problem,28715634,876.334,https://sparse.tamu.edu/MM/ND/nd24k.tar.gz
+Belcastro,mouse_gene,45101,45101,28967291,1,0,0,0,1.0,1.0,undirected weighted graph,28967291,884.014,https://sparse.tamu.edu/MM/Belcastro/mouse_gene.tar.gz
+DIMACS10,coPapersDBLP,540486,540486,30491458,1,1,0,0,1.0,1.0,undirected graph,30491458,930.527,https://sparse.tamu.edu/MM/DIMACS10/coPapersDBLP.tar.gz
+DIMACS10,coPapersCiteseer,434102,434102,32073440,1,1,0,0,1.0,1.0,undirected graph,32073440,978.806,https://sparse.tamu.edu/MM/DIMACS10/coPapersCiteseer.tar.gz
+Mycielski,mycielskian16,49151,49151,33382480,1,1,0,0,1.0,1.0,undirected graph,33382480,1018.754,https://sparse.tamu.edu/MM/Mycielski/mycielskian16.tar.gz
+GHS_psdef,inline_1,503712,503712,36816170,1,0,1,1,1.0,1.0,structural problem,36816342,1123.548,https://sparse.tamu.edu/MM/GHS_psdef/inline_1.tar.gz
+Janna,PFlow_742,742793,742793,37138461,1,0,1,1,1.0,1.0,2D/3D problem,37138461,1133.378,https://sparse.tamu.edu/MM/Janna/PFlow_742.tar.gz
+Fluorem,RM07R,381689,381689,37464962,1,0,1,0,0.9261667922354103,4.260681089287885e-06,computational fluid dynamics problem,37464962,1143.342,https://sparse.tamu.edu/MM/Fluorem/RM07R.tar.gz
+Janna,Emilia_923,923136,923136,40373538,1,0,1,1,1.0,1.0,structural problem,41005206,1251.382,https://sparse.tamu.edu/MM/Janna/Emilia_923.tar.gz
+Oberwolfach,boneS10,914898,914898,40878708,1,0,1,1,1.0,1.0,model reduction problem,55468422,1692.764,https://sparse.tamu.edu/MM/Oberwolfach/boneS10.tar.gz
+GHS_psdef,ldoor,952203,952203,42493817,1,0,1,1,1.0,1.0,structural problem,46522475,1419.755,https://sparse.tamu.edu/MM/GHS_psdef/ldoor.tar.gz
+DIMACS10,kron_g500-logn19,524288,524288,43562265,1,0,0,0,1.0,1.0,undirected multigraph,43562265,1329.417,https://sparse.tamu.edu/MM/DIMACS10/kron_g500-logn19.tar.gz
+Oberwolfach,bone010,986703,986703,47851783,1,0,1,1,1.0,1.0,model reduction problem,71666325,2187.085,https://sparse.tamu.edu/MM/Oberwolfach/bone010.tar.gz
+GHS_psdef,audikw_1,943695,943695,77651847,1,0,1,1,1.0,1.0,structural problem,77651847,2369.748,https://sparse.tamu.edu/MM/GHS_psdef/audikw_1.tar.gz
+Mycielski,mycielskian17,98303,98303,100245742,1,1,0,0,1.0,1.0,undirected graph,100245742,3059.259,https://sparse.tamu.edu/MM/Mycielski/mycielskian17.tar.gz
+Mycielski,mycielskian18,196607,196607,300933832,1,1,0,0,1.0,1.0,undirected graph,300933832,9183.774,https://sparse.tamu.edu/MM/Mycielski/mycielskian18.tar.gz
+Mycielski,mycielskian19,393215,393215,903194710,1,1,0,0,1.0,1.0,undirected graph,903194710,27563.317,https://sparse.tamu.edu/MM/Mycielski/mycielskian19.tar.gz
+Mycielski,mycielskian20,786431,786431,2710370560,1,1,0,0,1.0,1.0,undirected graph,2710370560,82713.947,https://sparse.tamu.edu/MM/Mycielski/mycielskian20.tar.gz

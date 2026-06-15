@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Download real SPD matrices from the SuiteSparse Matrix Collection.
+"""Download real square matrices from the SuiteSparse Matrix Collection.
 
-The script uses SuiteSparse's public ``ssstats.csv`` metadata and trusts the
-``posdef`` flag as the SPD filter. By default it downloads a capped, medium
-benchmark set, extracts the Matrix Market ``.mtx`` files, and removes archives
-after successful extraction.
+The script uses SuiteSparse's public ``ssstats.csv`` metadata. By default it
+downloads a capped, medium benchmark set, extracts the Matrix Market ``.mtx``
+files, and removes archives after successful extraction.
 """
 
 from __future__ import annotations
@@ -141,9 +140,10 @@ def parse_stats_csv(text: str) -> list[MatrixInfo]:
     return matrices
 
 
-def filter_spd_matrices(
+def filter_square_matrices(
     matrices: list[MatrixInfo],
     max_files: int | None,
+    min_rows: int | None,
     max_rows: int | None,
     max_nnz: int | None,
     max_total_gb: float | None,
@@ -152,10 +152,10 @@ def filter_spd_matrices(
     candidates = [
         matrix
         for matrix in matrices
-        if matrix.posdef == 1
-        and matrix.is_real
+        if matrix.is_real
         and matrix.nrows == matrix.ncols
         and (include_binary or not matrix.is_binary)
+        and (min_rows is None or matrix.nrows >= min_rows)
         and (max_rows is None or matrix.nrows <= max_rows)
         and (max_nnz is None or matrix.nnz <= max_nnz)
     ]
@@ -330,7 +330,7 @@ def print_selection(matrices: list[MatrixInfo]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Download real SPD Matrix Market matrices from SuiteSparse."
+        description="Download real square Matrix Market matrices from SuiteSparse."
     )
     parser.add_argument("--out", default="data/suitesparse_spd", help="Output directory")
     parser.add_argument(
@@ -348,6 +348,12 @@ def parse_args() -> argparse.Namespace:
         type=positive_int_or_none,
         default=50,
         help="Maximum number of matrices to select; 0 disables this cap",
+    )
+    parser.add_argument(
+        "--min-rows",
+        type=positive_int_or_none,
+        default=None,
+        help="Minimum row count; 0 disables this floor",
     )
     parser.add_argument(
         "--max-rows",
@@ -387,7 +393,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--include-binary",
         action="store_true",
-        help="Include SuiteSparse binary/pattern matrices marked positive definite",
+        help="Include SuiteSparse binary/pattern square matrices",
     )
     return parser.parse_args()
 
@@ -406,9 +412,10 @@ def main() -> int:
         print(f"Failed to read SuiteSparse stats: {exc}", file=sys.stderr)
         return 1
 
-    selected = filter_spd_matrices(
+    selected = filter_square_matrices(
         matrices,
         max_files=args.max_files,
+        min_rows=args.min_rows,
         max_rows=args.max_rows,
         max_nnz=args.max_nnz,
         max_total_gb=args.max_total_gb,
@@ -419,7 +426,7 @@ def main() -> int:
     write_manifest(manifest_path, selected, args.base_url)
     estimated_gb = sum(matrix.estimated_bytes for matrix in selected) / (1024**3)
     print(
-        f"Selected {len(selected)} real SPD matrices "
+        f"Selected {len(selected)} real square matrices "
         f"(estimated extracted size {estimated_gb:.2f} GiB)"
     )
     print(f"Wrote manifest: {manifest_path}")

@@ -2,9 +2,9 @@
 REM ------------------------------------------------------------------
 REM Loop matrix_example over every .mtx file recursively under input\
 REM and write a per-matrix JSON result to
-REM results\<solver>\<relpath>\<name>.json, mirroring the input
+REM results\<solver>\<relpath>\<name>_<precision>.json, mirroring the input
 REM directory layout (so groups like input\HB\foo.mtx end up in
-REM results\<solver>\HB\foo.json).
+REM results\<solver>\HB\foo_double.json and foo_float.json).
 REM
 REM Usage:
 REM     scripts\examples\run_spd_benchmark.cmd                (default solver: cudss)
@@ -67,7 +67,8 @@ for /R "%INPUT_DIR%" %%f in (*.mtx) do (
     echo ============================================================
     echo   Matrix: !REL_DIR!%%~nxf  ^|  solver: %SOLVER%  ^|  patch: %PATCH_SIZE%
     echo ============================================================
-    "%BINARY%" -i "%%f" -s %SOLVER% -p %PATCH_SIZE% --out "%OUT_DIR%\!REL_DIR!%%~nf.json"
+    "%BINARY%" -i "%%f" -s %SOLVER% -p %PATCH_SIZE% --precision double --make-spd-from-pattern --out "%OUT_DIR%\!REL_DIR!%%~nf_double.json"
+    "%BINARY%" -i "%%f" -s %SOLVER% -p %PATCH_SIZE% --precision float --make-spd-from-pattern --out "%OUT_DIR%\!REL_DIR!%%~nf_float.json"
 )
 
 echo.
