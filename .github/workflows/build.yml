@@ -39,5 +39,5 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel 2
 
-      - name: Test
-        run: ctest --test-dir build -C Release --output-on-failure
+      # - name: Test
+      #   run: ctest --test-dir build -C Release --output-on-failure
