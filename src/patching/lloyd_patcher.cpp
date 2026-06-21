@@ -32,8 +32,15 @@ void LloydPatcher::compute(int n, const int *Gp, const int *Gi,
       return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
       };
   auto t0 = Clock::now();
-  create_clusters(n, Gp, Gi, patch_size, &opt, node_to_patch);
+  opt.execution_backend = LloydOptions::ExecutionBackend::GPU;
+  create_clusters(n, Gp, Gi, patch_size, &opt, node_to_patch);    
   spdlog::info("LloydPatcher: create_clusters took {} (ms)", elapsed_ms(t0, Clock::now()));
+  if (opt.execution_backend == LloydOptions::ExecutionBackend::GPU) {
+    spdlog::info("LloydPatcher: create_clusters uses GPU backend");
+  }
+  if (opt.execution_backend == LloydOptions::ExecutionBackend::CPU) {
+    spdlog::info("LloydPatcher: create_clusters uses CPU backend");
+  }
 
   if (static_cast<int>(node_to_patch.size()) != n) {
     throw std::runtime_error("LloydPatcher: invalid cluster assignment size");
