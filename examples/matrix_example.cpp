@@ -214,7 +214,8 @@ int run_benchmark(const std::string&     input_matrix,
                   homa::LinSysSolverType solver_type,
                   int                    patch_size,
                   const std::string&     output_json,
-                  bool                   make_spd_pattern)
+                  bool                   make_spd_pattern,
+                  int                    runs)
 {
     SparseMat<Scalar> raw;
     if (!Eigen::loadMarket(raw, input_matrix)) {
@@ -250,11 +251,37 @@ int run_benchmark(const std::string&     input_matrix,
 
     warm_up_if_needed<Scalar>(solver_type, solver_matrix, rhs);
 
-    std::vector<int> empty_perm, empty_etree;
-    StageTimes def = run_solver_path<Scalar>(
-        solver_type, solver_matrix, A, rhs, empty_perm, empty_etree, false);
-
     using Clock = std::chrono::high_resolution_clock;
+
+    // Helper to accumulate timings across multiple runs. 
+    // keep the last residual for the JSON record but average all stage times 
+    const int total_runs = std::max(1, runs);
+    auto avg_stage_times = [&](auto produce) {
+        StageTimes sum;
+        StageTimes last;
+        for (int r = 0; r < total_runs; ++r) {
+            last = produce();
+            sum.ordering_ms  += last.ordering_ms;
+            sum.reorder_ms   += last.reorder_ms;
+            sum.analysis_ms  += last.analysis_ms;
+            sum.factorize_ms += last.factorize_ms;
+            sum.solve_ms     += last.solve_ms;
+        }
+        StageTimes avg;
+        avg.ordering_ms  = sum.ordering_ms  / total_runs;
+        avg.reorder_ms   = sum.reorder_ms   / total_runs;
+        avg.analysis_ms  = sum.analysis_ms  / total_runs;
+        avg.factorize_ms = sum.factorize_ms / total_runs;
+        avg.solve_ms     = sum.solve_ms     / total_runs;
+        avg.residual     = last.residual;
+        return avg;
+    };
+
+    std::vector<int> empty_perm, empty_etree;
+    StageTimes def = avg_stage_times([&]() {
+        return run_solver_path<Scalar>(
+            solver_type, solver_matrix, A, rhs, empty_perm, empty_etree, false);
+    });
 
     homa::Options opts;
     opts.use_gpu             = true;
@@ -263,17 +290,24 @@ int run_benchmark(const std::string&     input_matrix,
     opts.compute_etree       = (solver_type == homa::LinSysSolverType::GPU_CUDSS);
     opts.local_method        = homa::Options::LocalMethod::AMD;
 
-    const auto t0 = Clock::now();
-    homa::OrderingResult ord = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
-    const double homa_ordering_ms =
-        std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
+    double homa_ordering_ms_sum = 0.0;
+    homa::OrderingResult ord;
+    for (int r = 0; r < total_runs; ++r) {
+        const auto t0 = Clock::now();
+        ord = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
+        homa_ordering_ms_sum +=
+            std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
+    }
+    const double homa_ordering_ms = homa_ordering_ms_sum / total_runs;
 
     if (!homa::check_valid_permutation(ord.perm.data(), ord.perm.size())) {
         spdlog::error("HOMA permutation is invalid!");
     }
 
-    StageTimes homa = run_solver_path<Scalar>(
-        solver_type, solver_matrix, A, rhs, ord.perm, ord.etree, true);
+    StageTimes homa = avg_stage_times([&]() {
+        return run_solver_path<Scalar>(
+            solver_type, solver_matrix, A, rhs, ord.perm, ord.etree,true);
+    });
     homa.ordering_ms = homa_ordering_ms;
 
     double def_total_ms  = def.ordering_ms  + def.factorize_ms  + def.solve_ms;
@@ -331,6 +365,7 @@ int main(int argc, char* argv[])
     int         patch_size  = 512;
     std::string output_json;
     bool        make_spd_pattern = false;
+    int         runs       = 1;
 
     CLI::App app{"Homa Matrix Market linear solver example"};
     app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
@@ -342,6 +377,9 @@ int main(int argc, char* argv[])
         "Optional JSON file to write benchmark results to (no output if empty)");
     app.add_flag("--make-spd-from-pattern", make_spd_pattern,
         "Build a guaranteed SPD matrix from the input sparsity pattern");
+    app.add_option("-r,--runs", runs,
+        "Number of timed runs (default: 1). Stage times are averaged")->check(
+            CLI::PositiveNumber);
     CLI11_PARSE(app, argc, argv);
 
     homa::LinSysSolverType solver_type = homa::LinSysSolverType::CPU_CHOLMOD;
@@ -355,11 +393,11 @@ int main(int argc, char* argv[])
     const std::string prec = to_lower(precision);
     if (prec == "double" || prec == "fp64" || prec == "f64") {
         return run_benchmark<double>(
-            input_matrix, solver_type, patch_size, output_json, make_spd_pattern);
+            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs);
     }
     if (prec == "float" || prec == "fp32" || prec == "f32" || prec == "single") {
         return run_benchmark<float>(
-            input_matrix, solver_type, patch_size, output_json, make_spd_pattern);
+            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs);
     }
 
     std::cerr << "Unknown precision '" << precision
