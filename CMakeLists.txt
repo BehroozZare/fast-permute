@@ -201,6 +201,7 @@ set(_homa_sources
     src/ordering/homa.cpp    
     src/ordering/cpu_ordering_with_patch.cpp
     src/ordering/amd_order_helper.cpp
+    src/patching/greedy_patcher.cpp
     src/patching/metis_patcher.cpp
     src/utils/remove_diagonal.cpp
     src/utils/check_valid_permutation.cpp
