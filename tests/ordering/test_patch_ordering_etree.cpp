@@ -50,7 +50,6 @@ TEST(PatchOrderingEtree, CpuWithEtreeSucceeds) {
   opts.use_gpu = false;
   opts.patch_size = 4;
   opts.nd_levels = 2;
-  opts.use_patch_separator = true;
   opts.local_method = homa::Options::LocalMethod::AMD;
   opts.compute_etree = true;
 

@@ -215,7 +215,8 @@ int run_benchmark(const std::string&     input_matrix,
                   int                    patch_size,
                   const std::string&     output_json,
                   bool                   make_spd_pattern,
-                  int                    runs)
+                  int                    runs,
+                  homa::Options::SeparatorMethod separator_method)
 {
     SparseMat<Scalar> raw;
     if (!Eigen::loadMarket(raw, input_matrix)) {
@@ -286,9 +287,9 @@ int run_benchmark(const std::string&     input_matrix,
     homa::Options opts;
     opts.use_gpu             = true;
     opts.patch_size          = patch_size;
-    opts.use_patch_separator = true;
     opts.compute_etree       = (solver_type == homa::LinSysSolverType::GPU_CUDSS);
     opts.local_method        = homa::Options::LocalMethod::AMD;
+    opts.separator_method    = separator_method;
 
     double homa_ordering_ms_sum = 0.0;
     homa::OrderingResult ord;
@@ -366,6 +367,7 @@ int main(int argc, char* argv[])
     std::string output_json;
     bool        make_spd_pattern = false;
     int         runs       = 1;
+    std::string separator_method = "auto";
 
     CLI::App app{"Homa Matrix Market linear solver example"};
     app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
@@ -380,6 +382,9 @@ int main(int argc, char* argv[])
     app.add_option("-r,--runs", runs,
         "Number of timed runs (default: 1). Stage times are averaged")->check(
             CLI::PositiveNumber);
+    app.add_option("--separator-method", separator_method,
+        "Separator strategy: auto (heuristic, default), quotient, or direct (METIS)")
+        ->check(CLI::IsMember({"auto", "quotient", "direct", "metis"}, CLI::ignore_case));
     CLI11_PARSE(app, argc, argv);
 
     homa::LinSysSolverType solver_type = homa::LinSysSolverType::CPU_CHOLMOD;
@@ -390,14 +395,17 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    const homa::Options::SeparatorMethod sep_method =
+        separator_method_from_name(separator_method);
+
     const std::string prec = to_lower(precision);
     if (prec == "double" || prec == "fp64" || prec == "f64") {
         return run_benchmark<double>(
-            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs);
+            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs, sep_method);
     }
     if (prec == "float" || prec == "fp32" || prec == "f32" || prec == "single") {
         return run_benchmark<float>(
-            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs);
+            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs, sep_method);
     }
 
     std::cerr << "Unknown precision '" << precision

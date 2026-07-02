@@ -10,10 +10,12 @@
 #include <string>
 
 #include <homa/solvers/LinSysSolver.h>
+#include <homa/types.h>
 #include <spdlog/spdlog.h>
 
 #ifdef USE_CUDSS
 #include <cuda_runtime.h>
+#include "homa/utils/cuda_error_handler.h"
 #endif
 
 struct StageTimes {
@@ -139,10 +141,10 @@ struct GpuTimer {
 
     double stop_ms()
     {
-        cudaEventRecord(stop_);
-        cudaEventSynchronize(stop_);
+        CUDA_CHECK(cudaEventRecord(stop_));
+        CUDA_CHECK(cudaEventSynchronize(stop_));
         float ms = 0.0f;
-        cudaEventElapsedTime(&ms, start_, stop_);
+        CUDA_CHECK(cudaEventElapsedTime(&ms, start_, stop_));
         return static_cast<double>(ms);
     }
 
@@ -190,6 +192,24 @@ homa::LinSysSolverType solver_type_from_name(const std::string& solver_name)
     }
 
     throw std::invalid_argument("Unknown solver: " + solver_name);
+}
+
+homa::Options::SeparatorMethod separator_method_from_name(const std::string& method_name)
+{
+    const std::string name = to_lower(method_name);
+
+    if (name == "auto" || name == "heuristic") {
+        return homa::Options::SeparatorMethod::AUTO;
+    }
+    if (name == "quotient" || name == "patch") {
+        return homa::Options::SeparatorMethod::QUOTIENT;
+    }
+    if (name == "direct" || name == "metis" || name == "direct_metis") {
+        return homa::Options::SeparatorMethod::DIRECT_METIS;
+    }
+
+    throw std::invalid_argument("Unknown separator method: " + method_name +
+        " (expected 'auto', 'quotient', or 'direct')");
 }
 
 bool is_matrix_market_symmetric(const std::string& filename)

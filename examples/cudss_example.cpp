@@ -16,52 +16,27 @@
 #include <igl/read_triangle_mesh.h>
 #include <spdlog/spdlog.h>
 
-namespace {
-// RAII wrapper around a pair of CUDA events. start()/stop() returns the GPU
-// elapsed time in milliseconds (sub-millisecond resolution).
-class GpuTimer {
-public:
-    GpuTimer()
-    {
-        CUDA_CHECK(cudaEventCreate(&start_));
-        CUDA_CHECK(cudaEventCreate(&stop_));
-    }
-    ~GpuTimer()
-    {
-        CUDA_CHECK(cudaEventDestroy(start_));
-        CUDA_CHECK(cudaEventDestroy(stop_));
-    }
-    GpuTimer(const GpuTimer&)            = delete;
-    GpuTimer& operator=(const GpuTimer&) = delete;
-
-    void  start() { CUDA_CHECK(cudaEventRecord(start_)); }
-    float stop_ms()
-    {
-        CUDA_CHECK(cudaEventRecord(stop_));
-        CUDA_CHECK(cudaEventSynchronize(stop_));
-        float ms = 0.0f;
-        CUDA_CHECK(cudaEventElapsedTime(&ms, start_, stop_));
-        return ms;
-    }
-
-private:
-    cudaEvent_t start_{};
-    cudaEvent_t stop_{};
-};
-} // namespace
+#include "util.h"
 
 int main(int argc, char* argv[])
 {
     std::string input_mesh;
     int         patch_size = 512;
     int         runs       = 1;
+    std::string separator_method = "auto";
 
     CLI::App app{"Homa cuDSS example"};
     app.add_option("-i,--input",      input_mesh, "Input mesh (.obj)")->required();
     app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
     app.add_option("-r,--runs",       runs,       "Number of timed runs (default: 1)")
         ->check(CLI::PositiveNumber);
+    app.add_option("--separator-method", separator_method,
+        "Separator strategy: auto (heuristic, default), quotient, or direct (METIS)")
+        ->transform(CLI::IsMember({"auto", "quotient", "direct", "metis"}, CLI::ignore_case));
     CLI11_PARSE(app, argc, argv);
+
+    const homa::Options::SeparatorMethod sep_method =
+        separator_method_from_name(separator_method);
 
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
@@ -145,9 +120,9 @@ int main(int argc, char* argv[])
         homa::Options opts;
         opts.use_gpu             = true;
         opts.patch_size          = patch_size;
-        opts.use_patch_separator = true;
         opts.compute_etree       = true; // cuDSS requires etree alongside permutation
         opts.local_method        = homa::Options::LocalMethod::AMD;
+        opts.separator_method    = sep_method;
 
         homa::OrderingResult ord;
         for (int r = 0; r < total_runs; ++r) {

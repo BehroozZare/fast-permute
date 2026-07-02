@@ -76,7 +76,6 @@ int main(int argc, char* argv[])
     {
         homa::Options opts;
         opts.patch_size          = patch_size;
-        opts.use_patch_separator = true;
         opts.local_method        = homa::Options::LocalMethod::AMD;
 
         auto t0 = Clock::now();
