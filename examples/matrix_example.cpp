@@ -51,8 +51,9 @@ SparseMat<Scalar> expand_symmetric_storage(const SparseMat<Scalar>& raw)
     }
 
     SparseMat<Scalar> expanded =
-        (lower >= upper) ? SparseMat<Scalar>(raw.template selfadjointView<Eigen::Lower>())
-                         : SparseMat<Scalar>(raw.template selfadjointView<Eigen::Upper>());
+        (lower >= upper) ?
+            SparseMat<Scalar>(raw.template selfadjointView<Eigen::Lower>()) :
+            SparseMat<Scalar>(raw.template selfadjointView<Eigen::Upper>());
     expanded.makeCompressed();
     return expanded;
 }
@@ -60,7 +61,7 @@ SparseMat<Scalar> expand_symmetric_storage(const SparseMat<Scalar>& raw)
 template <class Scalar>
 SparseMat<Scalar> make_spd_from_pattern(const SparseMat<Scalar>& raw)
 {
-    const int n = static_cast<int>(raw.rows());
+    const int                        n = static_cast<int>(raw.rows());
     std::vector<std::pair<int, int>> edges;
 
     for (int c = 0; c < raw.outerSize(); ++c) {
@@ -98,7 +99,8 @@ SparseMat<Scalar> make_spd_from_pattern(const SparseMat<Scalar>& raw)
 }
 
 template <class Scalar>
-SparseMat<Scalar> solver_matrix_for(homa::LinSysSolverType solver_type, const SparseMat<Scalar>& A)
+SparseMat<Scalar> solver_matrix_for(homa::LinSysSolverType   solver_type,
+                                    const SparseMat<Scalar>& A)
 {
     if (solver_type == homa::LinSysSolverType::CPU_MKL) {
         SparseMat<Scalar> lower = A.template triangularView<Eigen::Lower>();
@@ -123,7 +125,7 @@ double time_step(homa::LinSysSolverType solver_type, Fn&& fn)
     }
 #endif
 
-    using Clock = std::chrono::high_resolution_clock;
+    using Clock   = std::chrono::high_resolution_clock;
     const auto t0 = Clock::now();
     fn();
     return std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
@@ -182,9 +184,8 @@ StageTimes run_solver_path(homa::LinSysSolverType   solver_type,
             solver->ordering(use_homa_ordering ? perm : empty,
                              use_homa_ordering ? etree : empty);
         });
-        times.analysis_ms = time_step(solver_type, [&]() {
-            solver->analyze_pattern();
-        });
+        times.analysis_ms =
+            time_step(solver_type, [&]() { solver->analyze_pattern(); });
     } else {
         times.analysis_ms = time_step(solver_type, [&]() {
             solver->analyze_pattern(use_homa_ordering ? perm : empty,
@@ -204,47 +205,54 @@ StageTimes run_solver_path(homa::LinSysSolverType   solver_type,
 template <class Scalar>
 const char* precision_label()
 {
-    if constexpr (std::is_same_v<Scalar, float>)  return "float";
-    if constexpr (std::is_same_v<Scalar, double>) return "double";
+    if constexpr (std::is_same_v<Scalar, float>)
+        return "float";
+    if constexpr (std::is_same_v<Scalar, double>)
+        return "double";
     return "unknown";
 }
 
 template <class Scalar>
-int run_benchmark(const std::string&     input_matrix,
-                  homa::LinSysSolverType solver_type,
-                  int                    patch_size,
-                  const std::string&     output_json,
-                  bool                   make_spd_pattern,
-                  int                    runs,
+int run_benchmark(const std::string&             input_matrix,
+                  homa::LinSysSolverType         solver_type,
+                  int                            patch_size,
+                  const std::string&             output_json,
+                  bool                           make_spd_pattern,
+                  int                            runs,
                   homa::Options::SeparatorMethod separator_method)
 {
     SparseMat<Scalar> raw;
     if (!Eigen::loadMarket(raw, input_matrix)) {
-        std::cerr << "Failed to read Matrix Market file: " << input_matrix << "\n";
+        std::cerr << "Failed to read Matrix Market file: " << input_matrix
+                  << "\n";
         return 1;
     }
 
     if (raw.rows() != raw.cols()) {
-        std::cerr << "Matrix must be square: " << raw.rows() << "x" << raw.cols() << "\n";
+        std::cerr << "Matrix must be square: " << raw.rows() << "x"
+                  << raw.cols() << "\n";
         return 1;
     }
 
-    SparseMat<Scalar> A = make_spd_pattern
-                              ? make_spd_from_pattern<Scalar>(raw)
-                              : (is_matrix_market_symmetric(input_matrix)
-                                     ? expand_symmetric_storage<Scalar>(raw)
-                                     : raw);
+    SparseMat<Scalar> A = make_spd_pattern ?
+                              make_spd_from_pattern<Scalar>(raw) :
+                              (is_matrix_market_symmetric(input_matrix) ?
+                                   expand_symmetric_storage<Scalar>(raw) :
+                                   raw);
     A.makeCompressed();
 
     SparseMat<Scalar> solver_matrix = solver_matrix_for<Scalar>(solver_type, A);
 
     spdlog::info("Matrix: {}x{}, {} non-zeros, precision={}",
-                 A.rows(), A.cols(), A.nonZeros(), precision_label<Scalar>());
+                 A.rows(),
+                 A.cols(),
+                 A.nonZeros(),
+                 precision_label<Scalar>());
     if (solver_matrix.nonZeros() != A.nonZeros()) {
         spdlog::info("Solver matrix: {} non-zeros", solver_matrix.nonZeros());
     }
 
-    const int n = static_cast<int>(A.rows());
+    const int        n = static_cast<int>(A.rows());
     std::vector<int> Gp, Gi;
     homa::remove_diagonal(n, A.outerIndexPtr(), A.innerIndexPtr(), Gp, Gi);
 
@@ -254,50 +262,51 @@ int run_benchmark(const std::string&     input_matrix,
 
     using Clock = std::chrono::high_resolution_clock;
 
-    // Helper to accumulate timings across multiple runs. 
-    // keep the last residual for the JSON record but average all stage times 
-    const int total_runs = std::max(1, runs);
-    auto avg_stage_times = [&](auto produce) {
+    // Helper to accumulate timings across multiple runs.
+    // keep the last residual for the JSON record but average all stage times
+    const int total_runs      = std::max(1, runs);
+    auto      avg_stage_times = [&](auto produce) {
         StageTimes sum;
         StageTimes last;
         for (int r = 0; r < total_runs; ++r) {
             last = produce();
-            sum.ordering_ms  += last.ordering_ms;
-            sum.reorder_ms   += last.reorder_ms;
-            sum.analysis_ms  += last.analysis_ms;
+            sum.ordering_ms += last.ordering_ms;
+            sum.reorder_ms += last.reorder_ms;
+            sum.analysis_ms += last.analysis_ms;
             sum.factorize_ms += last.factorize_ms;
-            sum.solve_ms     += last.solve_ms;
+            sum.solve_ms += last.solve_ms;
         }
         StageTimes avg;
-        avg.ordering_ms  = sum.ordering_ms  / total_runs;
-        avg.reorder_ms   = sum.reorder_ms   / total_runs;
-        avg.analysis_ms  = sum.analysis_ms  / total_runs;
+        avg.ordering_ms  = sum.ordering_ms / total_runs;
+        avg.reorder_ms   = sum.reorder_ms / total_runs;
+        avg.analysis_ms  = sum.analysis_ms / total_runs;
         avg.factorize_ms = sum.factorize_ms / total_runs;
-        avg.solve_ms     = sum.solve_ms     / total_runs;
+        avg.solve_ms     = sum.solve_ms / total_runs;
         avg.residual     = last.residual;
         return avg;
     };
 
     std::vector<int> empty_perm, empty_etree;
-    StageTimes def = avg_stage_times([&]() {
+    StageTimes       def = avg_stage_times([&]() {
         return run_solver_path<Scalar>(
             solver_type, solver_matrix, A, rhs, empty_perm, empty_etree, false);
     });
 
     homa::Options opts;
-    opts.use_gpu             = true;
-    opts.patch_size          = patch_size;
-    opts.compute_etree       = (solver_type == homa::LinSysSolverType::GPU_CUDSS);
-    opts.local_method        = homa::Options::LocalMethod::AMD;
-    opts.separator_method    = separator_method;
+    opts.use_gpu          = true;
+    opts.patch_size       = patch_size;
+    opts.compute_etree    = (solver_type == homa::LinSysSolverType::GPU_CUDSS);
+    opts.local_method     = homa::Options::LocalMethod::AMD;
+    opts.separator_method = separator_method;
 
-    double homa_ordering_ms_sum = 0.0;
+    double               homa_ordering_ms_sum = 0.0;
     homa::OrderingResult ord;
     for (int r = 0; r < total_runs; ++r) {
         const auto t0 = Clock::now();
-        ord = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
+        ord           = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
         homa_ordering_ms_sum +=
-            std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
+            std::chrono::duration<double, std::milli>(Clock::now() - t0)
+                .count();
     }
     const double homa_ordering_ms = homa_ordering_ms_sum / total_runs;
 
@@ -305,38 +314,49 @@ int run_benchmark(const std::string&     input_matrix,
         spdlog::error("HOMA permutation is invalid!");
     }
 
-    StageTimes homa = avg_stage_times([&]() {
+    StageTimes homa  = avg_stage_times([&]() {
         return run_solver_path<Scalar>(
-            solver_type, solver_matrix, A, rhs, ord.perm, ord.etree,true);
+            solver_type, solver_matrix, A, rhs, ord.perm, ord.etree, true);
     });
     homa.ordering_ms = homa_ordering_ms;
 
-    double def_total_ms  = def.ordering_ms  + def.factorize_ms  + def.solve_ms;
+    double def_total_ms  = def.ordering_ms + def.factorize_ms + def.solve_ms;
     double homa_total_ms = homa.ordering_ms + homa.factorize_ms + homa.solve_ms;
     if (solver_type == homa::LinSysSolverType::GPU_CUDSS) {
-        def_total_ms  += def.reorder_ms  + def.analysis_ms;
+        def_total_ms += def.reorder_ms + def.analysis_ms;
         homa_total_ms += homa.reorder_ms + homa.analysis_ms;
     } else {
-        def_total_ms  += def.analysis_ms;
+        def_total_ms += def.analysis_ms;
         homa_total_ms += homa.analysis_ms;
     }
 
     std::cout << "\n=== " << solver_display_name(solver_type)
               << " Matrix Results (" << precision_label<Scalar>() << ") ===\n";
-    std::cout << std::left << std::fixed << std::setprecision(3) << std::setw(18) << "" << std::setw(16) << "Solver-default" << "HOMA\n"
-              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---" << homa_ordering_ms << "\n";
+    std::cout << std::left << std::fixed << std::setprecision(3)
+              << std::setw(18) << "" << std::setw(16) << "Solver-default"
+              << "HOMA\n"
+              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"
+              << homa_ordering_ms << "\n";
 
     if (solver_type == homa::LinSysSolverType::GPU_CUDSS) {
-        std::cout << std::setw(18) << "Reorder  (ms) :" << std::setw(16) << def.reorder_ms << homa.reorder_ms << "\n"
-                  << std::setw(18) << "Symbolic (ms) :" << std::setw(16) << def.analysis_ms << homa.analysis_ms << "\n";
+        std::cout << std::setw(18) << "Reorder  (ms) :" << std::setw(16)
+                  << def.reorder_ms << homa.reorder_ms << "\n"
+                  << std::setw(18) << "Symbolic (ms) :" << std::setw(16)
+                  << def.analysis_ms << homa.analysis_ms << "\n";
     } else {
-        std::cout << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def.analysis_ms << homa.analysis_ms << "\n";
+        std::cout << std::setw(18) << "Analysis (ms) :" << std::setw(16)
+                  << def.analysis_ms << homa.analysis_ms << "\n";
     }
 
-    std::cout << std::setw(18) << "Factorize (ms):" << std::setw(16) << def.factorize_ms << homa.factorize_ms << "\n"
-              << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def.solve_ms << homa.solve_ms << "\n"
-              << std::setw(18) << "Total (ms)    :" << std::setw(16) << def_total_ms << homa_total_ms << " (speedup =" << def_total_ms / homa_total_ms << ")\n"
-              << std::setw(18) << "Residual      :" << std::setw(16) << def.residual << homa.residual << "\n";
+    std::cout << std::setw(18) << "Factorize (ms):" << std::setw(16)
+              << def.factorize_ms << homa.factorize_ms << "\n"
+              << std::setw(18) << "Solve (ms)    :" << std::setw(16)
+              << def.solve_ms << homa.solve_ms << "\n"
+              << std::setw(18) << "Total (ms)    :" << std::setw(16)
+              << def_total_ms << homa_total_ms
+              << " (speedup =" << def_total_ms / homa_total_ms << ")\n"
+              << std::setw(18) << "Residual      :" << std::setw(16)
+              << def.residual << homa.residual << "\n";
 
     if (!output_json.empty()) {
         BenchmarkRecord rec;
@@ -346,6 +366,7 @@ int run_benchmark(const std::string&     input_matrix,
         rec.n                = static_cast<int>(A.rows());
         rec.nnz              = static_cast<long long>(A.nonZeros());
         rec.patch_size       = patch_size;
+        rec.separator_method = separator_method;
         rec.default_times    = def;
         rec.homa_times       = homa;
         rec.default_total_ms = def_total_ms;
@@ -356,7 +377,7 @@ int run_benchmark(const std::string&     input_matrix,
     return 0;
 }
 
-} // namespace
+}  // namespace
 
 int main(int argc, char* argv[])
 {
@@ -366,25 +387,37 @@ int main(int argc, char* argv[])
     int         patch_size  = 512;
     std::string output_json;
     bool        make_spd_pattern = false;
-    int         runs       = 1;
+    int         runs             = 1;
     std::string separator_method = "auto";
 
     CLI::App app{"Homa Matrix Market linear solver example"};
-    app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")->required();
-    app.add_option("-s,--solver", solver_name, "Solver backend: cholmod, mkl, cudss");
+    app.add_option("-i,--input", input_matrix, "Input matrix (.mtx)")
+        ->required();
+    app.add_option(
+        "-s,--solver", solver_name, "Solver backend: cholmod, mkl, cudss");
     app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
-    app.add_option("--precision", precision,
-        "Floating-point precision: double (default) or float");
-    app.add_option("-o,--out", output_json,
-        "Optional JSON file to write benchmark results to (no output if empty)");
-    app.add_flag("--make-spd-from-pattern", make_spd_pattern,
+    app.add_option("--precision",
+                   precision,
+                   "Floating-point precision: double (default) or float");
+    app.add_option("-o,--out",
+                   output_json,
+                   "Optional JSON file to write benchmark results to (no "
+                   "output if empty)");
+    app.add_flag(
+        "--make-spd-from-pattern",
+        make_spd_pattern,
         "Build a guaranteed SPD matrix from the input sparsity pattern");
-    app.add_option("-r,--runs", runs,
-        "Number of timed runs (default: 1). Stage times are averaged")->check(
-            CLI::PositiveNumber);
-    app.add_option("--separator-method", separator_method,
-        "Separator strategy: auto (heuristic, default), quotient, or direct (METIS)")
-        ->check(CLI::IsMember({"auto", "quotient", "direct", "metis"}, CLI::ignore_case));
+    app.add_option(
+           "-r,--runs",
+           runs,
+           "Number of timed runs (default: 1). Stage times are averaged")
+        ->check(CLI::PositiveNumber);
+    app.add_option("--separator-method",
+                   separator_method,
+                   "Separator strategy: auto (heuristic, default), quotient, "
+                   "or direct (METIS)")
+        ->check(CLI::IsMember({"auto", "quotient", "direct", "metis"},
+                              CLI::ignore_case));
     CLI11_PARSE(app, argc, argv);
 
     homa::LinSysSolverType solver_type = homa::LinSysSolverType::CPU_CHOLMOD;
@@ -400,12 +433,23 @@ int main(int argc, char* argv[])
 
     const std::string prec = to_lower(precision);
     if (prec == "double" || prec == "fp64" || prec == "f64") {
-        return run_benchmark<double>(
-            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs, sep_method);
+        return run_benchmark<double>(input_matrix,
+                                     solver_type,
+                                     patch_size,
+                                     output_json,
+                                     make_spd_pattern,
+                                     runs,
+                                     sep_method);
     }
-    if (prec == "float" || prec == "fp32" || prec == "f32" || prec == "single") {
-        return run_benchmark<float>(
-            input_matrix, solver_type, patch_size, output_json, make_spd_pattern, runs, sep_method);
+    if (prec == "float" || prec == "fp32" || prec == "f32" ||
+        prec == "single") {
+        return run_benchmark<float>(input_matrix,
+                                    solver_type,
+                                    patch_size,
+                                    output_json,
+                                    make_spd_pattern,
+                                    runs,
+                                    sep_method);
     }
 
     std::cerr << "Unknown precision '" << precision

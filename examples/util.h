@@ -18,7 +18,8 @@
 #include "homa/utils/cuda_error_handler.h"
 #endif
 
-struct StageTimes {
+struct StageTimes
+{
     double ordering_ms  = 0.0;
     double reorder_ms   = 0.0;
     double analysis_ms  = 0.0;
@@ -27,17 +28,20 @@ struct StageTimes {
     double residual     = 0.0;
 };
 
-struct BenchmarkRecord {
-    std::string matrix_path;
-    std::string solver_name;
-    std::string precision;   // "float" or "double"
-    int         n          = 0;
-    long long   nnz        = 0;
-    int         patch_size = 0;
-    StageTimes  default_times;
-    StageTimes  homa_times;
-    double      default_total_ms = 0.0;
-    double      homa_total_ms    = 0.0;
+struct BenchmarkRecord
+{
+    std::string                    matrix_path;
+    std::string                    solver_name;
+    std::string                    precision;  // "float" or "double"
+    int                            n          = 0;
+    long long                      nnz        = 0;
+    int                            patch_size = 0;
+    homa::Options::SeparatorMethod separator_method =
+        homa::Options::SeparatorMethod::AUTO;
+    StageTimes default_times;
+    StageTimes homa_times;
+    double     default_total_ms = 0.0;
+    double     homa_total_ms    = 0.0;
 };
 
 inline std::string json_escape(const std::string& value)
@@ -46,24 +50,51 @@ inline std::string json_escape(const std::string& value)
     out.reserve(value.size() + 2);
     for (unsigned char c : value) {
         switch (c) {
-        case '"':  out += "\\\""; break;
-        case '\\': out += "\\\\"; break;
-        case '\b': out += "\\b";  break;
-        case '\f': out += "\\f";  break;
-        case '\n': out += "\\n";  break;
-        case '\r': out += "\\r";  break;
-        case '\t': out += "\\t";  break;
-        default:
-            if (c < 0x20) {
-                char buf[8];
-                std::snprintf(buf, sizeof(buf), "\\u%04x", c);
-                out += buf;
-            } else {
-                out.push_back(static_cast<char>(c));
-            }
+            case '"':
+                out += "\\\"";
+                break;
+            case '\\':
+                out += "\\\\";
+                break;
+            case '\b':
+                out += "\\b";
+                break;
+            case '\f':
+                out += "\\f";
+                break;
+            case '\n':
+                out += "\\n";
+                break;
+            case '\r':
+                out += "\\r";
+                break;
+            case '\t':
+                out += "\\t";
+                break;
+            default:
+                if (c < 0x20) {
+                    char buf[8];
+                    std::snprintf(buf, sizeof(buf), "\\u%04x", c);
+                    out += buf;
+                } else {
+                    out.push_back(static_cast<char>(c));
+                }
         }
     }
     return out;
+}
+
+inline const char* separator_method_name(homa::Options::SeparatorMethod method)
+{
+    switch (method) {
+        case homa::Options::SeparatorMethod::QUOTIENT:
+            return "quotient";
+        case homa::Options::SeparatorMethod::DIRECT_METIS:
+            return "direct";
+        case homa::Options::SeparatorMethod::AUTO:
+        default:
+            return "auto";
+    }
 }
 
 namespace detail {
@@ -72,16 +103,16 @@ inline void write_stage_times(std::ostream&     out,
                               const StageTimes& s,
                               double            total_ms)
 {
-    out << "    \"ordering_ms\":  " << s.ordering_ms  << ",\n"
-        << "    \"reorder_ms\":   " << s.reorder_ms   << ",\n"
-        << "    \"analysis_ms\":  " << s.analysis_ms  << ",\n"
+    out << "    \"ordering_ms\":  " << s.ordering_ms << ",\n"
+        << "    \"reorder_ms\":   " << s.reorder_ms << ",\n"
+        << "    \"analysis_ms\":  " << s.analysis_ms << ",\n"
         << "    \"factorize_ms\": " << s.factorize_ms << ",\n"
-        << "    \"solve_ms\":     " << s.solve_ms     << ",\n"
-        << "    \"total_ms\":     " << total_ms       << ",\n"
-        << "    \"residual\":     " << s.residual     << "\n";
+        << "    \"solve_ms\":     " << s.solve_ms << ",\n"
+        << "    \"total_ms\":     " << total_ms << ",\n"
+        << "    \"residual\":     " << s.residual << "\n";
 }
 
-} // namespace detail
+}  // namespace detail
 
 inline bool write_results_json(const std::string&     path,
                                const BenchmarkRecord& rec)
@@ -100,13 +131,15 @@ inline bool write_results_json(const std::string&     path,
     out << "{\n"
         << "  \"matrix\": {\n"
         << "    \"path\": \"" << json_escape(rec.matrix_path) << "\",\n"
-        << "    \"name\": \"" << json_escape(stem)            << "\",\n"
-        << "    \"n\": "      << rec.n                        << ",\n"
-        << "    \"nnz\": "    << rec.nnz                      << "\n"
+        << "    \"name\": \"" << json_escape(stem) << "\",\n"
+        << "    \"n\": " << rec.n << ",\n"
+        << "    \"nnz\": " << rec.nnz << "\n"
         << "  },\n"
-        << "  \"solver\": \""    << json_escape(rec.solver_name) << "\",\n"
-        << "  \"precision\": \"" << json_escape(rec.precision)   << "\",\n"
-        << "  \"patch_size\": "  << rec.patch_size                << ",\n"
+        << "  \"solver\": \"" << json_escape(rec.solver_name) << "\",\n"
+        << "  \"precision\": \"" << json_escape(rec.precision) << "\",\n"
+        << "  \"patch_size\": " << rec.patch_size << ",\n"
+        << "  \"separator_method\": \""
+        << separator_method_name(rec.separator_method) << "\",\n"
         << "  \"default\": {\n";
     detail::write_stage_times(out, rec.default_times, rec.default_total_ms);
     out << "  },\n"
@@ -116,7 +149,8 @@ inline bool write_results_json(const std::string&     path,
         << "}\n";
 
     if (!out.good()) {
-        spdlog::warn("benchmark_json: write to {} did not complete cleanly", path);
+        spdlog::warn("benchmark_json: write to {} did not complete cleanly",
+                     path);
         return false;
     }
     return true;
@@ -124,20 +158,24 @@ inline bool write_results_json(const std::string&     path,
 
 
 #ifdef USE_CUDSS
-struct GpuTimer {
+struct GpuTimer
+{
     GpuTimer()
     {
-        cudaEventCreate(&start_);
-        cudaEventCreate(&stop_);
+        CUDA_CHECK(cudaEventCreate(&start_));
+        CUDA_CHECK(cudaEventCreate(&stop_));
     }
 
     ~GpuTimer()
     {
-        cudaEventDestroy(start_);
-        cudaEventDestroy(stop_);
+        CUDA_CHECK(cudaEventDestroy(start_));
+        CUDA_CHECK(cudaEventDestroy(stop_));
     }
 
-    void start() { cudaEventRecord(start_); }
+    void start()
+    {
+        CUDA_CHECK(cudaEventRecord(start_));
+    }
 
     double stop_ms()
     {
@@ -148,7 +186,7 @@ struct GpuTimer {
         return static_cast<double>(ms);
     }
 
-private:
+   private:
     cudaEvent_t start_{};
     cudaEvent_t stop_{};
 };
@@ -156,8 +194,9 @@ private:
 
 std::string to_lower(std::string value)
 {
-    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
+    std::transform(
+        value.begin(), value.end(), value.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
         });
     return value;
 }
@@ -166,14 +205,14 @@ std::string to_lower(std::string value)
 std::string solver_display_name(homa::LinSysSolverType solver_type)
 {
     switch (solver_type) {
-    case homa::LinSysSolverType::CPU_CHOLMOD:
-        return "CHOLMOD";
-    case homa::LinSysSolverType::CPU_MKL:
-        return "MKL PARDISO";
-    case homa::LinSysSolverType::GPU_CUDSS:
-        return "cuDSS";
-    default:
-        return "Unknown";
+        case homa::LinSysSolverType::CPU_CHOLMOD:
+            return "CHOLMOD";
+        case homa::LinSysSolverType::CPU_MKL:
+            return "MKL PARDISO";
+        case homa::LinSysSolverType::GPU_CUDSS:
+            return "cuDSS";
+        default:
+            return "Unknown";
     }
 }
 
@@ -194,7 +233,8 @@ homa::LinSysSolverType solver_type_from_name(const std::string& solver_name)
     throw std::invalid_argument("Unknown solver: " + solver_name);
 }
 
-homa::Options::SeparatorMethod separator_method_from_name(const std::string& method_name)
+homa::Options::SeparatorMethod separator_method_from_name(
+    const std::string& method_name)
 {
     const std::string name = to_lower(method_name);
 
@@ -209,7 +249,7 @@ homa::Options::SeparatorMethod separator_method_from_name(const std::string& met
     }
 
     throw std::invalid_argument("Unknown separator method: " + method_name +
-        " (expected 'auto', 'quotient', or 'direct')");
+                                " (expected 'auto', 'quotient', or 'direct')");
 }
 
 bool is_matrix_market_symmetric(const std::string& filename)
@@ -219,5 +259,5 @@ bool is_matrix_market_symmetric(const std::string& filename)
     std::getline(in, header);
     header = to_lower(header);
     return header.find(" symmetric") != std::string::npos ||
-        header.find(" hermitian") != std::string::npos;
+           header.find(" hermitian") != std::string::npos;
 }

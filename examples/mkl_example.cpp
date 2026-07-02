@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     int         patch_size = 512;
 
     CLI::App app{"Homa MKL PARDISO example"};
-    app.add_option("-i,--input",      input_mesh, "Input mesh (.obj)")->required();
+    app.add_option("-i,--input", input_mesh, "Input mesh (.obj)")->required();
     app.add_option("-p,--patch_size", patch_size, "Patch size (default: 512)");
     CLI11_PARSE(app, argc, argv);
 
@@ -34,9 +34,10 @@ int main(int argc, char* argv[])
     Eigen::SparseMatrix<double> L;
     homa::computeSPD_cot_matrix(V, F, L);
     L.makeCompressed();
-    spdlog::info("Matrix: {}x{}, {} non-zeros", L.rows(), L.cols(), L.nonZeros());
+    spdlog::info(
+        "Matrix: {}x{}, {} non-zeros", L.rows(), L.cols(), L.nonZeros());
 
-    int n = static_cast<int>(L.rows());
+    int              n = static_cast<int>(L.rows());
     std::vector<int> Gp, Gi;
     homa::remove_diagonal(n, L.outerIndexPtr(), L.innerIndexPtr(), Gp, Gi);
 
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
     L_lower.makeCompressed();
     Eigen::VectorXd rhs = Eigen::VectorXd::Random(n);
 
-    using Clock = std::chrono::high_resolution_clock;
+    using Clock     = std::chrono::high_resolution_clock;
     auto elapsed_ms = [](Clock::time_point a, Clock::time_point b) {
         return std::chrono::duration<double, std::milli>(b - a).count();
     };
@@ -73,15 +74,17 @@ int main(int argc, char* argv[])
     }
 
     // --- HOMA path ---
-    double homa_ordering_ms = 0.0, homa_analysis_ms = 0.0, homa_factorize_ms = 0.0, homa_solve_ms = 0.0;
+    double homa_ordering_ms = 0.0, homa_analysis_ms = 0.0,
+           homa_factorize_ms = 0.0, homa_solve_ms = 0.0;
     double homa_residual = 0.0;
     {
         homa::Options opts;
-        opts.patch_size          = patch_size;
-        opts.local_method        = homa::Options::LocalMethod::AMD;
+        opts.patch_size   = patch_size;
+        opts.local_method = homa::Options::LocalMethod::AMD;
 
-        auto t0 = Clock::now();
-        homa::OrderingResult ord = homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
+        auto                 t0 = Clock::now();
+        homa::OrderingResult ord =
+            homa::compute_ordering(n, Gp.data(), Gi.data(), opts);
         homa_ordering_ms = elapsed_ms(t0, Clock::now());
 
         if (!homa::check_valid_permutation(ord.perm.data(), ord.perm.size()))
@@ -108,15 +111,24 @@ int main(int argc, char* argv[])
 
     std::cout << "\n=== MKL PARDISO Results ===\n";
     double def_total_ms = def_analysis_ms + def_factorize_ms + def_solve_ms;
-    double homa_total_ms = homa_ordering_ms + homa_analysis_ms + homa_factorize_ms + homa_solve_ms;
+    double homa_total_ms =
+        homa_ordering_ms + homa_analysis_ms + homa_factorize_ms + homa_solve_ms;
     std::cout << std::left << std::fixed << std::setprecision(3)
-              << std::setw(18) << ""                << std::setw(16) << "Solver-default" << "HOMA\n"
-              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"            << homa_ordering_ms  << "\n"
-              << std::setw(18) << "Analysis (ms) :" << std::setw(16) << def_analysis_ms  << homa_analysis_ms  << "\n"
-              << std::setw(18) << "Factorize (ms):" << std::setw(16) << def_factorize_ms << homa_factorize_ms << "\n"
-              << std::setw(18) << "Solve (ms)    :" << std::setw(16) << def_solve_ms     << homa_solve_ms     << "\n"
-              << std::setw(18) << "Total (ms)    :" << std::setw(16) << def_total_ms     << homa_total_ms << " (speedup =" << def_total_ms / homa_total_ms << ")\n"
-              << std::setw(18) << "Residual      :" << std::setw(16) << def_residual     << homa_residual     << "\n";
+              << std::setw(18) << "" << std::setw(16) << "Solver-default"
+              << "HOMA\n"
+              << std::setw(18) << "Ordering (ms) :" << std::setw(16) << "---"
+              << homa_ordering_ms << "\n"
+              << std::setw(18) << "Analysis (ms) :" << std::setw(16)
+              << def_analysis_ms << homa_analysis_ms << "\n"
+              << std::setw(18) << "Factorize (ms):" << std::setw(16)
+              << def_factorize_ms << homa_factorize_ms << "\n"
+              << std::setw(18) << "Solve (ms)    :" << std::setw(16)
+              << def_solve_ms << homa_solve_ms << "\n"
+              << std::setw(18) << "Total (ms)    :" << std::setw(16)
+              << def_total_ms << homa_total_ms
+              << " (speedup =" << def_total_ms / homa_total_ms << ")\n"
+              << std::setw(18) << "Residual      :" << std::setw(16)
+              << def_residual << homa_residual << "\n";
 
     return 0;
 }
