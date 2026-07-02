@@ -125,21 +125,44 @@ public:
 
     QuotientGraph _quotient_graph;
     bool use_patch_separator = true;
+    int direct_separator_max_level = -1;
+    int direct_separator_min_nodes = 4096;
+    bool always_refine_separators = false;
+    int separator_refinement_max_level = 8;
+    bool use_min_vertex_cover_refinement = true;
     std::string local_permute_method = "amd";
+    int local_amd_min_nodes = 1024;
+    int serial_ordering_max_nodes = 50000;
     // std::string separator_refinement_method = "nothing";
     DecompositionTree _decomposition_tree;
-    int _decomposition_max_level;
 
     int _num_patches = -1;
     std::vector<int> _g_node_to_patch;
+    std::vector<int> _decompose_marker;
+    std::vector<int> _decompose_local_index;
     int _G_n, _G_nnz;
     int* _Gp, *_Gi;
 
-    double node_to_patch_time = 0;
+    double quotient_graph_time = 0;
     double decompose_time = 0;
     double local_permute_time = 0;
     double assemble_time = 0;
-    double quotient_graph_creation_time = 0;
+    double ordering_total_time_ms = 0;
+
+    double quotient_patch_compaction_time_ms = 0;
+    double quotient_patch_nodes_time_ms = 0;
+    double quotient_adjacency_time_ms = 0;
+    double quotient_csr_time_ms = 0;
+
+    double decompose_partition_time_ms = 0;
+    double decompose_separator_time_ms = 0;
+    double decompose_bookkeeping_time_ms = 0;
+    long long decompose_processed_nodes = 0;
+    long long decompose_separator_vertices = 0;
+
+    double local_subgraph_time_ms = 0;
+    double local_order_time_ms = 0;
+    long long local_order_blocks = 0;
 
     double _separator_ratio = 0.0;
 
@@ -165,15 +188,20 @@ public:
 
     void find_separator_superset(
         std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
-        std::vector<int>& map,///<[in] a mapping from nodes to their partition -> unassigned nodes get -1 as parition id
+        std::vector<int>& where,///<[in] local node partition assignment
+        int marker_token,///<[in] token marking nodes in this decomposition node
         std::vector<int>& separator_superset///<[out] The superset of separator nodes
     );
 
-    //Given a set of separator superset, from G, extracts the bipartite graph and refines the separator nodes
-    //Based on the Hopcroft-Karp algorithm
-    void refine_bipartate_separator(
+    //Given the separator superset and the current bipartition, refine it down to a
+    //minimum vertex separator via Hopcroft-Karp maximum matching + Konig minimum
+    //vertex cover of the left/right boundary bipartite graph.
+    void refine_separator_min_vertex_cover(
         int tree_node_idx,///<[in] The tree decomposition node
-        std::vector<int>& separator_superset///<[in] The separator superset
+        std::vector<int>& assigned_g_nodes,///<[in] All nodes in current decomposition level
+        std::vector<int>& separator_g_nodes,///<[in/out] The separator nodes to refine
+        std::vector<int>& where,///<[out] The where array
+        int marker_token///<[in] token marking nodes in this decomposition node
         );
 
     //Refine separator using METIS FM-based node refinement
@@ -182,16 +210,22 @@ public:
         int tree_node_idx,///<[in] The tree decomposition node
         std::vector<int>& assigned_g_nodes,///<[in] All nodes in current decomposition level
         std::vector<int>& separator_g_nodes,///<[in/out] The separator nodes to refine
-        std::vector<int>& where///<[out] The where array
+        std::vector<int>& where,///<[out] The where array
+        int marker_token///<[in] token marking nodes in this decomposition node
         );
 
     //Given a subset of nodes (filtered nodes are marked with -1), partition the graph into three parts: left, right, and separator
-    void three_way_G_partition(int tree_node_idx,///<[in] The index of the current decomposition node
+    void compute_vertex_separator(int tree_node_idx,///<[in] The index of the current decomposition node
         std::vector<int>& assigned_g_nodes,///<[in] Assigned G nodes for current decomposition
         std::vector<int>& where///<[out] the partition assignment where = 2 is separator, 0, and 1 is left and right
     );
 
     void decompose();
+    void decompose_node(
+        int tree_node_id,
+        int level,
+        std::vector<DecompositionInfo>& decomposition_info_stack);
+    bool use_serial_ordering_path() const;
 
     void compute_local_quotient_graph(
         std::vector<int>& assigned_g_node,///<[in] The index of the current decomposition node
@@ -222,14 +256,11 @@ public:
     //Leaves to the root
     void level_order_offset_computation();
 
-    void compute_sub_graph(
-        std::vector<int>&         nodes,
-        Eigen::SparseMatrix<int>& local_graph) const;
-
     //Build a CSR subgraph from a set of global node IDs
     void build_subgraph_csr(
         const std::vector<int>& assigned_g_nodes,  ///< [in] Global node IDs to include
-        SubGraph& subgraph                          ///< [out] Populated subgraph in CSR format
+        SubGraph& subgraph,                         ///< [out] Populated subgraph in CSR format
+        int marker_token = 0                        ///< [in] optional prebuilt marker token
     ) const;
 
     void compute_sub_graphs(std::vector<SubGraph>& sub_graphs);
@@ -237,7 +268,12 @@ public:
     double compute_separator_ratio();
 
     void applyOptions(const Options& opts) {
-        use_patch_separator = opts.use_patch_separator;
+        // use_patch_separator is resolved from opts.separator_method in
+        // run_ordering (via resolve_separator_policy), not here.
+        direct_separator_max_level = opts.direct_separator_max_level;
+        if (opts.direct_separator_min_nodes >= 0) {
+            direct_separator_min_nodes = opts.direct_separator_min_nodes;
+        }
         switch (opts.local_method) {
             case Options::LocalMethod::AMD:   local_permute_method = "amd";   break;
             case Options::LocalMethod::METIS: local_permute_method = "metis"; break;
@@ -252,6 +288,7 @@ public:
     void step4_assemble_final_permutation(std::vector<int>& perm);
 
     void compute_permutation(std::vector<int>& perm);
+    void reset_timing_stats();
     void reset();
 };
 }
