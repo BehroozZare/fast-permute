@@ -1,24 +1,27 @@
-//Behrooz
+// Behrooz
 #pragma once
 
 
 #include "nvtx3/nvToolsExt.h"
 
 // Helper class for RAII-style range marking
-class NVTXRange {
-public:
-    NVTXRange(const std::string& name, uint32_t color = 0xFF00FF00) {
+class NVTXRange
+{
+   public:
+    NVTXRange(const std::string& name, uint32_t color = 0xFF00FF00)
+    {
         nvtxEventAttributes_t eventAttrib = {0};
-        eventAttrib.version = NVTX_VERSION;
-        eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-        eventAttrib.colorType = NVTX_COLOR_ARGB;
-        eventAttrib.color = color;
-        eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
-        eventAttrib.message.ascii = name.c_str();
+        eventAttrib.version               = NVTX_VERSION;
+        eventAttrib.size                  = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+        eventAttrib.colorType             = NVTX_COLOR_ARGB;
+        eventAttrib.color                 = color;
+        eventAttrib.messageType           = NVTX_MESSAGE_TYPE_ASCII;
+        eventAttrib.message.ascii         = name.c_str();
         nvtxRangePushEx(&eventAttrib);
     }
-    
-    ~NVTXRange() {
+
+    ~NVTXRange()
+    {
         nvtxRangePop();
     }
 };

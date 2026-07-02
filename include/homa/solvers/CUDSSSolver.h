@@ -12,21 +12,22 @@
 namespace homa {
 
 template <class Scalar>
-class CUDSSSolver : public LinSysSolver<Scalar> {
-public:
+class CUDSSSolver : public LinSysSolver<Scalar>
+{
+   public:
     using Base = LinSysSolver<Scalar>;
-    using typename Base::Vec;
-    using typename Base::Mat;
+    using Base::initVariables;
+    using Base::L_NNZ;
+    using Base::matrix_view_;
     using Base::N;
     using Base::NNZ;
-    using Base::L_NNZ;
     using Base::ordering_result;
-    using Base::matrix_view_;
-    using Base::owned_host_outer_;
     using Base::owned_host_inner_;
+    using Base::owned_host_outer_;
     using Base::recordMatrixPattern;
-    using Base::initVariables;
     using Base::setMatrix;
+    using typename Base::Mat;
+    using typename Base::Vec;
 
     cudssHandle_t handle;
     cudssConfig_t config;
@@ -52,20 +53,26 @@ public:
 
     void setMatrix(SparseMatrixView<Scalar>& A) override;
     void setMatrix(int* p, int* i, Scalar* x, int A_N, int NNZ) override;
-    void innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree) override;
-    void innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree) override;
+    void innerOrdering(std::vector<int>& user_defined_perm,
+                       std::vector<int>& etree) override;
+    void innerAnalyze_pattern(std::vector<int>& user_defined_perm,
+                              std::vector<int>& etree) override;
     void innerFactorize(void) override;
     void innerSolve(Vec& rhs, Vec& result) override;
     void innerSolve(Mat& rhs, Mat& result) override;
-    void innerSolveRaw(const Scalar* rhs_data, int rows, int cols, Scalar* result_data) override;
-    void innerSolveView(DenseMatrixView<Scalar>& rhs, DenseMatrixView<Scalar>& result) override;
+    void innerSolveRaw(const Scalar* rhs_data,
+                       int           rows,
+                       int           cols,
+                       Scalar*       result_data) override;
+    void innerSolveView(DenseMatrixView<Scalar>& rhs,
+                        DenseMatrixView<Scalar>& result) override;
     void resetSolver() override;
     int  getFactorNNZ() override;
     void clean_sparse_matrix_mem();
     void clean_rhs_sol_mem();
     LinSysSolverType type() const override;
 
-protected:
+   protected:
     void copyDeviceMatrixPatternToHost() override;
 };
 

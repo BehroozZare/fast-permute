@@ -1,4 +1,4 @@
-#include "compress_hessian.h"
+#include "homa/utils/compress_hessian.h"
 #include <algorithm>
 #include <cassert>
 #include <tuple>
@@ -8,9 +8,12 @@ namespace homa {
 
 // Compress a CSC matrix by merging groups of `dim` consecutive DOFs into a
 // single graph node. Builds the symmetric off-diagonal sparsity pattern.
-void compress_hessian(int N,
-                      const int* Ap, const int* Ai,
-                      std::vector<int>& Gp, std::vector<int>& Gi, int dim)
+void compress_hessian(int               N,
+                      const int*        Ap,
+                      const int*        Ai,
+                      std::vector<int>& Gp,
+                      std::vector<int>& Gi,
+                      int               dim)
 {
     assert(N % dim == 0);
     const int Gn = N / dim;
@@ -50,4 +53,4 @@ void compress_hessian(int N,
 #endif
 }
 
-} // namespace homa
+}  // namespace homa

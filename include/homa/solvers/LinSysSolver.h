@@ -21,7 +21,7 @@
 namespace homa {
 
 enum class LinSysSolverType
-{   
+{
     CPU_CHOLMOD,
     CPU_MKL,
     GPU_CUDSS
@@ -30,19 +30,20 @@ enum class LinSysSolverType
 template <class Scalar>
 class LinSysSolver
 {
-    static_assert(std::is_same_v<Scalar, float> || std::is_same_v<Scalar, double>,
+    static_assert(std::is_same_v<Scalar, float> ||
+                      std::is_same_v<Scalar, double>,
                   "homa::LinSysSolver only supports float or double Scalar");
 
    public:
     using ScalarType = Scalar;
-    using Vec = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
-    using Mat = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+    using Vec        = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+    using Mat        = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
 
-    int    L_NNZ    = 0;
-    int    NNZ      = 0;
-    int    N        = 0;    
-    std::string ordering_name = "DEFAULT";
-    std::string ordering_type = "METIS";
+    int            L_NNZ         = 0;
+    int            NNZ           = 0;
+    int            N             = 0;
+    std::string    ordering_name = "DEFAULT";
+    std::string    ordering_type = "METIS";
     OrderingResult ordering_result;
 
    public:
@@ -57,11 +58,7 @@ class LinSysSolver
 
     virtual void setMatrix(SparseMatrixView<Scalar>& A);
 
-    virtual void setMatrix(int*    p,
-                           int*    i,
-                           Scalar* x,
-                           int     A_N,
-                           int     NNZ) = 0;
+    virtual void setMatrix(int* p, int* i, Scalar* x, int A_N, int NNZ) = 0;
 
     void ordering(const Options& opts = {});
 
@@ -82,7 +79,11 @@ class LinSysSolver
         ordering_applied_ = true;
     }
 
-    virtual void innerOrdering(std::vector<int>& user_defined_perm, std::vector<int>& etree) { return; }
+    virtual void innerOrdering(std::vector<int>& user_defined_perm,
+                               std::vector<int>& etree)
+    {
+        return;
+    }
 
     virtual void analyze_pattern()
     {
@@ -99,7 +100,8 @@ class LinSysSolver
         innerAnalyze_pattern(empty, empty);
     }
 
-    virtual void analyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+    virtual void analyze_pattern(std::vector<int>& user_defined_perm,
+                                 std::vector<int>& etree)
     {
         if (static_cast<int>(user_defined_perm.size()) == N) {
             ordering_result.perm  = user_defined_perm;
@@ -114,7 +116,8 @@ class LinSysSolver
         innerAnalyze_pattern(user_defined_perm, etree);
     }
 
-    virtual void innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree) = 0;
+    virtual void innerAnalyze_pattern(std::vector<int>& user_defined_perm,
+                                      std::vector<int>& etree) = 0;
 
     virtual void factorize(void)
     {
@@ -122,7 +125,7 @@ class LinSysSolver
     }
 
     virtual void innerFactorize(void) = 0;
-    virtual int getFactorNNZ(void)
+    virtual int  getFactorNNZ(void)
     {
         return L_NNZ;
     }
@@ -137,35 +140,43 @@ class LinSysSolver
         // Use raw pointer interface to avoid ABI issues between GCC and NVCC
         // when passing Eigen types across compilation boundaries
         result.resize(rhs.rows(), rhs.cols());
-        innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
+        innerSolveRaw(rhs.data(),
+                      static_cast<int>(rhs.rows()),
+                      static_cast<int>(rhs.cols()),
+                      result.data());
     }
 
-    virtual void solve(DenseMatrixView<Scalar>& rhs, DenseMatrixView<Scalar>& result)
+    virtual void solve(DenseMatrixView<Scalar>& rhs,
+                       DenseMatrixView<Scalar>& result)
     {
         innerSolveView(rhs, result);
     }
-        
+
     virtual void innerSolve(Vec& rhs, Vec& result) = 0;
     virtual void innerSolve(Mat& rhs, Mat& result) = 0;
 
-    // Raw pointer interface to avoid ABI issues between compilers (GCC vs NVCC).
-    // rhs_data and result_data are column-major arrays of size rows x cols
-    // in the solver's Scalar precision.
-    virtual void innerSolveRaw(const Scalar* rhs_data, int rows, int cols, Scalar* result_data) = 0;
-    virtual void innerSolveView(DenseMatrixView<Scalar>& rhs, DenseMatrixView<Scalar>& result);
+    // Raw pointer interface to avoid ABI issues between compilers (GCC vs
+    // NVCC). rhs_data and result_data are column-major arrays of size rows x
+    // cols in the solver's Scalar precision.
+    virtual void innerSolveRaw(const Scalar* rhs_data,
+                               int           rows,
+                               int           cols,
+                               Scalar*       result_data) = 0;
+    virtual void innerSolveView(DenseMatrixView<Scalar>& rhs,
+                                DenseMatrixView<Scalar>& result);
 
 
     virtual void resetSolver() = 0;
 
-   public:    
+   public:
     virtual void initVariables()
     {
-        L_NNZ    = 0;
-        NNZ      = 0;
-        N        = 0;        
-        ordering_result = {};
+        L_NNZ             = 0;
+        NNZ               = 0;
+        N                 = 0;
+        ordering_result   = {};
         ordering_applied_ = false;
-        matrix_view_ = {};
+        matrix_view_      = {};
         owned_host_outer_.clear();
         owned_host_inner_.clear();
     }
@@ -182,9 +193,9 @@ class LinSysSolver
 
 
     SparseMatrixView<Scalar> matrix_view_;
-    std::vector<int> owned_host_outer_;
-    std::vector<int> owned_host_inner_;
-    bool ordering_applied_ = false;
+    std::vector<int>         owned_host_outer_;
+    std::vector<int>         owned_host_inner_;
+    bool                     ordering_applied_ = false;
 };
 
 extern template class LinSysSolver<float>;

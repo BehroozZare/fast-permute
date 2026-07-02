@@ -1,6 +1,8 @@
 ---
 Language:        Cpp
 BasedOnStyle:  Chromium
+SortIncludes: Never
+IncludeBlocks: Preserve
 TabWidth: 4
 UseTab: Never
 

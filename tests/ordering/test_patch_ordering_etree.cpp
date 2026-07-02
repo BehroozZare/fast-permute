@@ -1,7 +1,9 @@
-#include "homa/ordering.h"
-#include "homa/types.h"
 #include <gtest/gtest.h>
 #include <vector>
+
+#include "homa/homa.h"
+#include "homa/types.h"
+
 
 // These tests originally used the legacy PatchOrdering class via
 // Ordering::create(). After the driver layer was removed they use

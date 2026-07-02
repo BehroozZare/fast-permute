@@ -16,9 +16,11 @@ namespace {
 
 // Build a sorted, deduped vector of (col, row) off-diagonal symmetric pairs
 // from a CSC matrix (Ap, Ai) of size N x N.
-std::vector<std::tuple<int, int>> build_offdiag_pairs(int N, const int* Ap, const int* Ai)
+std::vector<std::tuple<int, int>> build_offdiag_pairs(int        N,
+                                                      const int* Ap,
+                                                      const int* Ai)
 {
-    const int dim = 1;
+    const int                         dim = 1;
     std::vector<std::tuple<int, int>> coefficients;
     for (int c = 0; c < N; c += dim) {
         assert((Ap[c + 1] - Ap[c]) % dim == 0);
@@ -34,17 +36,18 @@ std::vector<std::tuple<int, int>> build_offdiag_pairs(int N, const int* Ap, cons
     }
 
     std::sort(coefficients.begin(), coefficients.end());
-    coefficients.erase(
-        std::unique(coefficients.begin(), coefficients.end()),
-        coefficients.end());
+    coefficients.erase(std::unique(coefficients.begin(), coefficients.end()),
+                       coefficients.end());
     return coefficients;
 }
 
 }  // namespace
 
-void remove_diagonal(int N,
-                     const int* Ap, const int* Ai,
-                     std::vector<int>& Gp, std::vector<int>& Gi)
+void remove_diagonal(int               N,
+                     const int*        Ap,
+                     const int*        Ai,
+                     std::vector<int>& Gp,
+                     std::vector<int>& Gi)
 {
     std::vector<std::tuple<int, int>> coefficients =
         build_offdiag_pairs(N, Ap, Ai);
@@ -60,8 +63,8 @@ void remove_diagonal(int N,
     Gi.resize(Gp.back());
     std::vector<int> Mp_vec_cnt(Gp.size(), 0);
     for (size_t i = 0; i < coefficients.size(); i++) {
-        int row = std::get<0>(coefficients[i]);
-        int col = std::get<1>(coefficients[i]);
+        int row                       = std::get<0>(coefficients[i]);
+        int col                       = std::get<1>(coefficients[i]);
         Gi[Gp[row] + Mp_vec_cnt[row]] = col;
         Mp_vec_cnt[row]++;
     }

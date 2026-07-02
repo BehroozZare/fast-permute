@@ -7,7 +7,7 @@
 
 #include "homa/utils/SPD_cot_matrix.h"
 #include <homa/solvers/LinSysSolver.h>
-#include "homa/ordering.h"
+#include "homa/homa.h"
 #include "homa/types.h"
 #include "homa/utils/check_valid_permutation.h"
 #include "homa/utils/remove_diagonal.h"

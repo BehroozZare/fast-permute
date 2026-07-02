@@ -1,4 +1,4 @@
-#include "amd_order_helper.h"
+#include "homa/ordering/amd_order_helper.h"
 
 #include <amd.h>
 

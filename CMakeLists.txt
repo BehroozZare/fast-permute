@@ -205,14 +205,19 @@ set(_homa_sources
     src/patching/metis_patcher.cpp
     src/utils/remove_diagonal.cpp
     src/utils/check_valid_permutation.cpp
-    src/solvers/LinSysSolver.cpp
+	src/utils/compress_hessian.cpp
+    src/solvers/LinSysSolver.cpp	
     include/homa/solvers/LinSysSolver.h
+	include/homa/solvers/CHOLMODSolver.h
+	include/homa/solvers/CUDSSSolver.h
+	include/homa/solvers/MKLSolver.h
+	include/homa/solvers/scalar_traits.h
 	include/homa/matrix_view.h
-	include/homa/ordering.h
+	include/homa/homa.h
 	include/homa/patcher.h
 	include/homa/types.h
 	include/homa/utils/check_valid_permutation.h
-	include/homa/utils/compress_hessian.h	
+	include/homa/utils/compress_hessian.h
 	include/homa/utils/nvtx_helper.h
 	include/homa/utils/remove_diagonal.h
 	include/homa/utils/SPD_cot_matrix.h

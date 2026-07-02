@@ -12,22 +12,31 @@ template <class Scalar>
 inline constexpr bool is_supported_scalar_v =
     std::is_same_v<Scalar, float> || std::is_same_v<Scalar, double>;
 
-} // namespace homa::detail
+}  // namespace homa::detail
 
 
 #ifdef USE_CUDSS
 #include <library_types.h>
 namespace homa::detail {
 
-template <class Scalar> struct cudss_dtype;
-template <> struct cudss_dtype<float>  { static constexpr cudaDataType_t value = CUDA_R_32F; };
-template <> struct cudss_dtype<double> { static constexpr cudaDataType_t value = CUDA_R_64F; };
+template <class Scalar>
+struct cudss_dtype;
+template <>
+struct cudss_dtype<float>
+{
+    static constexpr cudaDataType_t value = CUDA_R_32F;
+};
+template <>
+struct cudss_dtype<double>
+{
+    static constexpr cudaDataType_t value = CUDA_R_64F;
+};
 
 template <class Scalar>
 inline constexpr cudaDataType_t cudss_dtype_v = cudss_dtype<Scalar>::value;
 
-} // namespace homa::detail
-#endif // USE_CUDSS
+}  // namespace homa::detail
+#endif  // USE_CUDSS
 
 
 #ifdef USE_CHOLMOD
@@ -37,9 +46,18 @@ namespace homa::detail {
 // SuiteSparse 7.0+ exposes CHOLMOD_SINGLE / CHOLMOD_DOUBLE as the dtype values
 // stored in cholmod_common::dtype. Newly allocated sparse / dense / factor
 // objects inherit that precision.
-template <class Scalar> struct cholmod_dtype;
-template <> struct cholmod_dtype<float>  { static constexpr int value = CHOLMOD_SINGLE; };
-template <> struct cholmod_dtype<double> { static constexpr int value = CHOLMOD_DOUBLE; };
+template <class Scalar>
+struct cholmod_dtype;
+template <>
+struct cholmod_dtype<float>
+{
+    static constexpr int value = CHOLMOD_SINGLE;
+};
+template <>
+struct cholmod_dtype<double>
+{
+    static constexpr int value = CHOLMOD_DOUBLE;
+};
 
 // SuiteSparse 7+ passes xtype+dtype as a single xdtype argument to
 // cholmod_allocate_sparse / cholmod_allocate_dense (CHOLMOD_REAL + dtype).
@@ -47,8 +65,8 @@ template <class Scalar>
 inline constexpr int cholmod_xdtype_v =
     CHOLMOD_REAL + cholmod_dtype<Scalar>::value;
 
-} // namespace homa::detail
-#endif // USE_CHOLMOD
+}  // namespace homa::detail
+#endif  // USE_CHOLMOD
 
 
 #ifdef USE_MKL
@@ -60,5 +78,5 @@ namespace homa::detail {
 template <class Scalar>
 inline constexpr int mkl_iparm27_v = std::is_same_v<Scalar, float> ? 1 : 0;
 
-} // namespace homa::detail
-#endif // USE_MKL
+}  // namespace homa::detail
+#endif  // USE_MKL

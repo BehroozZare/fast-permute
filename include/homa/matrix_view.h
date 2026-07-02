@@ -45,4 +45,4 @@ using SparseMatrixViewF = SparseMatrixView<float>;
 using DenseMatrixViewD  = DenseMatrixView<double>;
 using DenseMatrixViewF  = DenseMatrixView<float>;
 
-} // namespace homa
+}  // namespace homa

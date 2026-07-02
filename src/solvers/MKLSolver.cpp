@@ -5,8 +5,8 @@
 
 #ifdef USE_MKL
 
-#include <homa/solvers/MKLSolver.h>
-#include "scalar_traits.h"
+#include "homa/solvers/MKLSolver.h"
+#include "homa/solvers/scalar_traits.h"
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -17,8 +17,9 @@
 
 namespace homa {
 
-static_assert(sizeof(MKL_INT) == sizeof(int),
-              "Homa MKLSolver expects oneMKL LP64 because inputs use int CSR indices.");
+static_assert(
+    sizeof(MKL_INT) == sizeof(int),
+    "Homa MKLSolver expects oneMKL LP64 because inputs use int CSR indices.");
 
 #ifndef HOMA_MKL_INTERFACE_LAYER
 #define HOMA_MKL_INTERFACE_LAYER MKL_INTERFACE_LP64
@@ -41,9 +42,9 @@ MKLSolver<Scalar>::MKLSolver()
     resetPardisoHandle();
     setMKLConfigParam();
 
-    Ap = nullptr;
-    Ai = nullptr;
-    Ax = nullptr;
+    Ap    = nullptr;
+    Ai    = nullptr;
+    Ax    = nullptr;
     N_MKL = 0;
 
     Base::initVariables();
@@ -80,12 +81,26 @@ void MKLSolver<Scalar>::releasePardisoMemory()
     error                 = 0;
     MKL_INT* perm_ptr     = perm.empty() ? nullptr : perm.data();
 
-    PARDISO(pt, &maxfct, &mnum, &mtype, &release_phase, &N_MKL, nullptr,
-            nullptr, nullptr, perm_ptr, &nrhs, iparm, &msglvl, nullptr,
-            nullptr, &error);
+    PARDISO(pt,
+            &maxfct,
+            &mnum,
+            &mtype,
+            &release_phase,
+            &N_MKL,
+            nullptr,
+            nullptr,
+            nullptr,
+            perm_ptr,
+            &nrhs,
+            iparm,
+            &msglvl,
+            nullptr,
+            nullptr,
+            &error);
 
     if (error != 0) {
-        spdlog::warn("MKL PARDISO: ERROR during memory release - code: {}", error);
+        spdlog::warn("MKL PARDISO: ERROR during memory release - code: {}",
+                     error);
     }
 
     resetPardisoHandle();
@@ -98,16 +113,16 @@ void MKLSolver<Scalar>::setMKLConfigParam()
         iparm[i] = 0;
     }
 
-    iparm[0] = 1;   /* No solver default */
-    iparm[1] = 2;   /* Fill-in reordering from METIS */
-    iparm[2] = 0;
-    iparm[3] = 0;   /* No iterative-direct algorithm */
-    iparm[4] = 0;   /* User permutation is ignored by default */
-    iparm[5] = 0;   /* Write solution into x */
-    iparm[6] = 0;   /* Not in use */
-    iparm[7] = 1;   /* Max numbers of iterative refinement steps */
-    iparm[8] = 0;   /* Not in use */
-    iparm[9] = 0;   /* Perturb the pivot elements with 1E-8 */
+    iparm[0]  = 1; /* No solver default */
+    iparm[1]  = 2; /* Fill-in reordering from METIS */
+    iparm[2]  = 0;
+    iparm[3]  = 0;  /* No iterative-direct algorithm */
+    iparm[4]  = 0;  /* User permutation is ignored by default */
+    iparm[5]  = 0;  /* Write solution into x */
+    iparm[6]  = 0;  /* Not in use */
+    iparm[7]  = 1;  /* Max numbers of iterative refinement steps */
+    iparm[8]  = 0;  /* Not in use */
+    iparm[9]  = 0;  /* Perturb the pivot elements with 1E-8 */
     iparm[10] = 0;  /* Use nonsymmetric permutation and scaling MPS */
     iparm[11] = 0;  /* A^TX=B */
     iparm[12] = 0;  /* Maximum weighted matching algorithm is switched-off */
@@ -126,16 +141,16 @@ void MKLSolver<Scalar>::setMKLConfigParam()
     // 0 = double precision, 1 = single precision (PARDISO consults this to
     // interpret the void* matrix/rhs/solution buffers we pass below).
     iparm[27] = detail::mkl_iparm27_v<Scalar>;
-    iparm[34] = 1;  /* Zero-based indexing */
+    iparm[34] = 1; /* Zero-based indexing */
     iparm[30] = 0;
     iparm[35] = 0;
 
     maxfct = 1; /* Maximum number of numerical factorizations. */
-    mnum = 1;   /* Which factorization to use. */
+    mnum   = 1; /* Which factorization to use. */
     msglvl = 0; /* Print statistical information in file */
-    error = 0;  /* Initialize error flag */
-    nrhs = 1;   /* Number of right hand sides. */
-    mtype = 2;  /* Real and SPD matrices */
+    error  = 0; /* Initialize error flag */
+    nrhs   = 1; /* Number of right hand sides. */
+    mtype  = 2; /* Real and SPD matrices */
 }
 
 template <class Scalar>
@@ -145,14 +160,19 @@ void MKLSolver<Scalar>::clean_memory()
 }
 
 template <class Scalar>
-void MKLSolver<Scalar>::setMatrix(int* p, int* i, Scalar* x, int A_N, int NNZ_in)
+void MKLSolver<Scalar>::setMatrix(int*    p,
+                                  int*    i,
+                                  Scalar* x,
+                                  int     A_N,
+                                  int     NNZ_in)
 {
     releasePardisoMemory();
 
     assert(p[A_N] == NNZ_in);
-    recordMatrixPattern(p, i, A_N, NNZ_in, SparseFormat::CSC, MemoryLocation::Host);
-    this->N = A_N;
-    this->NNZ = NNZ_in;
+    recordMatrixPattern(
+        p, i, A_N, NNZ_in, SparseFormat::CSC, MemoryLocation::Host);
+    this->N     = A_N;
+    this->NNZ   = NNZ_in;
     this->N_MKL = A_N;
 
     Ap = p;
@@ -161,7 +181,9 @@ void MKLSolver<Scalar>::setMatrix(int* p, int* i, Scalar* x, int A_N, int NNZ_in
 }
 
 template <class Scalar>
-void MKLSolver<Scalar>::innerAnalyze_pattern(std::vector<int>& user_defined_perm, std::vector<int>& etree)
+void MKLSolver<Scalar>::innerAnalyze_pattern(
+    std::vector<int>& user_defined_perm,
+    std::vector<int>& etree)
 {
     releasePardisoMemory();
     resetPardisoHandle();
@@ -191,14 +213,30 @@ void MKLSolver<Scalar>::innerAnalyze_pattern(std::vector<int>& user_defined_perm
 
     phase = 11;
     error = 0;
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL,
-            static_cast<void*>(Ax), Ap, Ai,
-            perm.data(), &nrhs, iparm, &msglvl,
-            static_cast<void*>(&ddum), static_cast<void*>(&ddum), &error);
+    PARDISO(pt,
+            &maxfct,
+            &mnum,
+            &mtype,
+            &phase,
+            &N_MKL,
+            static_cast<void*>(Ax),
+            Ap,
+            Ai,
+            perm.data(),
+            &nrhs,
+            iparm,
+            &msglvl,
+            static_cast<void*>(&ddum),
+            static_cast<void*>(&ddum),
+            &error);
 
     if (error != 0) {
-        spdlog::error("MKL PARDISO: ERROR during symbolic factorization - code: {}", error);
-        throw std::runtime_error("Symbolic factorization failed with error code: " + std::to_string(error));
+        spdlog::error(
+            "MKL PARDISO: ERROR during symbolic factorization - code: {}",
+            error);
+        throw std::runtime_error(
+            "Symbolic factorization failed with error code: " +
+            std::to_string(error));
     }
 
     has_pardiso_memory_ = true;
@@ -211,26 +249,44 @@ template <class Scalar>
 void MKLSolver<Scalar>::innerFactorize(void)
 {
     if (!has_pardiso_memory_) {
-        throw std::runtime_error("MKL PARDISO factorize called before analyze_pattern");
+        throw std::runtime_error(
+            "MKL PARDISO factorize called before analyze_pattern");
     }
 
     phase = 22;
     error = 0;
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL,
-            static_cast<void*>(Ax), Ap, Ai,
-            perm.data(), &nrhs, iparm, &msglvl,
-            static_cast<void*>(&ddum), static_cast<void*>(&ddum), &error);
+    PARDISO(pt,
+            &maxfct,
+            &mnum,
+            &mtype,
+            &phase,
+            &N_MKL,
+            static_cast<void*>(Ax),
+            Ap,
+            Ai,
+            perm.data(),
+            &nrhs,
+            iparm,
+            &msglvl,
+            static_cast<void*>(&ddum),
+            static_cast<void*>(&ddum),
+            &error);
 
     L_NNZ = iparm[17];
 
     if (error != 0) {
-        spdlog::error("MKL PARDISO: ERROR during numerical factorization - code: {}", error);
-        throw std::runtime_error("Numerical factorization failed with error code: " + std::to_string(error));
+        spdlog::error(
+            "MKL PARDISO: ERROR during numerical factorization - code: {}",
+            error);
+        throw std::runtime_error(
+            "Numerical factorization failed with error code: " +
+            std::to_string(error));
     }
 
     factorized_ = true;
 
-    spdlog::info("MKL PARDISO: Numerical factorization complete, L_NNZ = {}", L_NNZ);
+    spdlog::info("MKL PARDISO: Numerical factorization complete, L_NNZ = {}",
+                 L_NNZ);
 }
 
 template <class Scalar>
@@ -246,20 +302,33 @@ void MKLSolver<Scalar>::innerSolve(typename MKLSolver<Scalar>::Vec& rhs,
     if (!x) {
         throw std::bad_alloc();
     }
-    
-    phase = 33;
-    error = 0;
+
+    phase    = 33;
+    error    = 0;
     iparm[7] = 0; /* Max numbers of iterative refinement steps. */
 
-    PARDISO(pt, &maxfct, &mnum, &mtype, &phase, &N_MKL,
-            static_cast<void*>(Ax), Ap, Ai,
-            perm.data(), &nrhs, iparm, &msglvl,
-            static_cast<void*>(rhs.data()), static_cast<void*>(x), &error);
+    PARDISO(pt,
+            &maxfct,
+            &mnum,
+            &mtype,
+            &phase,
+            &N_MKL,
+            static_cast<void*>(Ax),
+            Ap,
+            Ai,
+            perm.data(),
+            &nrhs,
+            iparm,
+            &msglvl,
+            static_cast<void*>(rhs.data()),
+            static_cast<void*>(x),
+            &error);
 
     if (error != 0) {
         spdlog::error("MKL PARDISO: ERROR during solve - code: {}", error);
         mkl_free(x);
-        throw std::runtime_error("Solve failed with error code: " + std::to_string(error));
+        throw std::runtime_error("Solve failed with error code: " +
+                                 std::to_string(error));
     }
 
     result = Eigen::Map<Vec, Eigen::Unaligned>(x, N);
@@ -272,11 +341,17 @@ void MKLSolver<Scalar>::innerSolve(typename MKLSolver<Scalar>::Mat& rhs,
 {
     // Delegate to raw pointer version
     result.resize(rhs.rows(), rhs.cols());
-    innerSolveRaw(rhs.data(), static_cast<int>(rhs.rows()), static_cast<int>(rhs.cols()), result.data());
+    innerSolveRaw(rhs.data(),
+                  static_cast<int>(rhs.rows()),
+                  static_cast<int>(rhs.cols()),
+                  result.data());
 }
 
 template <class Scalar>
-void MKLSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data, int rows, int cols, Scalar* result_data)
+void MKLSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data,
+                                      int           rows,
+                                      int           cols,
+                                      Scalar*       result_data)
 {
     // Solve column by column
     for (int c = 0; c < cols; c++) {
@@ -287,7 +362,8 @@ void MKLSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data, int rows, int cols
         innerSolve(rhs_col, result_col);
 
         // Copy result to output column
-        std::memcpy(result_data + c * rows, result_col.data(), rows * sizeof(Scalar));
+        std::memcpy(
+            result_data + c * rows, result_col.data(), rows * sizeof(Scalar));
     }
 }
 
@@ -297,13 +373,13 @@ void MKLSolver<Scalar>::resetSolver()
     releasePardisoMemory();
     resetPardisoHandle();
     setMKLConfigParam();
-    
-    Ap = nullptr;
-    Ai = nullptr;
-    Ax = nullptr;
+
+    Ap    = nullptr;
+    Ai    = nullptr;
+    Ax    = nullptr;
     N_MKL = 0;
     perm.clear();
-    
+
     Base::initVariables();
 }
 
