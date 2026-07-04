@@ -13,7 +13,7 @@
 #include "homa/solvers/CUDSSSolver.h"
 #include "homa/solvers/scalar_traits.h"
 
-#include "homa/utils/CUDA_CHECK_handler.h"
+#include "homa/utils/cuda_error_handler.h"
 
 #include <spdlog/spdlog.h>
 #include "omp.h"
