@@ -1,0 +1,13 @@
+name: homa
+channels:
+  - conda-forge  
+dependencies:
+  - python=3.11
+  - pip
+  - cmake>=3.24  
+  - numpy
+  - scipy    
+  - pip:
+      - scikit-build-core>=0.10
+      - nanobind>=2.2      
+      # - cupy-cuda12x
