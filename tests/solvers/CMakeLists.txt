@@ -1,0 +1,7 @@
+if(HOMA_BUILD_TESTS)
+    add_executable(test_solver_perm_refactor test_solver_perm_refactor.cpp)
+    target_link_libraries(test_solver_perm_refactor PRIVATE homa GTest::gtest_main)
+    target_include_directories(test_solver_perm_refactor PRIVATE ${HOMA_SOURCE_DIR}/include)
+    homa_configure_runtime(test_solver_perm_refactor)
+    gtest_discover_tests(test_solver_perm_refactor)
+endif()
