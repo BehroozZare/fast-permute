@@ -28,7 +28,7 @@ and returns a fill-reducing permutation (and the elimination tree).
 It works even when no solver backend is built.
 
 ```cpp
-#include <homa/ordering.h>
+#include "homa/homa.h"
 
 homa::Options opts;
 opts.patch_size    = 512;   // Lloyd / METIS patch target
@@ -48,7 +48,7 @@ The user then can hand the permutation to any third-party solver that supports a
 The `LinSysSolver` interface is a uniform front-end to all three backends, by switching backends through changing the `LinSysSolverType` argument. `LinSysSolver` is a class template parameterized on `Scalar`; both `float` and `double` are supported, with convenience aliases `homa::LinSysSolverD` and `homa::LinSysSolverF`.
 
 ```cpp
-#include <homa/solvers/LinSysSolver.h>
+#include "homa/solvers/LinSysSolver.h"
 
 std::unique_ptr<homa::LinSysSolverD> solver(
     homa::LinSysSolverD::create(homa::LinSysSolverType::CPU_CHOLMOD));
