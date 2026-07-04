@@ -1,8 +1,3 @@
-//
-//  CUDSSSolver.cu
-//  IPC
-//
-
 #ifdef USE_CUDSS
 
 #include <spdlog/spdlog.h>
@@ -13,25 +8,15 @@
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
+#include <string>
+
 #include "homa/solvers/CUDSSSolver.h"
 #include "homa/solvers/scalar_traits.h"
 
+#include "homa/utils/CUDA_CHECK_handler.h"
+
 #include <spdlog/spdlog.h>
 #include "omp.h"
-
-#ifndef CUDA_ERROR
-inline void HandleError(cudaError_t err, const char* file, int line)
-{
-    // Error handling micro, wrap it around function whenever possible
-    if (err != cudaSuccess) {
-        spdlog::error("Line {} File {}", line, file);
-        spdlog::error("CUDA ERROR: {}", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-}
-#define CUDA_ERROR(err) (HandleError(err, __FILE__, __LINE__))
-#endif
-
 
 namespace homa {
 namespace {
@@ -100,7 +85,8 @@ CUDSSSolver<Scalar>::CUDSSSolver()
         spdlog::error(
             "CUDSSSolver::constructor - cudssCreate failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     const bool  mt_strict          = envFlagEnabled("RX_CUDSS_MT_STRICT");
@@ -129,7 +115,8 @@ CUDSSSolver<Scalar>::CUDSSSolver()
                 "CUDSSSolver: Failed to enable MT mode (status: {}) with "
                 "strict mode enabled",
                 static_cast<int>(status));
-            exit(EXIT_FAILURE);
+            throw std::runtime_error(
+                "CUDSSSolver: fatal error (see log above for details)");
         } else {
             spdlog::warn(
                 "CUDSSSolver: Failed to enable MT mode (status: {}); falling "
@@ -149,7 +136,8 @@ CUDSSSolver<Scalar>::CUDSSSolver()
             "CUDSSSolver::constructor - cudssConfigCreate failed with status: "
             "{}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
 #ifdef CUDSS_CONFIG_HOST_NTHREADS
@@ -170,7 +158,8 @@ CUDSSSolver<Scalar>::CUDSSSolver()
                 "(status: {}) with "
                 "strict mode enabled",
                 static_cast<int>(status));
-            exit(EXIT_FAILURE);
+            throw std::runtime_error(
+                "CUDSSSolver: fatal error (see log above for details)");
         } else {
             spdlog::warn(
                 "CUDSSSolver: Failed to set CUDSS_CONFIG_HOST_NTHREADS "
@@ -193,7 +182,8 @@ CUDSSSolver<Scalar>::CUDSSSolver()
         spdlog::error(
             "CUDSSSolver::constructor - cudssDataCreate failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     is_allocated           = false;
@@ -206,11 +196,11 @@ template <class Scalar>
 void CUDSSSolver<Scalar>::clean_sparse_matrix_mem()
 {
     if (owns_sparse_matrix_mem && rowOffsets_dev != nullptr)
-        CUDA_ERROR(cudaFree(rowOffsets_dev));
+        CUDA_CHECK(cudaFree(rowOffsets_dev));
     if (owns_sparse_matrix_mem && colIndices_dev != nullptr)
-        CUDA_ERROR(cudaFree(colIndices_dev));
+        CUDA_CHECK(cudaFree(colIndices_dev));
     if (owns_sparse_matrix_mem && values_dev != nullptr)
-        CUDA_ERROR(cudaFree(values_dev));
+        CUDA_CHECK(cudaFree(values_dev));
     if (A != nullptr)
         cudssMatrixDestroy(A);
     rowOffsets_dev         = nullptr;
@@ -229,9 +219,9 @@ void CUDSSSolver<Scalar>::clean_rhs_sol_mem()
     if (b_mat != nullptr)
         cudssMatrixDestroy(b_mat);
     if (owns_xvalues_mem && xvalues_dev != nullptr)
-        CUDA_ERROR(cudaFree(xvalues_dev));
+        CUDA_CHECK(cudaFree(xvalues_dev));
     if (owns_bvalues_mem && bvalues_dev != nullptr)
-        CUDA_ERROR(cudaFree(bvalues_dev));
+        CUDA_CHECK(cudaFree(bvalues_dev));
     xvalues_dev      = nullptr;
     bvalues_dev      = nullptr;
     x_mat            = nullptr;
@@ -254,11 +244,13 @@ void CUDSSSolver<Scalar>::setMatrix(int*    p,
             "CUDSSSolver::setMatrix - Invalid dimensions: N={}, NNZ={}",
             A_N,
             NNZ_in);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
     if (p == nullptr || i == nullptr || x == nullptr) {
         spdlog::error("CUDSSSolver::setMatrix - Null pointer passed");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     // Log matrix properties for debugging
@@ -276,10 +268,10 @@ void CUDSSSolver<Scalar>::setMatrix(int*    p,
     // Allocating memory
     if (needs_realloc) {
         clean_sparse_matrix_mem();
-        CUDA_ERROR(
+        CUDA_CHECK(
             cudaMalloc((void**)&rowOffsets_dev, (A_N + 1) * sizeof(int)));
-        CUDA_ERROR(cudaMalloc((void**)&colIndices_dev, NNZ_in * sizeof(int)));
-        CUDA_ERROR(cudaMalloc((void**)&values_dev, NNZ_in * sizeof(Scalar)));
+        CUDA_CHECK(cudaMalloc((void**)&colIndices_dev, NNZ_in * sizeof(int)));
+        CUDA_CHECK(cudaMalloc((void**)&values_dev, NNZ_in * sizeof(Scalar)));
         is_allocated           = true;
         owns_sparse_matrix_mem = true;
     } else if (A != nullptr) {
@@ -289,11 +281,11 @@ void CUDSSSolver<Scalar>::setMatrix(int*    p,
 
 
     // Copying data to device
-    CUDA_ERROR(cudaMemcpy(
+    CUDA_CHECK(cudaMemcpy(
         rowOffsets_dev, p, (A_N + 1) * sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_ERROR(cudaMemcpy(
+    CUDA_CHECK(cudaMemcpy(
         colIndices_dev, i, NNZ_in * sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_ERROR(cudaMemcpy(
+    CUDA_CHECK(cudaMemcpy(
         values_dev, x, NNZ_in * sizeof(Scalar), cudaMemcpyHostToDevice));
 
     // Creating matrix
@@ -317,7 +309,8 @@ void CUDSSSolver<Scalar>::setMatrix(int*    p,
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::matrix creation failed with status: {}",
                       static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 }
 
@@ -338,12 +331,14 @@ void CUDSSSolver<Scalar>::setMatrix(SparseMatrixView<Scalar>& matrix)
             matrix.rows,
             matrix.cols,
             matrix.nnz);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
     if (matrix.outer == nullptr || matrix.inner == nullptr ||
         matrix.values == nullptr) {
         spdlog::error("CUDSSSolver::setMatrix(device) - Null pointer passed");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
     if (matrix.format != SparseFormat::CSR) {
         throw std::invalid_argument(
@@ -383,7 +378,8 @@ void CUDSSSolver<Scalar>::setMatrix(SparseMatrixView<Scalar>& matrix)
         spdlog::error(
             "CUDSSSolver::device matrix creation failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 }
 
@@ -404,11 +400,11 @@ void CUDSSSolver<Scalar>::copyDeviceMatrixPatternToHost()
     owned_host_outer_.resize(static_cast<size_t>(N) + 1);
     owned_host_inner_.resize(static_cast<size_t>(matrix_view_.nnz));
 
-    CUDA_ERROR(cudaMemcpy(owned_host_outer_.data(),
+    CUDA_CHECK(cudaMemcpy(owned_host_outer_.data(),
                           matrix_view_.outer,
                           (static_cast<size_t>(N) + 1) * sizeof(int),
                           cudaMemcpyDeviceToHost));
-    CUDA_ERROR(cudaMemcpy(owned_host_inner_.data(),
+    CUDA_CHECK(cudaMemcpy(owned_host_inner_.data(),
                           matrix_view_.inner,
                           static_cast<size_t>(matrix_view_.nnz) * sizeof(int),
                           cudaMemcpyDeviceToHost));
@@ -448,7 +444,8 @@ void CUDSSSolver<Scalar>::innerOrdering(std::vector<int>& user_defined_perm,
                 "CUDSSSolver::cudssDataSet for user permutation failed with "
                 "status: {}",
                 static_cast<int>(status));
-            exit(EXIT_FAILURE);
+            throw std::runtime_error(
+                "CUDSSSolver: fatal error (see log above for details)");
         }
 
         // Set user elimination tree (HOST pointer per CUDSS docs)
@@ -462,7 +459,8 @@ void CUDSSSolver<Scalar>::innerOrdering(std::vector<int>& user_defined_perm,
                 "CUDSSSolver::cudssDataSet for user elimination tree failed "
                 "with status: {}",
                 static_cast<int>(status));
-            exit(EXIT_FAILURE);
+            throw std::runtime_error(
+                "CUDSSSolver: fatal error (see log above for details)");
         }
 
 
@@ -478,7 +476,8 @@ void CUDSSSolver<Scalar>::innerOrdering(std::vector<int>& user_defined_perm,
                 "CUDSSSolver::cudssConfigSet for ND_NLEVELS failed with "
                 "status: {}",
                 static_cast<int>(status));
-            exit(EXIT_FAILURE);
+            throw std::runtime_error(
+                "CUDSSSolver: fatal error (see log above for details)");
         }
 
         // Execute reordering phase (cuDSS still needs this to process user
@@ -488,7 +487,8 @@ void CUDSSSolver<Scalar>::innerOrdering(std::vector<int>& user_defined_perm,
         if (status != CUDSS_STATUS_SUCCESS) {
             spdlog::error("CUDSSSolver::reordering failed with status: {}",
                           static_cast<int>(status));
-            exit(EXIT_FAILURE);
+            throw std::runtime_error(
+                "CUDSSSolver: fatal error (see log above for details)");
         }
     } else {
         // DEFAULT MODE: Let CUDSS handle reordering
@@ -500,7 +500,8 @@ void CUDSSSolver<Scalar>::innerOrdering(std::vector<int>& user_defined_perm,
         if (status != CUDSS_STATUS_SUCCESS) {
             spdlog::error("CUDSSSolver::reordering failed with status: {}",
                           static_cast<int>(status));
-            exit(EXIT_FAILURE);
+            throw std::runtime_error(
+                "CUDSSSolver: fatal error (see log above for details)");
         }
     }
 }
@@ -525,7 +526,8 @@ void CUDSSSolver<Scalar>::innerAnalyze_pattern(
         spdlog::error(
             "CUDSSSolver::symbolic factorization failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 }
 
@@ -537,7 +539,8 @@ void CUDSSSolver<Scalar>::innerFactorize(void)
         handle, CUDSS_PHASE_FACTORIZATION, config, data, A, nullptr, nullptr);
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::factorization failed!");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 }
 
@@ -566,7 +569,8 @@ void CUDSSSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data,
             "CUDSSSolver::solve - RHS rows {} doesn't match matrix size {}",
             rows,
             N);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     int nrhs = cols;
@@ -576,13 +580,13 @@ void CUDSSSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data,
     clean_rhs_sol_mem();
 
     // Allocate device memory for N × nrhs matrices
-    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(Scalar)));
-    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(Scalar)));
+    CUDA_CHECK(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(Scalar)));
+    CUDA_CHECK(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(Scalar)));
     owns_bvalues_mem = true;
     owns_xvalues_mem = true;
 
     // Copy RHS to device (data is column-major)
-    CUDA_ERROR(cudaMemcpy(bvalues_dev,
+    CUDA_CHECK(cudaMemcpy(bvalues_dev,
                           rhs_data,
                           N * nrhs * sizeof(Scalar),
                           cudaMemcpyHostToDevice));
@@ -598,7 +602,8 @@ void CUDSSSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data,
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}",
                       static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     // Create solution dense matrix (N × nrhs, leading dimension = N)
@@ -613,7 +618,8 @@ void CUDSSSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data,
         spdlog::error(
             "CUDSSSolver::solution matrix creation failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     // Execute solve phase
@@ -622,11 +628,12 @@ void CUDSSSolver<Scalar>::innerSolveRaw(const Scalar* rhs_data,
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::solve failed with status: {}",
                       static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     // Copy result back to host
-    CUDA_ERROR(cudaMemcpy(result_data,
+    CUDA_CHECK(cudaMemcpy(result_data,
                           xvalues_dev,
                           N * nrhs * sizeof(Scalar),
                           cudaMemcpyDeviceToHost));
@@ -640,11 +647,13 @@ void CUDSSSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs,
 {
     if (rhs.rows != N || result.rows != N || rhs.cols != result.cols) {
         spdlog::error("CUDSSSolver::solve - incompatible dense dimensions");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
     if (rhs.values == nullptr || result.values == nullptr) {
         spdlog::error("CUDSSSolver::solve - Null dense pointer passed");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     const int nrhs   = rhs.cols;
@@ -669,9 +678,9 @@ void CUDSSSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs,
         bvalues_dev      = rhs.values;
         owns_bvalues_mem = false;
     } else {
-        CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(Scalar)));
+        CUDA_CHECK(cudaMalloc((void**)&bvalues_dev, N * nrhs * sizeof(Scalar)));
         owns_bvalues_mem = true;
-        CUDA_ERROR(cudaMemcpy(bvalues_dev,
+        CUDA_CHECK(cudaMemcpy(bvalues_dev,
                               rhs.values,
                               N * nrhs * sizeof(Scalar),
                               cudaMemcpyHostToDevice));
@@ -681,7 +690,7 @@ void CUDSSSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs,
         xvalues_dev      = result.values;
         owns_xvalues_mem = false;
     } else {
-        CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(Scalar)));
+        CUDA_CHECK(cudaMalloc((void**)&xvalues_dev, N * nrhs * sizeof(Scalar)));
         owns_xvalues_mem = true;
     }
 
@@ -695,7 +704,8 @@ void CUDSSSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs,
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}",
                       static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     status = cudssMatrixCreateDn(&x_mat,
@@ -709,7 +719,8 @@ void CUDSSSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs,
         spdlog::error(
             "CUDSSSolver::solution matrix creation failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     status =
@@ -717,11 +728,12 @@ void CUDSSSolver<Scalar>::innerSolveView(DenseMatrixView<Scalar>& rhs,
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::solve failed with status: {}",
                       static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     if (result.location == MemoryLocation::Host) {
-        CUDA_ERROR(cudaMemcpy(result.values,
+        CUDA_CHECK(cudaMemcpy(result.values,
                               xvalues_dev,
                               N * nrhs * sizeof(Scalar),
                               cudaMemcpyDeviceToHost));
@@ -740,7 +752,8 @@ void CUDSSSolver<Scalar>::innerSolve(typename CUDSSSolver<Scalar>::Vec& rhs,
             "CUDSSSolver::solve - RHS size {} doesn't match matrix size {}",
             rhs.size(),
             N);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     spdlog::info(
@@ -748,12 +761,12 @@ void CUDSSSolver<Scalar>::innerSolve(typename CUDSSSolver<Scalar>::Vec& rhs,
 
     // Clean up any existing memory first
     clean_rhs_sol_mem();
-    CUDA_ERROR(cudaMalloc((void**)&bvalues_dev, N * sizeof(Scalar)));
-    CUDA_ERROR(cudaMalloc((void**)&xvalues_dev, N * sizeof(Scalar)));
+    CUDA_CHECK(cudaMalloc((void**)&bvalues_dev, N * sizeof(Scalar)));
+    CUDA_CHECK(cudaMalloc((void**)&xvalues_dev, N * sizeof(Scalar)));
     owns_bvalues_mem = true;
     owns_xvalues_mem = true;
     // Copying the memory
-    CUDA_ERROR(cudaMemcpy(
+    CUDA_CHECK(cudaMemcpy(
         bvalues_dev, rhs.data(), N * sizeof(Scalar), cudaMemcpyHostToDevice));
     // Creating the rhs matrix (N×1 column vector)
     spdlog::info("Creating RHS dense matrix: N={}, ncols=1, ld={}", N, N);
@@ -767,7 +780,8 @@ void CUDSSSolver<Scalar>::innerSolve(typename CUDSSSolver<Scalar>::Vec& rhs,
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::RHS matrix creation failed with status: {}",
                       static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     // Creating solution matrix (N×1 column vector)
@@ -783,7 +797,8 @@ void CUDSSSolver<Scalar>::innerSolve(typename CUDSSSolver<Scalar>::Vec& rhs,
         spdlog::error(
             "CUDSSSolver::solution matrix creation failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     // Execute solve phase
@@ -793,12 +808,13 @@ void CUDSSSolver<Scalar>::innerSolve(typename CUDSSSolver<Scalar>::Vec& rhs,
     if (status != CUDSS_STATUS_SUCCESS) {
         spdlog::error("CUDSSSolver::solve failed with status: {} ",
                       static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
     spdlog::info("CUDSS solve completed successfully");
     // Copy the result back
     result.conservativeResize(rhs.size());
-    CUDA_ERROR(cudaMemcpy(result.data(),
+    CUDA_CHECK(cudaMemcpy(result.data(),
                           xvalues_dev,
                           result.rows() * sizeof(Scalar),
                           cudaMemcpyDeviceToHost));
@@ -824,7 +840,8 @@ void CUDSSSolver<Scalar>::resetSolver()
         spdlog::error(
             "CUDSSSolver::resetSolver - cudssDataCreate failed with status: {}",
             static_cast<int>(status));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            "CUDSSSolver: fatal error (see log above for details)");
     }
 
     Base::initVariables();

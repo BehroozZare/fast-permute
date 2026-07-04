@@ -4,16 +4,19 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <cstdlib>
+#include <stdexcept>
+#include <string>
 
-#define CUDA_CHECK(expr)                                                      \
-    do {                                                                      \
-        cudaError_t _err = (expr);                                            \
-        if (_err != cudaSuccess) {                                            \
-            std::cerr << "CUDA error at " << __FILE__ << ":" << __LINE__      \
-                      << " in " << #expr << " : " << cudaGetErrorString(_err) \
-                      << " (" << static_cast<int>(_err) << ")\n";             \
-            std::exit(EXIT_FAILURE);                                          \
-        }                                                                     \
+#define CUDA_CHECK(expr)                                            \
+    do {                                                            \
+        cudaError_t _err = (expr);                                  \
+        if (_err != cudaSuccess) {                                  \
+            throw std::runtime_error(                               \
+                std::string("CUDA error at ") + __FILE__ + ":" +    \
+                std::to_string(__LINE__) + " in " + #expr + " : " + \
+                cudaGetErrorString(_err) + " (" +                   \
+                std::to_string(static_cast<int>(_err)) + ")");      \
+        }                                                           \
     } while (0)
 
 inline void handle_thrust_error(const char*                 expr,
@@ -36,7 +39,8 @@ inline void handle_thrust_error(const char*                 expr,
                   << code.value() << ")\n";
     }
 
-    std::exit(EXIT_FAILURE);  // or throw; or your own error policy
+    throw std::runtime_error(std::string("Thrust error in ") + expr + ": " +
+                             e.what());
 }
 
 #define THRUST_CALL(expr)                                      \
