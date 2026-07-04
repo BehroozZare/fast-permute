@@ -22,3 +22,4 @@ imgui.ini
 .polyscope.ini
 *.mtx
 /scripts/examples/results
+*.pyc

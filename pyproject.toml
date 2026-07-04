@@ -1,0 +1,35 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "nanobind>=2.2"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "homa"
+version = "0.1.0"
+description = "Fast fill-reducing sparse matrix ordering and SPD direct solver (CHOLMOD / MKL / cuDSS)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+scipy = ["scipy"]
+
+[tool.scikit-build]
+minimum-version = "0.10"
+build-dir = "build/skbuild/{wheel_tag}"
+wheel.packages = ["python/homa"]
+
+[tool.scikit-build.build]
+tool-args = ["/nodeReuse:false", "/m:1"]
+
+[tool.scikit-build.cmake]
+version = ">=3.24"
+
+[tool.scikit-build.cmake.define]
+HOMA_BUILD_PYTHON = "ON"
+HOMA_BUILD_EXAMPLE = "OFF"
+HOMA_BUILD_TESTS = "OFF"
+HOMA_WITH_CHOLMOD = "ON"
+HOMA_WITH_MKL = "ON"
+HOMA_WITH_CUDSS = "ON"
+HOMA_WITH_LLOYD_PATCHER = "ON"
