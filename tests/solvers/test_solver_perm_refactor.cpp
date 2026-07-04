@@ -136,7 +136,6 @@ void run_case(homa::LinSysSolverType type, const Case& c)
 
     if (c.homa) {
         homa::Options opts;
-        opts.compute_etree    = (type == homa::LinSysSolverType::GPU_CUDSS);
         opts.separator_method = c.sep;
         opts.local_method     = c.local;
         opts.patch_method     = c.patch;
