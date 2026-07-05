@@ -19,9 +19,6 @@ minimum-version = "0.12"
 build-dir = "build/skbuild/{wheel_tag}"
 wheel.packages = ["python/homapy"]
 
-[tool.scikit-build.build]
-tool-args = ["/nodeReuse:false", "/m:1"]
-
 [tool.scikit-build.cmake]
 version = ">=3.24"
 
@@ -37,3 +34,4 @@ HOMA_WITH_LLOYD_PATCHER = "ON"
 [[tool.scikit-build.overrides]]
 if.platform-system = "win32"
 cmake.args = ["-A", "x64", "-DCMAKE_GENERATOR_TOOLSET="]
+build.tool-args = ["/nodeReuse:false", "/m:1"]
