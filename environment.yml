@@ -1,4 +1,4 @@
-name: homa
+name: homapy
 channels:
   - conda-forge  
 dependencies:
@@ -9,6 +9,6 @@ dependencies:
   - scipy    
   - pytest
   - pip:
-      - scikit-build-core>=0.10
+      - scikit-build-core>=0.12
       - nanobind>=2.2      
       # - cupy-cuda12x

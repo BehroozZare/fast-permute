@@ -1,13 +1,13 @@
-# Creating Homa Python 
+# Homa Python bindings (`homapy`)
 
 Create or update the development environment:
 
 ```
 conda env update -f environment.yml
-conda activate homa
+conda activate homapy
 ```
 
-All commands below assume the `homa` environment is active. 
+All commands below assume the `homapy` environment is active.
 
 The default Python build uses the settings in `pyproject.toml`: Python bindings on, examples/tests off, and CHOLMOD, MKL, cuDSS, and the Lloyd patcher enabled. Because cuDSS is enabled by default, the default build needs a working CUDA toolkit setup.
 
@@ -18,7 +18,7 @@ Build and install the package into the active environment:
 python -m pip install -v . --no-build-isolation
 ```
 
-After changing native code such as `python/src/homa_bindings.cpp`, CMake files, or C++ sources, force a rebuild and reinstall:
+After changing native code such as `python/src/homapy_bindings.cpp`, CMake files, or C++ sources, force a rebuild and reinstall:
 
 ```
 python -m pip install -v . --no-build-isolation --force-reinstall --no-deps
@@ -55,8 +55,8 @@ python -m pip wheel . -w dist --no-build-isolation
 Check that the package is installed and see which solver backends were built:
 
 ```
-python -m pip show homa
-python -c "import homa; print(homa.has_cholmod(), homa.has_mkl(), homa.has_cudss(), homa.has_cuda())"
+python -m pip show homapy
+python -c "import homapy; print(homapy.has_cholmod(), homapy.has_mkl(), homapy.has_cudss(), homapy.has_cuda())"
 ```
 
 And run the Python tests:

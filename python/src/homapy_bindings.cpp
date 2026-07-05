@@ -72,7 +72,7 @@ class PySolver
         solver_.reset(homa::LinSysSolver<Scalar>::create(backend));
         if (!solver_) {
             throw std::runtime_error(
-                "homa: requested solver backend is not available in this "
+                "homapy: requested solver backend is not available in this "
                 "build");
         }
     }
@@ -224,7 +224,7 @@ constexpr bool kHasMkl =
 
 }  // namespace
 
-NB_MODULE(_homa, m)
+NB_MODULE(_homapy, m)
 {
     m.doc() = "Low-level Homa bindings (ordering + SPD direct solvers)";
 

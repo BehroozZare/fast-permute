@@ -1,9 +1,9 @@
 [build-system]
-requires = ["scikit-build-core>=0.10", "nanobind>=2.2"]
+requires = ["scikit-build-core>=0.12", "nanobind>=2.2"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "homa"
+name = "homapy"
 version = "0.1.0"
 description = "Fast fill-reducing sparse matrix ordering and SPD direct solver (CHOLMOD / MKL / cuDSS)"
 readme = "README.md"
@@ -15,9 +15,9 @@ dependencies = ["numpy"]
 scipy = ["scipy"]
 
 [tool.scikit-build]
-minimum-version = "0.10"
+minimum-version = "0.12"
 build-dir = "build/skbuild/{wheel_tag}"
-wheel.packages = ["python/homa"]
+wheel.packages = ["python/homapy"]
 
 [tool.scikit-build.build]
 tool-args = ["/nodeReuse:false", "/m:1"]
@@ -33,3 +33,7 @@ HOMA_WITH_CHOLMOD = "ON"
 HOMA_WITH_MKL = "ON"
 HOMA_WITH_CUDSS = "ON"
 HOMA_WITH_LLOYD_PATCHER = "ON"
+
+[[tool.scikit-build.overrides]]
+if.platform-system = "win32"
+cmake.args = ["-A", "x64", "-DCMAKE_GENERATOR_TOOLSET="]

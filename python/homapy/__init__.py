@@ -4,11 +4,11 @@ Thin Python wrapper over the C++ ``LinSysSolver`` (CHOLMOD / MKL / cuDSS) and
 the HOMA ordering. The API mirrors the C++ one:
 
     import scipy.sparse as sp
-    import homa
+    import homapy
 
-    solver = homa.Solver(backend="cholmod", dtype="float64")
+    solver = homapy.Solver(backend="cholmod", dtype="float64")
     solver.set_matrix(A)                 # A: SPD CSR (scipy) or cupyx CSR (device)
-    solver.ordering(homa.Options(patch_size=512))   # omit to use backend default
+    solver.ordering(homapy.Options(patch_size=512))   # omit to use backend default
     solver.analyze_pattern()
     solver.factorize()
     x = solver.solve(b)
@@ -32,7 +32,7 @@ from . import _dll as _dll
 
 _dll.setup()
 
-from . import _homa  # noqa: E402  (must import after _dll.setup on Windows)
+from . import _homapy  # noqa: E402  (must import after _dll.setup on Windows)
 
 __all__ = [
     "Solver",
@@ -46,26 +46,26 @@ __all__ = [
     "has_cuda",
 ]
 
-Backend = _homa.Backend
+Backend = _homapy.Backend
 
 
 # --------------------------------------------------------------------------- #
 # capability flags
 # --------------------------------------------------------------------------- #
 def has_cholmod() -> bool:
-    return bool(_homa.HAS_CHOLMOD)
+    return bool(_homapy.HAS_CHOLMOD)
 
 
 def has_mkl() -> bool:
-    return bool(_homa.HAS_MKL)
+    return bool(_homapy.HAS_MKL)
 
 
 def has_cudss() -> bool:
-    return bool(_homa.HAS_CUDSS)
+    return bool(_homapy.HAS_CUDSS)
 
 
 def has_cuda() -> bool:
-    return bool(_homa.HAS_CUDA)
+    return bool(_homapy.HAS_CUDA)
 
 
 # --------------------------------------------------------------------------- #
@@ -82,29 +82,29 @@ _BACKENDS = {
 }
 
 _SEPARATOR = {
-    "auto": _homa.SeparatorMethod.AUTO,
-    "quotient": _homa.SeparatorMethod.QUOTIENT,
-    "direct": _homa.SeparatorMethod.DIRECT_METIS,
-    "direct_metis": _homa.SeparatorMethod.DIRECT_METIS,
-    "metis": _homa.SeparatorMethod.DIRECT_METIS,
+    "auto": _homapy.SeparatorMethod.AUTO,
+    "quotient": _homapy.SeparatorMethod.QUOTIENT,
+    "direct": _homapy.SeparatorMethod.DIRECT_METIS,
+    "direct_metis": _homapy.SeparatorMethod.DIRECT_METIS,
+    "metis": _homapy.SeparatorMethod.DIRECT_METIS,
 }
 
 _LOCAL = {
-    "amd": _homa.LocalMethod.AMD,
-    "metis": _homa.LocalMethod.METIS,
-    "none": _homa.LocalMethod.NONE,
+    "amd": _homapy.LocalMethod.AMD,
+    "metis": _homapy.LocalMethod.METIS,
+    "none": _homapy.LocalMethod.NONE,
 }
 
 _PATCH = {
-    "greedy": _homa.PatchMethod.GREEDY,
-    "metis": _homa.PatchMethod.METIS,
-    "lloyd": _homa.PatchMethod.LLOYD,
+    "greedy": _homapy.PatchMethod.GREEDY,
+    "metis": _homapy.PatchMethod.METIS,
+    "lloyd": _homapy.PatchMethod.LLOYD,
 }
 
 _LLOYD_SEED = {
-    "random": _homa.LloydSeedMethod.RANDOM,
-    "morton": _homa.LloydSeedMethod.MORTON,
-    "fps": _homa.LloydSeedMethod.FPS,
+    "random": _homapy.LloydSeedMethod.RANDOM,
+    "morton": _homapy.LloydSeedMethod.MORTON,
+    "fps": _homapy.LloydSeedMethod.FPS,
 }
 
 _ENUM_MAPS = {
@@ -156,7 +156,7 @@ def Options(**kwargs):
     Enum fields accept friendly strings, e.g.
     ``Options(patch_size=512, separator_method="auto", local_method="amd")``.
     """
-    opts = _homa.Options()
+    opts = _homapy.Options()
     for key, value in kwargs.items():
         if not hasattr(opts, key):
             raise TypeError(f"Options got an unexpected argument {key!r}")
@@ -231,7 +231,7 @@ class Solver:
     def __init__(self, backend="cudss", dtype="float32"):
         self._backend = _backend_enum(backend)
         self._dtype = _dtype_for(dtype)
-        cls = _homa._SolverD if self._dtype == _np.float64 else _homa._SolverF
+        cls = _homapy._SolverD if self._dtype == _np.float64 else _homapy._SolverF
         self._solver = cls(self._backend)
         self._n = None
         self._is_device = False
@@ -357,7 +357,7 @@ def compute_ordering(A, options=None, **kwargs):
     A = sp.csr_matrix(A)
     indptr = _np.ascontiguousarray(A.indptr, dtype=_np.int32)
     indices = _np.ascontiguousarray(A.indices, dtype=_np.int32)
-    return _homa.compute_ordering(indptr, indices, int(A.shape[0]), options)
+    return _homapy.compute_ordering(indptr, indices, int(A.shape[0]), options)
 
 
 def _infer_dtype(A, b):

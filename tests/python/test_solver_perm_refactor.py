@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import scipy.sparse as sp
 
-import homa
+import homapy
 
 
 SIDE = 50
@@ -81,11 +81,11 @@ def _cupy_device_available() -> bool:
 
 def _backend_params() -> list[pytest.ParameterSet | str]:
     params: list[pytest.ParameterSet | str] = []
-    if homa.has_cholmod():
+    if homapy.has_cholmod():
         params.append(pytest.param("cholmod", id="cholmod"))
-    if homa.has_mkl():
+    if homapy.has_mkl():
         params.append(pytest.param("mkl", id="mkl"))
-    if homa.has_cudss():
+    if homapy.has_cudss():
         mark = ()
         if not _cupy_device_available():
             mark = pytest.mark.skip(reason="cuDSS test needs cupy and a CUDA device")
@@ -160,7 +160,7 @@ def _rhs(backend: str, rhs: np.ndarray):
 
 
 def _assign_refactor_values(
-    solver: homa.Solver,
+    solver: homapy.Solver,
     backend: str,
     matrix: sp.csr_matrix,
 ) -> None:
@@ -217,11 +217,11 @@ def test_solver_permutation_refactorization(
     b0 = a0 @ x_true
     b1 = a1 @ x_true
 
-    solver = homa.Solver(backend=backend, dtype=np.dtype(dtype).name)
+    solver = homapy.Solver(backend=backend, dtype=np.dtype(dtype).name)
     solver.set_matrix(_to_solver_matrix(backend, a0))
 
     if case.use_homa:
-        perm, _ = homa.compute_ordering(a0, **case.options)
+        perm, _ = homapy.compute_ordering(a0, **case.options)
         _assert_valid_permutation(perm, a0.shape[0])
         solver.ordering(**case.options)
 
