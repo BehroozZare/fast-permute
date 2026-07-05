@@ -9,6 +9,7 @@ function(homa_configure_mkl_runtime target_name)
 
     if(UNIX AND NOT APPLE AND _runtime_dirs)
         set_property(TARGET ${target_name} APPEND PROPERTY BUILD_RPATH ${_runtime_dirs})
+        set_property(TARGET ${target_name} APPEND PROPERTY INSTALL_RPATH ${_runtime_dirs})
     endif()
 
     if(WIN32 AND _runtime_dirs)
