@@ -66,11 +66,11 @@ jobs:
             cmake.define.HOMA_BUILD_PYTHON=ON
             cmake.define.HOMA_BUILD_EXAMPLE=OFF
             cmake.define.HOMA_BUILD_TESTS=OFF
-            cmake.define.HOMA_WITH_CUDA=ON
-            cmake.define.HOMA_WITH_CHOLMOD=ON
-            cmake.define.HOMA_WITH_MKL=ON
-            cmake.define.HOMA_WITH_CUDSS=ON
-            cmake.define.HOMA_WITH_LLOYD_PATCHER=ON
+            cmake.define.HOMA_WITH_CUDA=OFF
+            cmake.define.HOMA_WITH_CHOLMOD=OFF
+            cmake.define.HOMA_WITH_MKL=OFF
+            cmake.define.HOMA_WITH_CUDSS=OFF
+            cmake.define.HOMA_WITH_LLOYD_PATCHER=OFF
           CIBW_TEST_COMMAND: 'python -c "import homapy"'
           CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
           CIBW_ENVIRONMENT_LINUX: >-
