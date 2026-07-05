@@ -44,9 +44,19 @@ def to_device(A: sp.csr_matrix, b: np.ndarray, device: str):
     return csp.csr_matrix(A), cp.asarray(b)
 
 
+def to_backend_array(x: np.ndarray, device: str):
+    if device == "cpu":
+        return x
+
+    import cupy as cp
+
+    return cp.asarray(x)
+
+
 def relative_residual(A, x, b, device: str) -> float:
     if device == "gpu":
         import cupy as cp
+
         return float(cp.linalg.norm(A @ x - b) / cp.linalg.norm(b))
     return float(np.linalg.norm(A @ x - b) / np.linalg.norm(b))
 
@@ -57,27 +67,34 @@ def main() -> None:
     args = parser.parse_args()
 
     backend = "mkl" if args.device == "cpu" else "cudss"
-    
-    #build the system 
+
+    # Build the system.
     A_cpu = make_spd_grid(SIDE)
     x_true = np.linspace(1.0, 2.0, A_cpu.shape[0], dtype=DTYPE)
     b_cpu = A_cpu @ x_true
     A, b = to_device(A_cpu, b_cpu, args.device)
+    x_ref = to_backend_array(x_true, args.device)
 
-    #solve the system 
+    # Solve the system.
     solver = homapy.Solver(backend=backend, dtype=DTYPE.name)
     solver.set_matrix(A)
     solver.ordering(separator_method="auto", local_method="amd", patch_method="greedy")
     solver.analyze_pattern()
     solver.factorize()
     x = solver.solve(b)
-    
-    
-
     rel = relative_residual(A, x, b, args.device)
+
+    # Update A in place and refactorize without repeating ordering/analysis.
+    A.setdiag(A.diagonal() + 0.5)
+    b = A @ x_ref
+    solver.refactorize(A)
+    x = solver.solve(b)
+    rel_updated = relative_residual(A, x, b, args.device)
+
     print(
-        f"device={args.device} backend={backend} "
-        f"n={A_cpu.shape[0]} relative_residual={rel:.3e}"
+        f"\n device={args.device}, backend={backend}, "
+        f"n={A_cpu.shape[0]}, relative_residual={rel:.3e}, "
+        f"updated_relative_residual={rel_updated:.3e}"
     )
 
 

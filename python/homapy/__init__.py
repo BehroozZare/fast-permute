@@ -13,11 +13,11 @@ the HOMA ordering. The API mirrors the C++ one:
     solver.factorize()
     x = solver.solve(b)
 
-Refactorization (same sparsity pattern, new values): overwrite the value buffer
-the solver holds and call ``factorize()`` again::
+Refactorization (same sparsity pattern, new values): mutate the matrix values
+and call ``refactorize(A)``::
 
-    solver.values[:] = new_values 
-    solver.factorize()
+    A.setdiag(A.diagonal() + 0.5)
+    solver.refactorize(A)
     x2 = solver.solve(b2)
 
 For GPU-resident matrices (cupyx.scipy.sparse CSR), the device pointers are used
@@ -216,6 +216,25 @@ def _device_csr(A, dtype):
     return indptr, indices, values, int(A.shape[0]), int(indices.size)
 
 
+def _array_ptr(array) -> int:
+    if _is_device(array):
+        return int(array.data.ptr)
+    return int(array.ctypes.data)
+
+
+def _array_equal(left, right) -> bool:
+    if left.shape != right.shape:
+        return False
+    if _is_device(left) or _is_device(right):
+        import cupy as cp
+
+        result = cp.array_equal(left, right)
+        if hasattr(result, "get"):
+            result = result.get()
+        return bool(result)
+    return bool(_np.array_equal(left, right))
+
+
 # --------------------------------------------------------------------------- #
 # Solver
 # --------------------------------------------------------------------------- #
@@ -293,6 +312,39 @@ class Solver:
     def factorize(self):
         self._solver.factorize()
         return self
+
+    def refactorize(self, A=None):
+        """Update numeric values for the same sparsity pattern and factorize."""
+        if A is None:
+            return self.factorize()
+        if self._values is None:
+            raise RuntimeError("refactorize called before set_matrix")
+
+        is_device = _is_device(getattr(A, "data", None))
+        if is_device != self._is_device:
+            raise TypeError("refactorize matrix must use the same memory location")
+        if self._backend == Backend.GPU_CUDSS and not is_device:
+            raise RuntimeError(
+                "cuDSS refactorize(A) requires a cupyx CSR matrix; host "
+                "matrices are copied to device during set_matrix"
+            )
+
+        if is_device:
+            indptr, indices, values, n, nnz = _device_csr(A, self._dtype)
+        else:
+            indptr, indices, values, n, nnz = _host_csr(
+                A, self._dtype, self._backend)
+
+        if n != self._n or nnz != int(self._indices.shape[0]):
+            raise ValueError("refactorize requires the same sparsity pattern")
+        if not _array_equal(indptr, self._indptr) or not _array_equal(
+            indices, self._indices
+        ):
+            raise ValueError("refactorize requires the same sparsity pattern")
+
+        if _array_ptr(values) != _array_ptr(self._values):
+            self._values[:] = values
+        return self.factorize()
 
     def solve(self, b):
         if self._is_device:
