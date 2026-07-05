@@ -128,20 +128,8 @@ def _make_matrix(dtype: np.dtype, shift: float) -> sp.csr_matrix:
     ).tocsr()
 
 
-def _solver_matrix(backend: str, matrix: sp.csr_matrix) -> sp.csr_matrix:
-    if backend == "mkl":
-        return sp.tril(matrix).tocsr()
-    return matrix.tocsr()
-
-
-def _stored_value_matrix(backend: str, matrix: sp.csr_matrix) -> sp.csr_matrix:
-    if backend == "mkl":
-        return sp.triu(matrix).tocsr()
-    return _solver_matrix(backend, matrix)
-
-
 def _to_solver_matrix(backend: str, matrix: sp.csr_matrix):
-    matrix = _solver_matrix(backend, matrix)
+    matrix = matrix.tocsr()
     if backend != "cudss":
         return matrix
 
@@ -157,19 +145,6 @@ def _rhs(backend: str, rhs: np.ndarray):
     import cupy as cp
 
     return cp.asarray(rhs)
-
-
-def _assign_refactor_values(
-    solver: homapy.Solver,
-    backend: str,
-    matrix: sp.csr_matrix,
-) -> None:
-    values = _stored_value_matrix(backend, matrix).data
-    if backend == "cudss":
-        import cupy as cp
-
-        values = cp.asarray(values)
-    solver.values[:] = values
 
 
 def _assert_solve(
@@ -211,26 +186,24 @@ def test_solver_permutation_refactorization(
     tol: float,
     case: OrderingCase,
 ) -> None:
-    a0 = _make_matrix(dtype, 0.0)
-    a1 = _make_matrix(dtype, 0.5)
-    x_true = np.linspace(1.0, 2.0, a0.shape[0], dtype=dtype)
-    b0 = a0 @ x_true
-    b1 = a1 @ x_true
+    A = _to_solver_matrix(backend, _make_matrix(dtype, 0.0))
+    x_true = np.linspace(1.0, 2.0, A.shape[0], dtype=dtype)
+    x_ref = _rhs(backend, x_true)
+    b0 = A @ x_ref
 
     solver = homapy.Solver(backend=backend, dtype=np.dtype(dtype).name)
-    solver.set_matrix(_to_solver_matrix(backend, a0))
+    solver.set_matrix(A)
 
     if case.use_homa:
-        perm, _ = homapy.compute_ordering(a0, **case.options)
-        _assert_valid_permutation(perm, a0.shape[0])
+        perm, _ = homapy.compute_ordering(A, **case.options)
+        _assert_valid_permutation(perm, A.shape[0])
         solver.ordering(**case.options)
 
     solver.analyze_pattern()
     solver.factorize()
-    rhs0 = _rhs(backend, b0)
-    _assert_solve(backend, a0, rhs0, solver.solve(rhs0), tol)
+    _assert_solve(backend, A, b0, solver.solve(b0), tol)
 
-    _assign_refactor_values(solver, backend, a1)
-    solver.factorize()
-    rhs1 = _rhs(backend, b1)
-    _assert_solve(backend, a1, rhs1, solver.solve(rhs1), tol)
+    A.setdiag(A.diagonal() + dtype(0.5))
+    b1 = A @ x_ref
+    solver.refactorize(A)
+    _assert_solve(backend, A, b1, solver.solve(b1), tol)
