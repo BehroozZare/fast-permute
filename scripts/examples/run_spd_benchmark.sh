@@ -20,7 +20,7 @@ PATCH_SIZE="${2:-512}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-INPUT_DIR="$REPO_ROOT/input"
+INPUT_DIR="$REPO_ROOT/scripts/data/"
 BINARY="$REPO_ROOT/build/bin/matrix_example"
 OUT_DIR="results/$SOLVER"
 
@@ -70,8 +70,12 @@ for f in "${mtx_files[@]}"; do
     echo "============================================================"
     echo "  Matrix: $rel  |  solver: $SOLVER  |  patch: $PATCH_SIZE"
     echo "============================================================"
-    "$BINARY" -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision double --make-spd-from-pattern --out "$out_subdir/${name}_double.json"
-    "$BINARY" -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision float --make-spd-from-pattern --out "$out_subdir/${name}_float.json"
+    "$BINARY" -r 3 -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision double --make-spd-from-pattern --separator-method auto --out "$out_subdir/${name}_double_auto.json"
+    "$BINARY" -r 3 -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision float --make-spd-from-pattern --separator-method auto --out "$out_subdir/${name}_float_auto.json"
+    "$BINARY" -r 3 -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision double --make-spd-from-pattern --separator-method quotient --out "$out_subdir/${name}_double_quotient.json"
+    "$BINARY" -r 3 -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision float --make-spd-from-pattern --separator-method quotient --out "$out_subdir/${name}_float_quotient.json"
+    "$BINARY" -r 3 -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision double --make-spd-from-pattern --separator-method direct --out "$out_subdir/${name}_double_direct.json"
+    "$BINARY" -r 3 -i "$f" -s "$SOLVER" -p "$PATCH_SIZE" --precision float --make-spd-from-pattern --separator-method direct --out "$out_subdir/${name}_float_direct.json"
 done
 
 echo
