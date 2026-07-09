@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     if (!igl::read_triangle_mesh(input_mesh, V, F)) {
-        std::cerr << "Failed to read mesh: " << input_mesh << "\n";
+        spdlog::error("Failed to read mesh: {}", input_mesh);
         return 1;
     }
 

@@ -331,7 +331,7 @@ void CHOLMODSolver<Scalar>::innerAnalyze_pattern(
 
     assert(L != nullptr);
     if (L == nullptr) {
-        std::cerr << "ERROR during symbolic factorization:" << std::endl;
+        spdlog::error("ERROR during symbolic factorization:");
         throw std::runtime_error("Symbolic factorization failed");
     }
     L_NNZ = static_cast<int>(cm.lnz * 2 - N);
@@ -347,12 +347,12 @@ void CHOLMODSolver<Scalar>::innerFactorize(void)
     }
 
     if (cm.status == CHOLMOD_NOT_POSDEF) {
-        std::cerr << "ERROR during numerical factorization - matrix not "
-                     "positive definite"
-                  << std::endl;
-        std::cerr << "Matrix size: " << N << ", NNZ: " << NNZ << std::endl;
+        spdlog::error(
+            "ERROR during numerical factorization - matrix not positive "
+            "definite");
+        spdlog::error("Matrix size: {}, NNZ: {}", N, NNZ);
         if (use_gpu) {
-            std::cerr << "GPU mode was enabled" << std::endl;
+            spdlog::error("GPU mode was enabled");
 #if defined(CHOLMOD_HAS_CUDA)
             spdlog::error("Printing GPU statistics:");
             cholmod_l_gpu_stats(&cm);
