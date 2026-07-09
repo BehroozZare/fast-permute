@@ -24,6 +24,7 @@
 #include <homa/solvers/LinSysSolver.h>
 
 #include "util.h"
+#include "cleanup_mesh.h"
 
 template <class Scalar>
 using SparseMat = Eigen::SparseMatrix<Scalar>;
@@ -114,7 +115,11 @@ int run_benchmark(const std::string&             input_mesh,
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     if (!igl::read_triangle_mesh(input_mesh, V, F)) {
-        std::cerr << "Failed to read mesh: " << input_mesh << "\n";
+        spdlog::error("Failed to read mesh: {}", input_mesh);
+        return 1;
+    }
+    if (!cleanup_mesh(V, F)) {
+        spdlog::error("Mesh cleanup produced an empty mesh: {}", input_mesh);
         return 1;
     }
 
@@ -285,8 +290,7 @@ int main(int argc, char* argv[])
         return run_benchmark<float>(
             input_mesh, patch_size, output_json, runs, sep_method);
     }
-
-    std::cerr << "Unknown precision '" << precision
-              << "' (expected 'double' or 'float')\n";
+    spdlog::error("Unknown precision '{}' (expected 'double' or 'float')",
+                  precision);
     return 1;
 }
