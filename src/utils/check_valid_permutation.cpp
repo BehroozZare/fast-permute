@@ -9,6 +9,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <spdlog/spdlog.h>
+
 namespace homa {
 // Return the factor's nnz using CHOLMOD analysis. The input matrix should be
 // CSC with only lower part represented.
@@ -17,15 +19,19 @@ bool check_valid_permutation(int* perm, int n)
     std::vector<bool> marker(n, false);
     for (int i = 0; i < n; i++) {
         if (perm[i] < 0 || perm[i] >= n) {
-            std::cerr << "ERROR: Invalid permutation. Element " << i
-                      << " has value " << perm[i]
-                      << " which is out of range [0, " << n - 1 << "]"
-                      << std::endl;
+            spdlog::error(
+                "ERROR: Invalid permutation. Element {} has value {} which is "
+                "out of range [0, {}}",
+                i,
+                perm[i],
+                n - 1);
             return false;
         }
         if (marker[perm[i]]) {
-            std::cerr << "ERROR: Invalid permutation. Element " << perm[i]
-                      << " appears more than once." << std::endl;
+            spdlog::error(
+                "ERROR: Invalid permutation. Element {} appears more than "
+                "once.",
+                perm[i]);
             return false;
         }
         marker[perm[i]] = true;
@@ -34,8 +40,8 @@ bool check_valid_permutation(int* perm, int n)
     // Check to see there is no marker left
     for (int i = 0; i < n; i++) {
         if (marker[i] == false) {
-            std::cerr << "ERROR: Invalid permutation. Element " << i
-                      << " is missing." << std::endl;
+            spdlog::error("ERROR: Invalid permutation. Element {} is missing.",
+                          i);
             return false;
         }
     }

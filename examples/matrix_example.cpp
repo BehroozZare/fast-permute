@@ -223,14 +223,12 @@ int run_benchmark(const std::string&             input_matrix,
 {
     SparseMat<Scalar> raw;
     if (!Eigen::loadMarket(raw, input_matrix)) {
-        std::cerr << "Failed to read Matrix Market file: " << input_matrix
-                  << "\n";
+        spdlog::error("Failed to read Matrix Market file: {}", input_matrix);
         return 1;
     }
 
     if (raw.rows() != raw.cols()) {
-        std::cerr << "Matrix must be square: " << raw.rows() << "x"
-                  << raw.cols() << "\n";
+        spdlog::error("Matrix must be square: {} x {}", raw.rows(), raw.cols());
         return 1;
     }
 
@@ -424,7 +422,7 @@ int main(int argc, char* argv[])
     try {
         solver_type = solver_type_from_name(solver_name);
     } catch (const std::invalid_argument& e) {
-        std::cerr << e.what() << "\n";
+        spdlog::error("{}", e.what());
         return 1;
     }
 
@@ -452,7 +450,7 @@ int main(int argc, char* argv[])
                                     sep_method);
     }
 
-    std::cerr << "Unknown precision '" << precision
-              << "' (expected 'double' or 'float')\n";
+    spdlog::error("Unknown precision '{}' (expected 'double' or 'float')",
+                  precision);
     return 1;
 }
