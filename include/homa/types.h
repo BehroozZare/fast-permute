@@ -20,7 +20,7 @@ struct Options
         QUOTIENT,
         DIRECT_METIS
     };
-    SeparatorMethod separator_method = SeparatorMethod::AUTO;
+    SeparatorMethod separator_method = SeparatorMethod::QUOTIENT;
 
     // -1 is use heuristics; 0 means only the root uses direct graph separators.
     // only active with AUTO separator method
