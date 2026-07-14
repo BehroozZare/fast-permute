@@ -22,7 +22,7 @@ permissions:
 
 env:
   CUDA_VERSION: "12.6.3"
-  CUDA_ARCHITECTURES: "75;80;86;89;90"
+  CUDA_ARCHITECTURES: "80;86;89;90"
 
 jobs:
   wheels:
