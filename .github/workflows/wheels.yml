@@ -72,6 +72,9 @@ jobs:
             cmake.define.HOMA_WITH_CUDSS=ON
             cmake.define.HOMA_WITH_LLOYD_PATCHER=ON
           CIBW_TEST_COMMAND: 'python -c "import homapy"'
+          CIBW_TEST_REQUIRES_LINUX: "scipy"
+          CIBW_TEST_COMMAND_LINUX: >-
+            python -c "import homapy, numpy as np, scipy.sparse as sp; A = sp.diags([-np.ones(3), 4*np.ones(4), -np.ones(3)], [-1, 0, 1], format='csr'); b = np.ones(4); x = homapy.spsolve(A, b, backend='mkl', dtype='float64', reorder=False); assert np.linalg.norm(A @ x - b) < 1e-10"
           CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
           CIBW_ENVIRONMENT_LINUX: >-
             PATH=/usr/local/cuda/bin:$PATH
