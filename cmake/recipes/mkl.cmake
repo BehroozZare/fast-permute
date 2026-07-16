@@ -36,10 +36,21 @@ function(homa_configure_mkl_runtime target_name)
                 endif()
             endforeach()
 
+            foreach(_dir IN LISTS _runtime_dirs)
+                if(EXISTS "${_dir}")
+                    file(GLOB _homa_mkl_dispatch_files
+                        "${_dir}/libmkl_def.so*"
+                        "${_dir}/libmkl_avx*.so*"
+                        "${_dir}/libmkl_mc*.so*")
+                    list(APPEND _homa_mkl_component_files ${_homa_mkl_dispatch_files})
+                endif()
+            endforeach()
+
             if(HOMA_MKL_THREADING STREQUAL "intel" AND HOMA_MKL_OPENMP_RUNTIME)
                 list(APPEND _homa_mkl_component_files "${HOMA_MKL_OPENMP_RUNTIME}")
             endif()
 
+            list(REMOVE_DUPLICATES _homa_mkl_component_files)
             install(FILES ${_homa_mkl_component_files} DESTINATION homapy.libs)
         endif()
     endif()
