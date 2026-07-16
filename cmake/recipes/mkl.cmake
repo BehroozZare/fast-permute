@@ -36,6 +36,10 @@ function(homa_configure_mkl_runtime target_name)
                 endif()
             endforeach()
 
+            if(HOMA_MKL_THREADING STREQUAL "intel" AND HOMA_MKL_OPENMP_RUNTIME)
+                list(APPEND _homa_mkl_component_files "${HOMA_MKL_OPENMP_RUNTIME}")
+            endif()
+
             install(FILES ${_homa_mkl_component_files} DESTINATION homapy.libs)
         endif()
     endif()
