@@ -13,6 +13,7 @@ function(homa_configure_mkl_runtime target_name)
 
         if(HOMA_BUILD_PYTHON AND target_name STREQUAL "_homapy")
             set(_homa_mkl_component_names
+                libmkl_rt.so.2
                 libmkl_core.so.2
                 libmkl_intel_lp64.so.2)
             if(HOMA_MKL_THREADING STREQUAL "intel")

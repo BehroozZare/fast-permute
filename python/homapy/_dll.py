@@ -17,23 +17,29 @@ def _setup_linux() -> None:
     if not os.path.isdir(libs_dir):
         return
 
-    candidates = glob.glob(os.path.join(libs_dir, "libiomp5*.so*"))
-    if not candidates:
-        return
-
-    def sort_key(path: str) -> tuple[int, str]:
-        basename = os.path.basename(path)
-        return (1 if basename == "libiomp5.so" else 0, basename)
-
     mode = getattr(ctypes, "RTLD_GLOBAL", 0)
     mode |= getattr(os, "RTLD_NOW", 0)
 
-    for path in sorted(candidates, key=sort_key):
-        try:
-            _DLL_HANDLES.append(ctypes.CDLL(path, mode=mode))
-            return
-        except OSError:
-            pass
+    def load(pattern: str) -> None:
+        for path in sorted(glob.glob(os.path.join(libs_dir, pattern))):
+            try:
+                _DLL_HANDLES.append(ctypes.CDLL(path, mode=mode))
+                return
+            except OSError:
+                pass
+
+    for pattern in (
+        "libiomp5*.so*",
+        "libmkl_core.so*",
+        "libmkl_intel_lp64.so*",
+        "libmkl_intel_thread.so*",
+        "libmkl_sequential.so*",
+        "libmkl_def.so*",
+        "libmkl_avx*.so*",
+        "libmkl_mc*.so*",
+        "libmkl_rt.so*",
+    ):
+        load(pattern)
 
 
 def setup() -> None:
@@ -45,7 +51,7 @@ def setup() -> None:
         return
 
     candidates = []
-    
+
     candidates.append(os.path.dirname(os.path.abspath(__file__)))
 
     for env_var in ("CUDA_PATH", "CUDA_HOME"):

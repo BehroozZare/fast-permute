@@ -99,6 +99,16 @@ jobs:
             --exclude libcusparse.so.12
             --exclude libnvJitLink.so.12
             --exclude libnvrtc.so.12
+            --exclude libiomp5.so
+            --exclude libmkl_rt.so.2
+            --exclude libmkl_core.so.2
+            --exclude libmkl_intel_lp64.so.2
+            --exclude libmkl_intel_thread.so.2
+            --exclude libmkl_sequential.so.2
+            --exclude libmkl_def.so.2
+            --exclude libmkl_avx2.so.2
+            --exclude libmkl_avx512.so.2
+            --exclude libmkl_mc3.so.2
             -w {dest_dir} {wheel}
 
       - name: Inspect Linux wheels
